@@ -25,7 +25,7 @@ def iniciar_servidor_web():
 # ==========================================
 # CONFIGURAÇÕES DO BOT VIA NUVEM
 # ==========================================
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+TELEGRAM_TOKEN = os.getenv("8986739105:AAHNelnHiR6iOmNp-9x6Bf3P9ciKoou7jy0")
 CHAT_ID = "@raposacacadora"
 ARQUIVO_HISTORICO = "produtos_postados.txt"
 

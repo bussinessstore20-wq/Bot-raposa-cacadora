@@ -1,1440 +1,1495 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-    <meta charset="UTF-8">
+  <meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    >
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  >
 
-    <title>Raposa Caçadora - Painel VIP</title>
+  <title>Raposa Caçadora - Painel VIP</title>
 
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-    <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    >
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  >
 
-    <style>
-        :root {
-            --bg: #05070a;
-            --card: rgba(15, 23, 36, .92);
-            --border: rgba(255,255,255,.09);
-            --orange: #f97316;
-            --orange2: #ea580c;
-            --text: #f8fafc;
-            --sub: #94a3b8;
-            --input: rgba(6,10,17,.95);
-            --green: #22c55e;
-            --red: #ef4444;
-            --radius: 16px;
-        }
+  <style>
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family:
-                -apple-system,
-                BlinkMacSystemFont,
-                "Segoe UI",
-                Roboto,
-                Arial,
-                sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
+    :root {
+      --bg:
+        #05070a;
 
-        body {
-            min-height: 100vh;
-            padding: 20px 16px 30px;
-            color: var(--text);
-            background:
-                linear-gradient(
-                    135deg,
-                    #05070a 0%,
-                    #0d111a 100%
-                );
-        }
+      --card:
+        rgba(15, 23, 36, 0.92);
 
-        .container {
-            width: 100%;
-            max-width: 520px;
-            margin: 0 auto;
-        }
+      --border:
+        rgba(255,255,255,0.08);
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-bottom: 20px;
-        }
+      --orange:
+        #f97316;
 
-        .avatar {
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #080b11;
-            border: 2px solid var(--orange);
-            font-size: 28px;
-            box-shadow: 0 0 25px rgba(249,115,22,.45);
-        }
+      --orange-light:
+        #fdba74;
 
-        .brand h1 {
-            font-size: 1.25rem;
-            font-weight: 800;
-        }
+      --text:
+        #f8fafc;
 
-        .brand p {
-            margin-top: 3px;
-            color: var(--sub);
-            font-size: .8rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
+      --sub:
+        #94a3b8;
 
-        .status {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--green);
-            box-shadow: 0 0 8px var(--green);
-        }
+      --input:
+        rgba(6,10,17,0.95);
 
-        .card {
-            padding: 20px;
-            border-radius: var(--radius);
-            background: var(--card);
-            border: 1px solid var(--border);
-            box-shadow: 0 10px 30px rgba(0,0,0,.45);
-        }
+      --green:
+        #22c55e;
 
-        .title {
-            color: #fdba74;
-            font-size: .9rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: .05em;
-            margin-bottom: 18px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+      --red:
+        #ef4444;
 
-        .field {
-            margin-bottom: 18px;
-        }
+      --radius:
+        16px;
+    }
 
-        .field:last-child {
-            margin-bottom: 0;
-        }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
 
-        label {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            margin-bottom: 8px;
-            color: var(--sub);
-            font-size: .82rem;
-            font-weight: 600;
-        }
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Arial,
+        sans-serif;
 
-        .input-row {
-            display: flex;
-            gap: 8px;
-        }
+      -webkit-tap-highlight-color:
+        transparent;
+    }
 
-        .input-box {
-            position: relative;
-            flex: 1;
-        }
+    body {
+      min-height: 100vh;
 
-        .input-box > i {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #64748b;
-            pointer-events: none;
-        }
+      background:
+        linear-gradient(
+          135deg,
+          #05070a 0%,
+          #0d111a 100%
+        );
 
-        input,
-        select {
-            width: 100%;
-            min-height: 48px;
-            padding: 13px 14px 13px 42px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,.12);
-            outline: none;
-            background: var(--input);
-            color: var(--text);
-            font-size: .92rem;
-        }
+      color:
+        var(--text);
 
-        input:focus,
-        select:focus {
-            border-color: var(--orange);
-            box-shadow:
-                0 0 0 3px rgba(249,115,22,.15);
-        }
+      padding:
+        20px 16px 30px;
 
-        select option {
-            background: #0f172a;
-            color: white;
-        }
+      display:
+        flex;
 
-        .paste {
-            min-height: 48px;
-            padding: 0 15px;
-            border-radius: 12px;
-            border: 1px solid var(--orange);
-            background: rgba(249,115,22,.13);
-            color: #fdba74;
-            font-weight: 700;
-            cursor: pointer;
-            white-space: nowrap;
-        }
+      flex-direction:
+        column;
 
-        .paste:active {
-            transform: scale(.97);
-        }
+      gap:
+        20px;
+    }
 
-        .quick {
-            display: grid;
-            grid-template-columns: repeat(3,1fr);
-            gap: 8px;
-            margin-top: 8px;
-        }
+    .brand-header {
+      display:
+        flex;
 
-        .quick button {
-            padding: 10px 5px;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,.1);
-            background: var(--input);
-            color: var(--sub);
-            font-weight: 700;
-            cursor: pointer;
-        }
+      align-items:
+        center;
 
-        .quick button.active {
-            color: var(--orange);
-            border-color: var(--orange);
-            background: rgba(249,115,22,.15);
-        }
+      gap:
+        14px;
+    }
 
-        .submit {
-            width: 100%;
-            min-height: 54px;
-            margin-top: 18px;
-            border: 0;
-            border-radius: var(--radius);
-            background:
-                linear-gradient(
-                    135deg,
-                    var(--orange),
-                    var(--orange2)
-                );
-            color: white;
-            font-size: 1rem;
-            font-weight: 800;
-            cursor: pointer;
-            box-shadow:
-                0 8px 25px rgba(249,115,22,.35);
-        }
+    .brand-avatar {
+      width:
+        56px;
 
-        .submit:active {
-            transform: scale(.985);
-        }
+      height:
+        56px;
 
-        .submit:disabled {
-            opacity: .65;
-            cursor: not-allowed;
-        }
+      flex-shrink:
+        0;
 
-        .message {
-            display: none;
-            margin-top: 14px;
-            padding: 13px;
-            border-radius: 12px;
-            text-align: center;
-            line-height: 1.45;
-            font-size: .86rem;
-        }
+      border-radius:
+        50%;
 
-        .message.show {
-            display: block;
-        }
+      background:
+        #080b11;
 
-        .message.success {
-            color: #86efac;
-            background: rgba(34,197,94,.1);
-            border: 1px solid rgba(34,197,94,.25);
-        }
+      border:
+        2px solid var(--orange);
 
-        .message.error {
-            color: #fca5a5;
-            background: rgba(239,68,68,.1);
-            border: 1px solid rgba(239,68,68,.25);
-        }
+      display:
+        flex;
 
-        .footer {
-            margin-top: 20px;
-            text-align: center;
-            color: var(--sub);
-            font-size: .72rem;
-        }
+      align-items:
+        center;
 
-        .debug {
-            margin-top: 12px;
-            padding: 10px;
-            border-radius: 10px;
-            background: rgba(0,0,0,.25);
-            color: #64748b;
-            font-size: .68rem;
-            word-break: break-all;
-            display: none;
-        }
+      justify-content:
+        center;
 
-        @media (max-width: 390px) {
-            .input-row {
-                flex-direction: column;
-            }
+      font-size:
+        28px;
 
-            .paste {
-                width: 100%;
-            }
-        }
-    </style>
+      box-shadow:
+        0 0 25px
+        rgba(249,115,22,.45);
+    }
+
+    .brand-title h1 {
+      font-size:
+        1.25rem;
+
+      font-weight:
+        800;
+    }
+
+    .brand-title p {
+      margin-top:
+        3px;
+
+      font-size:
+        .8rem;
+
+      color:
+        var(--sub);
+
+      display:
+        flex;
+
+      align-items:
+        center;
+
+      gap:
+        6px;
+    }
+
+    .status-badge {
+      width:
+        8px;
+
+      height:
+        8px;
+
+      border-radius:
+        50%;
+
+      background:
+        var(--green);
+
+      box-shadow:
+        0 0 8px
+        var(--green);
+    }
+
+    .card {
+      background:
+        var(--card);
+
+      border:
+        1px solid var(--border);
+
+      border-radius:
+        var(--radius);
+
+      padding:
+        20px;
+
+      box-shadow:
+        0 10px 30px
+        rgba(0,0,0,.45);
+    }
+
+    .card-title {
+      color:
+        var(--orange-light);
+
+      font-size:
+        .9rem;
+
+      font-weight:
+        700;
+
+      text-transform:
+        uppercase;
+
+      letter-spacing:
+        .05em;
+
+      margin-bottom:
+        18px;
+
+      display:
+        flex;
+
+      align-items:
+        center;
+
+      gap:
+        8px;
+    }
+
+    .field-group {
+      display:
+        flex;
+
+      flex-direction:
+        column;
+
+      gap:
+        8px;
+
+      margin-bottom:
+        18px;
+    }
+
+    .field-group:last-child {
+      margin-bottom:
+        0;
+    }
+
+    label {
+      color:
+        var(--sub);
+
+      font-size:
+        .82rem;
+
+      font-weight:
+        600;
+
+      display:
+        flex;
+
+      align-items:
+        center;
+
+      gap:
+        6px;
+    }
+
+    .input-wrapper-paste {
+      display:
+        flex;
+
+      gap:
+        8px;
+
+      align-items:
+        center;
+    }
+
+    .input-wrapper {
+      position:
+        relative;
+
+      flex:
+        1;
+    }
+
+    .input-wrapper > i {
+      position:
+        absolute;
+
+      left:
+        14px;
+
+      top:
+        50%;
+
+      transform:
+        translateY(-50%);
+
+      color:
+        #64748b;
+
+      pointer-events:
+        none;
+    }
+
+    input,
+    select {
+      width:
+        100%;
+
+      padding:
+        14px 14px 14px 42px;
+
+      border:
+        1px solid
+        rgba(255,255,255,.12);
+
+      border-radius:
+        12px;
+
+      background:
+        var(--input);
+
+      color:
+        white;
+
+      outline:
+        none;
+
+      font-size:
+        .92rem;
+    }
+
+    input:focus,
+    select:focus {
+      border-color:
+        var(--orange);
+
+      box-shadow:
+        0 0 0 3px
+        rgba(249,115,22,.18);
+    }
+
+    select option {
+      background:
+        #0f172a;
+
+      color:
+        white;
+    }
+
+    .btn-colar {
+      padding:
+        14px 16px;
+
+      border:
+        1px solid var(--orange);
+
+      border-radius:
+        12px;
+
+      background:
+        rgba(249,115,22,.12);
+
+      color:
+        var(--orange-light);
+
+      font-weight:
+        700;
+
+      cursor:
+        pointer;
+
+      white-space:
+        nowrap;
+    }
+
+    .btn-colar:active {
+      transform:
+        scale(.97);
+    }
+
+    .time-grid {
+      display:
+        grid;
+
+      grid-template-columns:
+        repeat(3,1fr);
+
+      gap:
+        8px;
+
+      margin-top:
+        4px;
+    }
+
+    .time-btn {
+      padding:
+        10px 6px;
+
+      border:
+        1px solid
+        rgba(255,255,255,.12);
+
+      border-radius:
+        10px;
+
+      background:
+        var(--input);
+
+      color:
+        var(--sub);
+
+      font-weight:
+        600;
+
+      cursor:
+        pointer;
+    }
+
+    .time-btn.active {
+      color:
+        var(--orange);
+
+      border-color:
+        var(--orange);
+
+      background:
+        rgba(249,115,22,.15);
+    }
+
+    .btn-submit {
+      width:
+        100%;
+
+      padding:
+        16px;
+
+      border:
+        0;
+
+      border-radius:
+        var(--radius);
+
+      background:
+        linear-gradient(
+          135deg,
+          #f97316,
+          #ea580c
+        );
+
+      color:
+        white;
+
+      font-size:
+        1rem;
+
+      font-weight:
+        800;
+
+      cursor:
+        pointer;
+
+      box-shadow:
+        0 8px 25px
+        rgba(249,115,22,.35);
+
+      display:
+        flex;
+
+      align-items:
+        center;
+
+      justify-content:
+        center;
+
+      gap:
+        10px;
+    }
+
+    .btn-submit:disabled {
+      opacity:
+        .7;
+
+      cursor:
+        not-allowed;
+    }
+
+    .mensagem {
+      display:
+        none;
+
+      padding:
+        14px;
+
+      border-radius:
+        12px;
+
+      text-align:
+        center;
+
+      font-size:
+        .85rem;
+
+      line-height:
+        1.5;
+    }
+
+    .mensagem.sucesso {
+      display:
+        block;
+
+      color:
+        #86efac;
+
+      background:
+        rgba(34,197,94,.10);
+
+      border:
+        1px solid
+        rgba(34,197,94,.25);
+    }
+
+    .mensagem.erro {
+      display:
+        block;
+
+      color:
+        #fca5a5;
+
+      background:
+        rgba(239,68,68,.10);
+
+      border:
+        1px solid
+        rgba(239,68,68,.25);
+    }
+
+    .footer-note {
+      text-align:
+        center;
+
+      color:
+        var(--sub);
+
+      font-size:
+        .75rem;
+    }
+
+    @media (max-width:380px) {
+
+      .input-wrapper-paste {
+        flex-direction:
+          column;
+
+        align-items:
+          stretch;
+      }
+
+      .btn-colar {
+        width:
+          100%;
+      }
+
+    }
+
+  </style>
 </head>
 
 <body>
 
-<div class="container">
+  <div class="brand-header">
 
-    <div class="brand">
-        <div class="avatar">🦊</div>
-
-        <div>
-            <h1>Raposa Caçadora VIP</h1>
-
-            <p>
-                <span class="status"></span>
-                Sistema de Postagens Conectado
-            </p>
-        </div>
+    <div class="brand-avatar">
+      🦊
     </div>
 
-    <div class="card">
+    <div class="brand-title">
 
-        <div class="title">
-            <i class="fa-solid fa-sliders"></i>
-            Painel de Automação
-        </div>
+      <h1>
+        Raposa Caçadora VIP
+      </h1>
 
-        <!-- LINK -->
-        <div class="field">
+      <p>
+        <span class="status-badge"></span>
+        Sistema de Postagens Conectado
+      </p>
 
-            <label>
-                <i class="fa-solid fa-link"></i>
-                Link da Vitrine ou Produto
-            </label>
+    </div>
 
-            <div class="input-row">
+  </div>
 
-                <div class="input-box">
 
-                    <i class="fa-solid fa-store"></i>
+  <div class="card">
 
-                    <input
-                        id="linkVitrine"
-                        type="url"
-                        inputmode="url"
-                        placeholder="Cole o link da vitrine..."
-                        autocomplete="off"
-                        autocapitalize="off"
-                        spellcheck="false"
-                    >
+    <div class="card-title">
+      <i class="fa-solid fa-sliders"></i>
+      Painel de Automação
+    </div>
 
-                </div>
 
-                <button
-                    class="paste"
-                    id="btnColar"
-                    type="button"
-                >
-                    <i class="fa-solid fa-paste"></i>
-                    Colar
-                </button>
+    <div class="field-group">
 
-            </div>
+      <label>
+        <i class="fa-solid fa-link"></i>
+        Link da Vitrine / Produto
+      </label>
 
-        </div>
+      <div class="input-wrapper-paste">
 
-        <!-- INTERVALO -->
-        <div class="field">
+        <div class="input-wrapper">
 
-            <label>
-                <i class="fa-solid fa-clock"></i>
-                Tempo entre postagens
-            </label>
+          <i class="fa-solid fa-store"></i>
 
-            <div class="input-box">
-
-                <i class="fa-solid fa-stopwatch"></i>
-
-                <select id="intervalo">
-
-                    <option value="10">
-                        10 segundos - Teste
-                    </option>
-
-                    <option value="30">
-                        30 segundos
-                    </option>
-
-                    <option value="60">
-                        1 minuto
-                    </option>
-
-                    <option value="300" selected>
-                        5 minutos - Recomendado
-                    </option>
-
-                    <option value="1800">
-                        30 minutos
-                    </option>
-
-                    <option value="3600">
-                        1 hora
-                    </option>
-
-                </select>
-
-            </div>
-
-            <div class="quick">
-
-                <button type="button" data-time="10">
-                    10 seg
-                </button>
-
-                <button type="button" data-time="60">
-                    1 min
-                </button>
-
-                <button
-                    type="button"
-                    data-time="300"
-                    class="active"
-                >
-                    5 min
-                </button>
-
-            </div>
-
-        </div>
-
-        <!-- QUANTIDADE -->
-        <div class="field">
-
-            <label>
-                <i class="fa-solid fa-layer-group"></i>
-                Quantidade de produtos
-            </label>
-
-            <div class="input-box">
-
-                <i class="fa-solid fa-hashtag"></i>
-
-                <input
-                    id="quantidade"
-                    type="number"
-                    value="5"
-                    min="1"
-                    max="50"
-                    inputmode="numeric"
-                >
-
-            </div>
+          <input
+            type="text"
+            id="linkVitrine"
+            placeholder="Cole o link da vitrine ou produto..."
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+          >
 
         </div>
 
         <button
-            class="submit"
-            id="btnSubmit"
-            type="button"
+          class="btn-colar"
+          type="button"
+          onclick="colarLink()"
         >
-            <i class="fa-solid fa-rocket"></i>
-            INICIAR POSTAGENS AUTO
+          <i class="fa-solid fa-paste"></i>
+          Colar
         </button>
 
-        <div
-            id="mensagem"
-            class="message"
-        ></div>
-
-        <div
-            id="debug"
-            class="debug"
-        ></div>
+      </div>
 
     </div>
 
-    <div class="footer">
-        <i class="fa-solid fa-shield-halved"></i>
-        Integração Oficial Telegram WebApp
+
+    <div class="field-group">
+
+      <label>
+        <i class="fa-solid fa-clock"></i>
+        Tempo Entre Postagens
+      </label>
+
+      <div class="input-wrapper">
+
+        <i class="fa-solid fa-stopwatch"></i>
+
+        <select id="intervalo">
+
+          <option value="10">
+            10 Segundos (Teste)
+          </option>
+
+          <option value="30">
+            30 Segundos
+          </option>
+
+          <option value="60">
+            1 Minuto
+          </option>
+
+          <option value="300" selected>
+            5 Minutos (Recomendado)
+          </option>
+
+          <option value="1800">
+            30 Minutos
+          </option>
+
+          <option value="3600">
+            1 Hora
+          </option>
+
+        </select>
+
+      </div>
+
+      <div class="time-grid">
+
+        <button
+          type="button"
+          class="time-btn"
+          onclick="setTempo(10,this)"
+        >
+          10 seg
+        </button>
+
+        <button
+          type="button"
+          class="time-btn"
+          onclick="setTempo(60,this)"
+        >
+          1 min
+        </button>
+
+        <button
+          type="button"
+          class="time-btn active"
+          onclick="setTempo(300,this)"
+        >
+          5 min
+        </button>
+
+      </div>
+
     </div>
 
-</div>
+
+    <div class="field-group">
+
+      <label>
+        <i class="fa-solid fa-layer-group"></i>
+        Quantidade de Produtos
+      </label>
+
+      <div class="input-wrapper">
+
+        <i class="fa-solid fa-hashtag"></i>
+
+        <input
+          type="number"
+          id="quantidade"
+          value="5"
+          min="1"
+          max="50"
+          inputmode="numeric"
+        >
+
+      </div>
+
+    </div>
+
+  </div>
 
 
-<script>
+  <div
+    id="mensagem"
+    class="mensagem"
+  ></div>
 
-    /*
-    ============================================================
-    TELEGRAM WEB APP
-    ============================================================
-    */
+
+  <button
+    class="btn-submit"
+    id="btnSubmit"
+    type="button"
+    onclick="enviarConfiguracao()"
+  >
+
+    <i class="fa-solid fa-rocket"></i>
+
+    INICIAR POSTAGENS AUTO
+
+  </button>
+
+
+  <div class="footer-note">
+
+    <i class="fa-solid fa-shield-halved"></i>
+
+    Integração Oficial Telegram WebApp
+
+  </div>
+
+
+  <script>
+
+    /* =====================================================
+       TELEGRAM
+       ===================================================== */
 
     const tg =
-        window.Telegram &&
-        window.Telegram.WebApp
-            ? window.Telegram.WebApp
-            : null;
+      window.Telegram &&
+      window.Telegram.WebApp
+        ? window.Telegram.WebApp
+        : null;
 
 
     if (tg) {
 
-        try {
-            tg.ready();
-            tg.expand();
+      tg.ready();
 
-            if (tg.setHeaderColor) {
-                tg.setHeaderColor("#05070a");
-            }
+      tg.expand();
 
-            if (tg.setBackgroundColor) {
-                tg.setBackgroundColor("#05070a");
-            }
-        } catch (e) {
-            console.warn("Telegram WebApp:", e);
-        }
+      if (tg.setHeaderColor) {
+        tg.setHeaderColor("#05070a");
+      }
+
+      if (tg.setBackgroundColor) {
+        tg.setBackgroundColor("#05070a");
+      }
 
     }
 
 
-    /*
-    ============================================================
-    ELEMENTOS
-    ============================================================
-    */
+    /* =====================================================
+       URL ABSOLUTA DO SERVIDOR
+       ===================================================== */
 
-    const inputLink =
-        document.getElementById("linkVitrine");
-
-    const inputQuantidade =
-        document.getElementById("quantidade");
-
-    const selectIntervalo =
-        document.getElementById("intervalo");
-
-    const btnSubmit =
-        document.getElementById("btnSubmit");
-
-    const btnColar =
-        document.getElementById("btnColar");
-
-    const mensagem =
-        document.getElementById("mensagem");
-
-    const debug =
-        document.getElementById("debug");
+    const API_URL =
+      "https://bot-raposa-cacadora.onrender.com/api/configurar";
 
 
-    /*
-    ============================================================
-    MENSAGEM
-    ============================================================
-    */
+    /* =====================================================
+       MENSAGEM
+       ===================================================== */
 
-    function mostrarMensagem(texto, tipo) {
+    function mostrarMensagem(
+      texto,
+      tipo
+    ) {
 
-        mensagem.className =
-            "message show " + tipo;
+      const elemento =
+        document.getElementById(
+          "mensagem"
+        );
 
-        mensagem.innerHTML =
-            texto;
+      elemento.className =
+        "mensagem " + tipo;
+
+      elemento.innerHTML =
+        texto;
 
     }
 
 
-    function limparMensagem() {
+    /* =====================================================
+       COLAR
+       ===================================================== */
 
-        mensagem.className =
-            "message";
+    async function colarLink() {
 
-        mensagem.innerHTML =
-            "";
+      const input =
+        document.getElementById(
+          "linkVitrine"
+        );
 
-    }
+      try {
 
+        if (
+          navigator.clipboard &&
+          navigator.clipboard.readText
+        ) {
 
-    /*
-    ============================================================
-    HAPTIC
-    ============================================================
-    */
+          const texto =
+            await navigator.clipboard.readText();
 
-    function vibrar(tipo) {
+          if (texto) {
 
-        try {
+            input.value =
+              texto.trim();
 
             if (
-                tg &&
-                tg.HapticFeedback
+              tg &&
+              tg.HapticFeedback
             ) {
 
-                if (tipo === "success") {
-
-                    tg.HapticFeedback
-                        .notificationOccurred("success");
-
-                } else if (tipo === "error") {
-
-                    tg.HapticFeedback
-                        .notificationOccurred("error");
-
-                } else {
-
-                    tg.HapticFeedback
-                        .impactOccurred("medium");
-
-                }
-
-            }
-
-        } catch (e) {}
-
-    }
-
-
-    /*
-    ============================================================
-    COLAR
-    ============================================================
-    */
-
-    btnColar.addEventListener(
-        "click",
-        async function() {
-
-            try {
-
-                if (
-                    navigator.clipboard &&
-                    navigator.clipboard.readText
-                ) {
-
-                    const texto =
-                        await navigator.clipboard.readText();
-
-                    if (texto) {
-
-                        inputLink.value =
-                            texto.trim();
-
-                        vibrar("success");
-
-                        return;
-
-                    }
-
-                }
-
-            } catch (erro) {
-
-                console.warn(
-                    "Clipboard:",
-                    erro
+              tg.HapticFeedback
+                .notificationOccurred(
+                  "success"
                 );
 
             }
 
-            inputLink.focus();
-
-            if (
-                tg &&
-                tg.showAlert
-            ) {
-
-                tg.showAlert(
-                    "Toque e segure no campo para colar o link."
-                );
-
-            }
+            return;
+          }
 
         }
-    );
+
+      } catch (erro) {
+
+        console.log(
+          "Clipboard indisponível:",
+          erro
+        );
+
+      }
+
+      input.focus();
+
+      if (
+        tg &&
+        tg.showAlert
+      ) {
+
+        tg.showAlert(
+          "Toque e segure no campo para colar o link."
+        );
+
+      }
+
+    }
 
 
-    /*
-    ============================================================
-    BOTÕES DE TEMPO
-    ============================================================
-    */
+    /* =====================================================
+       TEMPO
+       ===================================================== */
 
-    document
-        .querySelectorAll(".quick button")
-        .forEach(function(botao) {
+    function setTempo(
+      segundos,
+      elemento
+    ) {
 
-            botao.addEventListener(
-                "click",
-                function() {
+      document.getElementById(
+        "intervalo"
+      ).value =
+        segundos;
 
-                    const valor =
-                        parseInt(
-                            this.dataset.time,
-                            10
-                        );
+      document
+        .querySelectorAll(
+          ".time-btn"
+        )
+        .forEach(
+          function(btn) {
 
-                    selectIntervalo.value =
-                        valor;
-
-                    document
-                        .querySelectorAll(
-                            ".quick button"
-                        )
-                        .forEach(
-                            function(b) {
-                                b.classList.remove(
-                                    "active"
-                                );
-                            }
-                        );
-
-                    this.classList.add(
-                        "active"
-                    );
-
-                }
+            btn.classList.remove(
+              "active"
             );
 
-        });
+          }
+        );
+
+      elemento.classList.add(
+        "active"
+      );
+
+    }
 
 
-    selectIntervalo.addEventListener(
+    document
+      .getElementById(
+        "intervalo"
+      )
+      .addEventListener(
         "change",
         function() {
 
-            const valor =
-                parseInt(
-                    this.value,
-                    10
-                );
-
-            document
-                .querySelectorAll(
-                    ".quick button"
-                )
-                .forEach(
-                    function(b) {
-                        b.classList.remove(
-                            "active"
-                        );
-                    }
-                );
-
-            document
-                .querySelectorAll(
-                    ".quick button"
-                )
-                .forEach(
-                    function(b) {
-
-                        if (
-                            parseInt(
-                                b.dataset.time,
-                                10
-                            ) === valor
-                        ) {
-
-                            b.classList.add(
-                                "active"
-                            );
-
-                        }
-
-                    }
-                );
-
-        }
-    );
-
-
-    /*
-    ============================================================
-    VALIDAR URL
-    ============================================================
-    */
-
-    function validarLink(link) {
-
-        try {
-
-            const url =
-                new URL(link);
-
-            return (
-                url.protocol === "http:" ||
-                url.protocol === "https:"
+          const valor =
+            parseInt(
+              this.value
             );
 
-        } catch (e) {
+          document
+            .querySelectorAll(
+              ".time-btn"
+            )
+            .forEach(
+              function(btn) {
 
-            return false;
+                btn.classList.remove(
+                  "active"
+                );
+
+              }
+            );
+
+          const botoes =
+            document.querySelectorAll(
+              ".time-btn"
+            );
+
+          if (valor === 10) {
+
+            botoes[0]
+              .classList
+              .add("active");
+
+          }
+
+          else if (valor === 60) {
+
+            botoes[1]
+              .classList
+              .add("active");
+
+          }
+
+          else if (valor === 300) {
+
+            botoes[2]
+              .classList
+              .add("active");
+
+          }
 
         }
-
-    }
-
-
-    /*
-    ============================================================
-    OBTER INIT DATA
-    ============================================================
-    */
-
-    function obterInitData() {
-
-        if (!tg) {
-            return "";
-        }
-
-        return (
-            tg.initData ||
-            ""
-        );
-
-    }
+      );
 
 
-    /*
-    ============================================================
-    ENVIO PRINCIPAL
-    ============================================================
-    */
+    /* =====================================================
+       ENVIAR CONFIGURAÇÃO
+       ===================================================== */
 
     async function enviarConfiguracao() {
 
-        limparMensagem();
-
-        debug.style.display =
-            "none";
-
-        const link =
-            inputLink.value.trim();
-
-        const intervalo =
-            parseInt(
-                selectIntervalo.value,
-                10
-            );
-
-        const quantidade =
-            parseInt(
-                inputQuantidade.value,
-                10
-            );
-
-
-        /*
-        --------------------------------------------------------
-        LINK
-        --------------------------------------------------------
-        */
-
-        if (!link) {
-
-            mostrarMensagem(
-                "⚠️ Cole o link da vitrine ou do produto.",
-                "error"
-            );
-
-            vibrar("error");
-
-            return;
-
-        }
-
-
-        if (!validarLink(link)) {
-
-            mostrarMensagem(
-                "⚠️ Informe um link válido começando com https://",
-                "error"
-            );
-
-            vibrar("error");
-
-            return;
-
-        }
-
-
-        /*
-        --------------------------------------------------------
-        QUANTIDADE
-        --------------------------------------------------------
-        */
-
-        if (
-            !Number.isInteger(quantidade) ||
-            quantidade < 1 ||
-            quantidade > 50
-        ) {
-
-            mostrarMensagem(
-                "⚠️ A quantidade deve estar entre 1 e 50.",
-                "error"
-            );
-
-            vibrar("error");
-
-            return;
-
-        }
-
-
-        /*
-        --------------------------------------------------------
-        TELEGRAM
-        --------------------------------------------------------
-        */
-
-        if (!tg) {
-
-            mostrarMensagem(
-                "❌ Abra este painel dentro do Telegram.",
-                "error"
-            );
-
-            vibrar("error");
-
-            return;
-
-        }
-
-
-        /*
-        --------------------------------------------------------
-        INIT DATA
-        --------------------------------------------------------
-        */
-
-        const initData =
-            obterInitData();
-
-        if (!initData) {
-
-            mostrarMensagem(
-                "❌ Não foi possível obter a autenticação do Telegram. Abra o painel pelo botão do bot.",
-                "error"
-            );
-
-            try {
-
-                if (tg.showAlert) {
-
-                    tg.showAlert(
-                        "Abra o painel pelo botão do bot no Telegram."
-                    );
-
-                }
-
-            } catch (e) {}
-
-            vibrar("error");
-
-            return;
-
-        }
-
-
-        /*
-        --------------------------------------------------------
-        IMPORTANTE:
-        USA A ORIGEM DA PRÓPRIA PÁGINA.
-        NÃO USA /configurar.
-        NÃO USA URL FIXA.
-        --------------------------------------------------------
-        */
-
-        const endpoint =
-            window.location.origin +
-            "/api/configurar";
-
-
-        /*
-        --------------------------------------------------------
-        PAYLOAD
-        --------------------------------------------------------
-        */
-
-        const payload = {
-
-            link: link,
-
-            intervalo: intervalo,
-
-            quantidade: quantidade,
-
-            initData: initData
-
-        };
-
-
-        /*
-        --------------------------------------------------------
-        DEBUG
-        --------------------------------------------------------
-        */
-
-        console.log(
-            "================================"
+      const btn =
+        document.getElementById(
+          "btnSubmit"
         );
 
-        console.log(
-            "RAPOSA CAÇADORA"
+      const link =
+        document
+          .getElementById(
+            "linkVitrine"
+          )
+          .value
+          .trim();
+
+      const intervalo =
+        parseInt(
+          document
+            .getElementById(
+              "intervalo"
+            )
+            .value
         );
 
-        console.log(
-            "Endpoint:",
-            endpoint
-        );
-
-        console.log(
-            "Método: POST"
-        );
-
-        console.log(
-            "Payload:",
-            {
-                link: link,
-                intervalo: intervalo,
-                quantidade: quantidade,
-                initData:
-                    initData
-                        ? "PRESENTE"
-                        : "AUSENTE"
-            }
-        );
-
-        console.log(
-            "================================"
+      const quantidade =
+        parseInt(
+          document
+            .getElementById(
+              "quantidade"
+            )
+            .value
         );
 
 
-        /*
-        --------------------------------------------------------
-        BOTÃO
-        --------------------------------------------------------
-        */
+      /* ---------------------------------------------------
+         LINK
+         --------------------------------------------------- */
 
-        btnSubmit.disabled =
-            true;
-
-        btnSubmit.innerHTML =
-            '<i class="fa-solid fa-spinner fa-spin"></i> ENVIANDO...';
+      if (!link) {
 
         mostrarMensagem(
-            "⏳ Enviando configuração para o servidor...",
-            "success"
+          "⚠️ Cole o link da vitrine ou do produto antes de iniciar.",
+          "erro"
         );
 
-        vibrar("medium");
+        if (
+          tg &&
+          tg.showAlert
+        ) {
 
+          tg.showAlert(
+            "Cole o link da vitrine ou do produto."
+          );
+
+        }
+
+        return;
+
+      }
+
+
+      /* ---------------------------------------------------
+         QUANTIDADE
+         --------------------------------------------------- */
+
+      if (
+        !Number.isInteger(
+          quantidade
+        ) ||
+        quantidade < 1 ||
+        quantidade > 50
+      ) {
+
+        mostrarMensagem(
+          "⚠️ A quantidade deve estar entre 1 e 50.",
+          "erro"
+        );
+
+        return;
+
+      }
+
+
+      /* ---------------------------------------------------
+         TELEGRAM
+         --------------------------------------------------- */
+
+      if (!tg) {
+
+        mostrarMensagem(
+          "❌ Abra este painel dentro do Telegram.",
+          "erro"
+        );
+
+        return;
+
+      }
+
+
+      /* ---------------------------------------------------
+         INIT DATA
+         --------------------------------------------------- */
+
+      const initData =
+        tg.initData || "";
+
+
+      if (!initData) {
+
+        mostrarMensagem(
+          "❌ Não foi possível obter a autenticação do Telegram.",
+          "erro"
+        );
+
+        if (tg.showAlert) {
+
+          tg.showAlert(
+            "Abra o painel pelo Telegram para continuar."
+          );
+
+        }
+
+        return;
+
+      }
+
+
+      /* ---------------------------------------------------
+         LOADING
+         --------------------------------------------------- */
+
+      btn.disabled =
+        true;
+
+      btn.innerHTML =
+        '<i class="fa-solid fa-spinner fa-spin"></i> ENVIANDO...';
+
+      mostrarMensagem(
+        "⏳ Enviando configuração para o servidor...",
+        "sucesso"
+      );
+
+
+      /* ---------------------------------------------------
+         PAYLOAD
+         --------------------------------------------------- */
+
+      const payload = {
+
+        link:
+          link,
+
+        intervalo:
+          intervalo,
+
+        quantidade:
+          quantidade,
+
+        initData:
+          initData
+
+      };
+
+
+      console.log(
+        "===================================="
+      );
+
+      console.log(
+        "🦊 RAPOSA CAÇADORA"
+      );
+
+      console.log(
+        "API:",
+        API_URL
+      );
+
+      console.log(
+        "Payload:",
+        {
+          link: link,
+          intervalo: intervalo,
+          quantidade: quantidade,
+          initData:
+            initData
+              ? "PRESENTE"
+              : "AUSENTE"
+        }
+      );
+
+      console.log(
+        "===================================="
+      );
+
+
+      try {
+
+        /* -------------------------------------------------
+           POST DIRETO PARA O RENDER
+           ------------------------------------------------- */
+
+        const resposta =
+          await fetch(
+            API_URL,
+            {
+
+              method:
+                "POST",
+
+              mode:
+                "cors",
+
+              cache:
+                "no-cache",
+
+              headers: {
+
+                "Content-Type":
+                  "application/json",
+
+                "Accept":
+                  "application/json"
+
+              },
+
+              body:
+                JSON.stringify(
+                  payload
+                )
+
+            }
+          );
+
+
+        console.log(
+          "HTTP:",
+          resposta.status
+        );
+
+
+        const texto =
+          await resposta.text();
+
+
+        console.log(
+          "Resposta:",
+          texto
+        );
+
+
+        /* -------------------------------------------------
+           TENTA JSON
+           ------------------------------------------------- */
+
+        let resultado =
+          null;
 
         try {
 
-            /*
-            ====================================================
-            POST
-            ====================================================
-            */
-
-            const resposta =
-                await fetch(
-                    endpoint,
-                    {
-                        method: "POST",
-
-                        headers: {
-                            "Content-Type":
-                                "application/json",
-
-                            "Accept":
-                                "application/json"
-                        },
-
-                        body:
-                            JSON.stringify(
-                                payload
-                            )
-                    }
-                );
-
-
-            /*
-            ====================================================
-            LER RESPOSTA
-            ====================================================
-            */
-
-            const texto =
-                await resposta.text();
-
-
-            console.log(
-                "HTTP:",
-                resposta.status
+          resultado =
+            JSON.parse(
+              texto
             );
 
-            console.log(
-                "Resposta:",
-                texto
-            );
+        } catch (erroJson) {
 
-
-            /*
-            ====================================================
-            TENTAR JSON
-            ====================================================
-            */
-
-            let resultado = null;
-
-            try {
-
-                resultado =
-                    texto
-                        ? JSON.parse(texto)
-                        : null;
-
-            } catch (erroJson) {
-
-                console.error(
-                    "Resposta não é JSON:",
-                    erroJson
-                );
-
-            }
-
-
-            /*
-            ====================================================
-            HTTP ERROR
-            ====================================================
-            */
-
-            if (!resposta.ok) {
-
-                let erroServidor =
-                    "Erro HTTP " +
-                    resposta.status;
-
-                if (
-                    resultado &&
-                    resultado.erro
-                ) {
-
-                    erroServidor =
-                        resultado.erro;
-
-                }
-
-                /*
-                Se o servidor devolveu HTML,
-                mostramos somente o HTTP.
-                */
-
-                if (
-                    !resultado &&
-                    texto &&
-                    texto.length < 500
-                ) {
-
-                    erroServidor +=
-                        "\n" + texto;
-
-                }
-
-                throw new Error(
-                    erroServidor
-                );
-
-            }
-
-
-            /*
-            ====================================================
-            RESPOSTA SEM JSON
-            ====================================================
-            */
-
-            if (!resultado) {
-
-                throw new Error(
-                    "O servidor respondeu, mas não enviou JSON válido."
-                );
-
-            }
-
-
-            /*
-            ====================================================
-            ERRO DA API
-            ====================================================
-            */
-
-            if (
-                resultado.ok !== true
-            ) {
-
-                throw new Error(
-                    resultado.erro ||
-                    resultado.mensagem ||
-                    "Não foi possível iniciar as postagens."
-                );
-
-            }
-
-
-            /*
-            ====================================================
-            SUCESSO
-            ====================================================
-            */
-
-            console.log(
-                "✅ Automação iniciada:",
-                resultado
-            );
-
-
-            mostrarMensagem(
-                "🚀 <b>Postagens iniciadas!</b><br><br>" +
-                "O servidor recebeu sua vitrine e iniciou o processamento.",
-                "success"
-            );
-
-
-            vibrar("success");
-
-
-            btnSubmit.innerHTML =
-                '<i class="fa-solid fa-check"></i> POSTAGENS INICIADAS';
-
-
-            /*
-            ====================================================
-            ALERTA TELEGRAM
-            ====================================================
-            */
-
-            try {
-
-                if (tg.showAlert) {
-
-                    tg.showAlert(
-                        "✅ Automação iniciada com sucesso!"
-                    );
-
-                }
-
-            } catch (e) {}
-
-
-            /*
-            ====================================================
-            FECHAR MINI APP
-            ====================================================
-            */
-
-            setTimeout(
-                function() {
-
-                    try {
-
-                        if (
-                            tg &&
-                            tg.close
-                        ) {
-
-                            tg.close();
-
-                        }
-
-                    } catch (e) {}
-
-                },
-                1800
-            );
-
-
-        } catch (erro) {
-
-            console.error(
-                "❌ ERRO FINAL:",
-                erro
-            );
-
-
-            const erroTexto =
-                erro &&
-                erro.message
-                    ? erro.message
-                    : "Erro desconhecido.";
-
-
-            mostrarMensagem(
-                "❌ <b>Erro:</b><br>" +
-                escapeHtml(
-                    erroTexto
-                ),
-                "error"
-            );
-
-
-            /*
-            ----------------------------------------------------
-            MOSTRA ENDPOINT PARA DIAGNÓSTICO
-            ----------------------------------------------------
-            */
-
-            debug.innerHTML =
-                "Endpoint utilizado:<br>" +
-                escapeHtml(endpoint);
-
-            debug.style.display =
-                "block";
-
-
-            vibrar("error");
-
-
-            try {
-
-                if (tg.showAlert) {
-
-                    tg.showAlert(
-                        "❌ " + erroTexto
-                    );
-
-                }
-
-            } catch (e) {}
-
-
-            btnSubmit.disabled =
-                false;
-
-            btnSubmit.innerHTML =
-                '<i class="fa-solid fa-rocket"></i> INICIAR POSTAGENS AUTO';
+          resultado =
+            null;
 
         }
 
-    }
 
+        /* -------------------------------------------------
+           ERRO HTTP
+           ------------------------------------------------- */
 
-    /*
-    ============================================================
-    ESCAPAR HTML
-    ============================================================
-    */
+        if (!resposta.ok) {
 
-    function escapeHtml(texto) {
+          let mensagemErro =
+            "Erro HTTP " +
+            resposta.status;
 
-        const div =
-            document.createElement(
-                "div"
-            );
+          if (
+            resultado &&
+            resultado.erro
+          ) {
 
-        div.textContent =
-            texto;
+            mensagemErro =
+              resultado.erro;
 
-        return div.innerHTML;
+          }
 
-    }
-
-
-    /*
-    ============================================================
-    CLIQUE NO BOTÃO
-    ============================================================
-    */
-
-    btnSubmit.addEventListener(
-        "click",
-        enviarConfiguracao
-    );
-
-
-    /*
-    ============================================================
-    ENTER NO CAMPO DO LINK
-    ============================================================
-    */
-
-    inputLink.addEventListener(
-        "keydown",
-        function(evento) {
+          else if (
+            resultado &&
+            resultado.error
+          ) {
 
             if (
-                evento.key === "Enter"
+              typeof resultado.error ===
+              "string"
             ) {
 
-                evento.preventDefault();
-
-                enviarConfiguracao();
+              mensagemErro =
+                resultado.error;
 
             }
 
+            else {
+
+              mensagemErro =
+                JSON.stringify(
+                  resultado.error
+                );
+
+            }
+
+          }
+
+          else if (texto) {
+
+            mensagemErro =
+              texto;
+
+          }
+
+          throw new Error(
+            mensagemErro
+          );
+
         }
-    );
 
 
-    /*
-    ============================================================
-    INFORMAÇÃO DE DIAGNÓSTICO NO CONSOLE
-    ============================================================
-    */
+        /* -------------------------------------------------
+           RESPOSTA NÃO JSON
+           ------------------------------------------------- */
 
-    console.log(
-        "🦊 Raposa Caçadora carregada."
-    );
+        if (!resultado) {
 
-    console.log(
-        "Página:",
-        window.location.href
-    );
+          throw new Error(
+            "O servidor respondeu, mas não retornou JSON válido."
+          );
 
-    console.log(
-        "Servidor:",
-        window.location.origin
-    );
+        }
 
-    console.log(
-        "API:",
-        window.location.origin +
-        "/api/configurar"
-    );
 
-</script>
+        /* -------------------------------------------------
+           API RETORNOU ERRO
+           ------------------------------------------------- */
+
+        if (
+          resultado.ok !== true
+        ) {
+
+          throw new Error(
+            resultado.erro ||
+            resultado.mensagem ||
+            "Não foi possível iniciar as postagens."
+          );
+
+        }
+
+
+        /* -------------------------------------------------
+           SUCESSO
+           ------------------------------------------------- */
+
+        mostrarMensagem(
+          "🚀 <b>Postagens iniciadas!</b><br><br>" +
+          "O servidor recebeu sua automação e começou o processamento.",
+          "sucesso"
+        );
+
+
+        if (
+          tg &&
+          tg.HapticFeedback
+        ) {
+
+          tg.HapticFeedback
+            .notificationOccurred(
+              "success"
+            );
+
+        }
+
+
+        if (
+          tg &&
+          tg.showAlert
+        ) {
+
+          tg.showAlert(
+            "✅ Automação iniciada com sucesso!"
+          );
+
+        }
+
+
+        btn.innerHTML =
+          '<i class="fa-solid fa-check"></i> POSTAGENS INICIADAS';
+
+
+        /* -------------------------------------------------
+           NÃO FECHA IMEDIATAMENTE
+           ------------------------------------------------- */
+
+        setTimeout(
+          function() {
+
+            if (
+              tg &&
+              tg.close
+            ) {
+
+              tg.close();
+
+            }
+
+          },
+          2500
+        );
+
+      }
+
+      catch (erro) {
+
+        console.error(
+          "❌ ERRO FINAL:",
+          erro
+        );
+
+
+        let mensagemErro =
+          erro &&
+          erro.message
+            ? erro.message
+            : "Erro desconhecido.";
+
+
+        mostrarMensagem(
+          "❌ Erro:<br>" +
+          mensagemErro,
+          "erro"
+        );
+
+
+        if (
+          tg &&
+          tg.HapticFeedback
+        ) {
+
+          tg.HapticFeedback
+            .notificationOccurred(
+              "error"
+            );
+
+        }
+
+
+        if (
+          tg &&
+          tg.showAlert
+        ) {
+
+          tg.showAlert(
+            "❌ Erro:\n" +
+            mensagemErro
+          );
+
+        }
+
+
+        btn.disabled =
+          false;
+
+        btn.innerHTML =
+          '<i class="fa-solid fa-rocket"></i> INICIAR POSTAGENS AUTO';
+
+      }
+
+    }
+
+  </script>
 
 </body>
+
 </html>

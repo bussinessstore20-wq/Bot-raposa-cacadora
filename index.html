@@ -1,8 +1,14 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  >
+
   <title>Raposa Caçadora - Painel VIP</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -13,311 +19,714 @@
   >
 
   <style>
+
     :root {
-      --bg-gradient: linear-gradient(135deg, #05070a 0%, #0d111a 100%);
-      --card-bg: rgba(15, 23, 36, 0.85);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --primary-accent: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-      --accent-glow: rgba(249, 115, 22, 0.45);
-      --text-main: #f8fafc;
-      --text-sub: #94a3b8;
-      --input-bg: rgba(6, 10, 17, 0.9);
-      --input-border: rgba(255, 255, 255, 0.12);
-      --radius: 16px;
+      --bg-gradient:
+        linear-gradient(
+          135deg,
+          #05070a 0%,
+          #0d111a 100%
+        );
+
+      --card-bg:
+        rgba(15, 23, 36, 0.88);
+
+      --card-border:
+        rgba(255, 255, 255, 0.08);
+
+      --primary-accent:
+        linear-gradient(
+          135deg,
+          #f97316 0%,
+          #ea580c 100%
+        );
+
+      --accent-glow:
+        rgba(249, 115, 22, 0.45);
+
+      --text-main:
+        #f8fafc;
+
+      --text-sub:
+        #94a3b8;
+
+      --input-bg:
+        rgba(6, 10, 17, 0.92);
+
+      --input-border:
+        rgba(255, 255, 255, 0.12);
+
+      --radius:
+        16px;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+
       -webkit-tap-highlight-color: transparent;
     }
 
     body {
-      background: var(--bg-gradient);
-      color: var(--text-main);
-      min-height: 100vh;
-      padding: 20px 16px 30px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
+      background:
+        var(--bg-gradient);
+
+      color:
+        var(--text-main);
+
+      min-height:
+        100vh;
+
+      padding:
+        20px 16px 30px;
+
+      display:
+        flex;
+
+      flex-direction:
+        column;
+
+      gap:
+        20px;
     }
 
     .brand-header {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 4px 0;
+      display:
+        flex;
+
+      align-items:
+        center;
+
+      gap:
+        14px;
+
+      padding:
+        4px 0;
     }
 
     .brand-avatar {
-      width: 56px;
-      height: 56px;
-      flex-shrink: 0;
-      border-radius: 50%;
-      background: #080b11;
-      border: 2px solid #f97316;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      box-shadow: 0 0 25px var(--accent-glow);
+      width:
+        56px;
+
+      height:
+        56px;
+
+      flex-shrink:
+        0;
+
+      border-radius:
+        50%;
+
+      background:
+        #080b11;
+
+      border:
+        2px solid #f97316;
+
+      display:
+        flex;
+
+      align-items:
+        center;
+
+      justify-content:
+        center;
+
+      font-size:
+        28px;
+
+      box-shadow:
+        0 0 25px var(--accent-glow);
     }
 
     .brand-title h1 {
-      font-size: 1.25rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      background: linear-gradient(90deg, #ffffff, #fdba74);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      font-size:
+        1.25rem;
+
+      font-weight:
+        800;
+
+      letter-spacing:
+        -0.02em;
+
+      background:
+        linear-gradient(
+          90deg,
+          #ffffff,
+          #fdba74
+        );
+
+      -webkit-background-clip:
+        text;
+
+      -webkit-text-fill-color:
+        transparent;
     }
 
     .brand-title p {
-      font-size: 0.8rem;
-      color: var(--text-sub);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-top: 2px;
+      font-size:
+        0.8rem;
+
+      color:
+        var(--text-sub);
+
+      display:
+        flex;
+
+      align-items:
+        center;
+
+      gap:
+        6px;
+
+      margin-top:
+        2px;
     }
 
     .status-badge {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      background-color: #22c55e;
-      border-radius: 50%;
-      box-shadow: 0 0 8px #22c55e;
+      display:
+        inline-block;
+
+      width:
+        8px;
+
+      height:
+        8px;
+
+      background-color:
+        #22c55e;
+
+      border-radius:
+        50%;
+
+      box-shadow:
+        0 0 8px #22c55e;
     }
 
     .card {
-      background: var(--card-bg);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius);
-      padding: 20px;
-      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8);
+      background:
+        var(--card-bg);
+
+      backdrop-filter:
+        blur(16px);
+
+      -webkit-backdrop-filter:
+        blur(16px);
+
+      border:
+        1px solid var(--card-border);
+
+      border-radius:
+        var(--radius);
+
+      padding:
+        20px;
+
+      box-shadow:
+        0 10px 30px -10px
+        rgba(0, 0, 0, 0.8);
     }
 
     .card-title {
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: #fdba74;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      font-size:
+        0.9rem;
+
+      font-weight:
+        700;
+
+      color:
+        #fdba74;
+
+      text-transform:
+        uppercase;
+
+      letter-spacing:
+        0.05em;
+
+      margin-bottom:
+        16px;
+
+      display:
+        flex;
+
+      align-items:
+        center;
+
+      gap:
+        8px;
     }
 
     .field-group {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 18px;
+      display:
+        flex;
+
+      flex-direction:
+        column;
+
+      gap:
+        8px;
+
+      margin-bottom:
+        18px;
     }
 
     .field-group:last-child {
-      margin-bottom: 0;
+      margin-bottom:
+        0;
     }
 
     label {
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text-sub);
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      font-size:
+        0.82rem;
+
+      font-weight:
+        600;
+
+      color:
+        var(--text-sub);
+
+      display:
+        flex;
+
+      align-items:
+        center;
+
+      gap:
+        6px;
     }
 
     .input-wrapper-paste {
-      display: flex;
-      gap: 8px;
-      align-items: center;
+      display:
+        flex;
+
+      gap:
+        8px;
+
+      align-items:
+        center;
     }
 
     .input-wrapper {
-      position: relative;
-      flex: 1;
+      position:
+        relative;
+
+      flex:
+        1;
     }
 
     .input-wrapper i {
-      position: absolute;
-      left: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #64748b;
-      font-size: 0.95rem;
-      pointer-events: none;
+      position:
+        absolute;
+
+      left:
+        14px;
+
+      top:
+        50%;
+
+      transform:
+        translateY(-50%);
+
+      color:
+        #64748b;
+
+      font-size:
+        0.95rem;
+
+      pointer-events:
+        none;
+
+      z-index:
+        2;
     }
 
     input,
     select {
-      width: 100%;
-      padding: 14px 14px 14px 42px;
-      border-radius: 12px;
-      border: 1px solid var(--input-border);
-      background: var(--input-bg);
-      color: var(--text-main);
-      font-size: 0.92rem;
-      outline: none;
-      transition: all 0.25s ease;
+      width:
+        100%;
+
+      padding:
+        14px 14px 14px 42px;
+
+      border-radius:
+        12px;
+
+      border:
+        1px solid var(--input-border);
+
+      background:
+        var(--input-bg);
+
+      color:
+        var(--text-main);
+
+      font-size:
+        0.92rem;
+
+      outline:
+        none;
+
+      transition:
+        all 0.25s ease;
     }
 
     input:focus,
     select:focus {
-      border-color: #f97316;
-      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+      border-color:
+        #f97316;
+
+      box-shadow:
+        0 0 0 3px
+        rgba(249, 115, 22, 0.2);
     }
 
     select option {
-      background: #0f172a;
-      color: #fff;
+      background:
+        #0f172a;
+
+      color:
+        #fff;
     }
 
     .btn-colar {
-      background: rgba(249, 115, 22, 0.15);
-      border: 1px solid #f97316;
-      color: #fdba74;
-      padding: 14px 16px;
-      border-radius: 12px;
-      font-size: 0.85rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      white-space: nowrap;
+      background:
+        rgba(249, 115, 22, 0.15);
+
+      border:
+        1px solid #f97316;
+
+      color:
+        #fdba74;
+
+      padding:
+        14px 16px;
+
+      border-radius:
+        12px;
+
+      font-size:
+        0.85rem;
+
+      font-weight:
+        700;
+
+      cursor:
+        pointer;
+
+      display:
+        flex;
+
+      align-items:
+        center;
+
+      gap:
+        6px;
+
+      white-space:
+        nowrap;
+
+      transition:
+        all 0.2s ease;
+    }
+
+    .btn-colar:active {
+      transform:
+        scale(0.95);
+
+      background:
+        rgba(249, 115, 22, 0.3);
     }
 
     .time-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-top: 6px;
+      display:
+        grid;
+
+      grid-template-columns:
+        repeat(3, 1fr);
+
+      gap:
+        8px;
+
+      margin-top:
+        6px;
     }
 
     .time-btn {
-      background: var(--input-bg);
-      border: 1px solid var(--input-border);
-      color: var(--text-sub);
-      padding: 10px 6px;
-      border-radius: 10px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: center;
+      background:
+        var(--input-bg);
+
+      border:
+        1px solid var(--input-border);
+
+      color:
+        var(--text-sub);
+
+      padding:
+        10px 6px;
+
+      border-radius:
+        10px;
+
+      font-size:
+        0.8rem;
+
+      font-weight:
+        600;
+
+      cursor:
+        pointer;
+
+      text-align:
+        center;
+
+      transition:
+        all 0.2s ease;
     }
 
     .time-btn.active {
-      background: rgba(249, 115, 22, 0.2);
-      border-color: #f97316;
-      color: #f97316;
+      background:
+        rgba(249, 115, 22, 0.2);
+
+      border-color:
+        #f97316;
+
+      color:
+        #f97316;
     }
 
     .btn-submit {
-      width: 100%;
-      background: var(--primary-accent);
-      color: white;
-      border: none;
-      padding: 16px;
-      border-radius: var(--radius);
-      font-size: 1rem;
-      font-weight: 800;
-      letter-spacing: 0.02em;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      cursor: pointer;
-      box-shadow: 0 8px 25px var(--accent-glow);
+      width:
+        100%;
+
+      background:
+        var(--primary-accent);
+
+      color:
+        white;
+
+      border:
+        none;
+
+      padding:
+        16px;
+
+      border-radius:
+        var(--radius);
+
+      font-size:
+        1rem;
+
+      font-weight:
+        800;
+
+      letter-spacing:
+        0.02em;
+
+      display:
+        flex;
+
+      align-items:
+        center;
+
+      justify-content:
+        center;
+
+      gap:
+        10px;
+
+      cursor:
+        pointer;
+
+      box-shadow:
+        0 8px 25px
+        var(--accent-glow);
+
+      transition:
+        all 0.25s ease;
+
+      margin-top:
+        6px;
+    }
+
+    .btn-submit:active {
+      transform:
+        scale(0.98);
     }
 
     .btn-submit:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
+      opacity:
+        0.7;
+
+      cursor:
+        not-allowed;
     }
 
     .mensagem {
-      display: none;
-      padding: 13px;
-      border-radius: 12px;
-      font-size: 0.85rem;
-      text-align: center;
-      line-height: 1.4;
-      word-break: break-word;
+      display:
+        none;
+
+      padding:
+        13px;
+
+      border-radius:
+        12px;
+
+      font-size:
+        0.85rem;
+
+      text-align:
+        center;
+
+      line-height:
+        1.5;
+
+      word-break:
+        break-word;
     }
 
     .mensagem.sucesso {
-      display: block;
-      color: #86efac;
-      background: rgba(34, 197, 94, 0.10);
-      border: 1px solid rgba(34, 197, 94, 0.25);
+      display:
+        block;
+
+      color:
+        #86efac;
+
+      background:
+        rgba(34, 197, 94, 0.10);
+
+      border:
+        1px solid
+        rgba(34, 197, 94, 0.25);
     }
 
     .mensagem.erro {
-      display: block;
-      color: #fca5a5;
-      background: rgba(239, 68, 68, 0.10);
-      border: 1px solid rgba(239, 68, 68, 0.25);
+      display:
+        block;
+
+      color:
+        #fca5a5;
+
+      background:
+        rgba(239, 68, 68, 0.10);
+
+      border:
+        1px solid
+        rgba(239, 68, 68, 0.25);
     }
 
     .footer-note {
-      text-align: center;
-      font-size: 0.75rem;
-      color: var(--text-sub);
-      margin-top: auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
+      text-align:
+        center;
+
+      font-size:
+        0.75rem;
+
+      color:
+        var(--text-sub);
+
+      margin-top:
+        auto;
+
+      display:
+        flex;
+
+      align-items:
+        center;
+
+      justify-content:
+        center;
+
+      gap:
+        6px;
     }
 
     @media (max-width: 380px) {
+
       .input-wrapper-paste {
-        flex-direction: column;
-        align-items: stretch;
+        flex-direction:
+          column;
+
+        align-items:
+          stretch;
       }
 
       .btn-colar {
-        justify-content: center;
+        justify-content:
+          center;
       }
+
     }
+
   </style>
 </head>
 
 <body>
 
+  <!-- ======================================================
+       HEADER
+       ====================================================== -->
+
   <div class="brand-header">
-    <div class="brand-avatar">🦊</div>
+
+    <div class="brand-avatar">
+      🦊
+    </div>
 
     <div class="brand-title">
-      <h1>Raposa Caçadora VIP</h1>
+
+      <h1>
+        Raposa Caçadora VIP
+      </h1>
 
       <p>
         <span class="status-badge"></span>
         Sistema de Postagens Conectado
       </p>
+
     </div>
+
   </div>
+
+
+  <!-- ======================================================
+       CARD
+       ====================================================== -->
 
   <div class="card">
 
     <div class="card-title">
+
       <i class="fa-solid fa-sliders"></i>
+
       Painel de Automação
+
     </div>
+
+
+    <!-- ====================================================
+         LINK
+         ==================================================== -->
 
     <div class="field-group">
 
       <label>
+
         <i class="fa-solid fa-link"></i>
-        Link da Vitrine Mercado Livre
+
+        Link da Vitrine ou Produto
+
       </label>
+
 
       <div class="input-wrapper-paste">
 
@@ -328,7 +737,7 @@
           <input
             type="text"
             id="linkVitrine"
-            placeholder="Cole aqui o link da vitrine..."
+            placeholder="Cole o link meli.la ou produto..."
             autocomplete="off"
             autocapitalize="off"
             spellcheck="false"
@@ -336,25 +745,38 @@
 
         </div>
 
+
         <button
           class="btn-colar"
           type="button"
           onclick="colarLink()"
         >
+
           <i class="fa-solid fa-paste"></i>
+
           Colar
+
         </button>
 
       </div>
 
     </div>
 
+
+    <!-- ====================================================
+         INTERVALO
+         ==================================================== -->
+
     <div class="field-group">
 
       <label>
+
         <i class="fa-solid fa-clock"></i>
+
         Tempo Entre Postagens
+
       </label>
+
 
       <div class="input-wrapper">
 
@@ -390,6 +812,7 @@
 
       </div>
 
+
       <div class="time-grid">
 
         <button
@@ -420,12 +843,21 @@
 
     </div>
 
+
+    <!-- ====================================================
+         QUANTIDADE
+         ==================================================== -->
+
     <div class="field-group">
 
       <label>
+
         <i class="fa-solid fa-layer-group"></i>
+
         Quantidade de Produtos
+
       </label>
+
 
       <div class="input-wrapper">
 
@@ -446,7 +878,20 @@
 
   </div>
 
-  <div id="mensagem" class="mensagem"></div>
+
+  <!-- ======================================================
+       MENSAGEM
+       ====================================================== -->
+
+  <div
+    id="mensagem"
+    class="mensagem"
+  ></div>
+
+
+  <!-- ======================================================
+       BOTÃO
+       ====================================================== -->
 
   <button
     class="btn-submit"
@@ -454,16 +899,36 @@
     type="button"
     onclick="enviarConfiguracao()"
   >
+
     <i class="fa-solid fa-rocket"></i>
+
     INICIAR POSTAGENS AUTO
+
   </button>
 
+
+  <!-- ======================================================
+       FOOTER
+       ====================================================== -->
+
   <div class="footer-note">
+
     <i class="fa-solid fa-shield-halved"></i>
+
     Integração Oficial Telegram WebApp
+
   </div>
 
+
+  <!-- ======================================================
+       JAVASCRIPT
+       ====================================================== -->
+
   <script>
+
+    /* ======================================================
+       TELEGRAM WEB APP
+       ====================================================== */
 
     const tg =
       window.Telegram &&
@@ -472,26 +937,51 @@
         : null;
 
 
+    /* ======================================================
+       INICIALIZA TELEGRAM
+       ====================================================== */
+
     if (tg) {
 
-      tg.ready();
-      tg.expand();
+      try {
 
-      if (tg.setHeaderColor) {
-        tg.setHeaderColor("#05070a");
-      }
+        tg.ready();
 
-      if (tg.setBackgroundColor) {
-        tg.setBackgroundColor("#05070a");
+        tg.expand();
+
+        if (tg.setHeaderColor) {
+          tg.setHeaderColor("#05070a");
+        }
+
+        if (tg.setBackgroundColor) {
+          tg.setBackgroundColor("#05070a");
+        }
+
+      } catch (erro) {
+
+        console.warn(
+          "Telegram WebApp:",
+          erro
+        );
+
       }
 
     }
 
 
-    function mostrarMensagem(texto, tipo) {
+    /* ======================================================
+       MENSAGEM
+       ====================================================== */
+
+    function mostrarMensagem(
+      texto,
+      tipo
+    ) {
 
       const elemento =
-        document.getElementById("mensagem");
+        document.getElementById(
+          "mensagem"
+        );
 
       elemento.className =
         "mensagem " + tipo;
@@ -502,10 +992,36 @@
     }
 
 
+    /* ======================================================
+       LIMPAR MENSAGEM
+       ====================================================== */
+
+    function limparMensagem() {
+
+      const elemento =
+        document.getElementById(
+          "mensagem"
+        );
+
+      elemento.className =
+        "mensagem";
+
+      elemento.innerHTML =
+        "";
+
+    }
+
+
+    /* ======================================================
+       COLAR LINK
+       ====================================================== */
+
     async function colarLink() {
 
       const input =
-        document.getElementById("linkVitrine");
+        document.getElementById(
+          "linkVitrine"
+        );
 
       try {
 
@@ -519,16 +1035,27 @@
 
           if (texto) {
 
-            input.value = texto.trim();
+            input.value =
+              texto.trim();
+
+            input.dispatchEvent(
+              new Event(
+                "input",
+                {
+                  bubbles: true
+                }
+              )
+            );
 
             if (
               tg &&
               tg.HapticFeedback
             ) {
 
-              tg.HapticFeedback.notificationOccurred(
-                "success"
-              );
+              tg.HapticFeedback
+                .notificationOccurred(
+                  "success"
+                );
 
             }
 
@@ -549,7 +1076,10 @@
 
       input.focus();
 
-      if (tg && tg.showAlert) {
+      if (
+        tg &&
+        tg.showAlert
+      ) {
 
         tg.showAlert(
           "Toque e segure no campo para colar o link."
@@ -560,23 +1090,44 @@
     }
 
 
-    function setTempo(segundos, elemento) {
+    /* ======================================================
+       TEMPO RÁPIDO
+       ====================================================== */
 
-      document.getElementById("intervalo").value =
+    function setTempo(
+      segundos,
+      elemento
+    ) {
+
+      document.getElementById(
+        "intervalo"
+      ).value =
         segundos;
 
       document
-        .querySelectorAll(".time-btn")
-        .forEach(function(btn) {
+        .querySelectorAll(
+          ".time-btn"
+        )
+        .forEach(
+          function(btn) {
 
-          btn.classList.remove("active");
+            btn.classList.remove(
+              "active"
+            );
 
-        });
+          }
+        );
 
-      elemento.classList.add("active");
+      elemento.classList.add(
+        "active"
+      );
 
     }
 
+
+    /* ======================================================
+       SINCRONIZAR BOTÕES
+       ====================================================== */
 
     document
       .getElementById("intervalo")
@@ -585,75 +1136,259 @@
         function() {
 
           const valor =
-            parseInt(this.value);
+            parseInt(
+              this.value,
+              10
+            );
 
           document
-            .querySelectorAll(".time-btn")
-            .forEach(function(btn) {
+            .querySelectorAll(
+              ".time-btn"
+            )
+            .forEach(
+              function(btn) {
 
-              btn.classList.remove("active");
+                btn.classList.remove(
+                  "active"
+                );
 
-            });
+              }
+            );
 
           const botoes =
-            document.querySelectorAll(".time-btn");
+            document.querySelectorAll(
+              ".time-btn"
+            );
 
           if (valor === 10) {
-            botoes[0].classList.add("active");
+
+            botoes[0]
+              .classList
+              .add("active");
+
           }
 
           else if (valor === 60) {
-            botoes[1].classList.add("active");
+
+            botoes[1]
+              .classList
+              .add("active");
+
           }
 
           else if (valor === 300) {
-            botoes[2].classList.add("active");
+
+            botoes[2]
+              .classList
+              .add("active");
+
           }
 
         }
       );
 
 
+    /* ======================================================
+       VALIDAR URL
+       ====================================================== */
+
+    function validarLink(link) {
+
+      if (!link) {
+        return false;
+      }
+
+      if (
+        !link.startsWith("http://") &&
+        !link.startsWith("https://")
+      ) {
+
+        return false;
+
+      }
+
+      return true;
+
+    }
+
+
+    /* ======================================================
+       FORMATAR ERRO DO SERVIDOR
+       ====================================================== */
+
+    function obterMensagemErro(
+      status,
+      resultado,
+      texto
+    ) {
+
+      if (
+        resultado &&
+        typeof resultado === "object"
+      ) {
+
+        if (resultado.erro) {
+
+          return (
+            resultado.erro +
+            " (HTTP " +
+            status +
+            ")"
+          );
+
+        }
+
+        if (resultado.message) {
+
+          return (
+            resultado.message +
+            " (HTTP " +
+            status +
+            ")"
+          );
+
+        }
+
+      }
+
+
+      if (status === 404) {
+
+        return (
+          "A rota /api/configurar não foi encontrada " +
+          "no servidor. Verifique se o index.html está " +
+          "sendo servido pelo mesmo servidor do main.py."
+        );
+
+      }
+
+
+      if (status === 405) {
+
+        return (
+          "O servidor recusou o método POST. " +
+          "A rota /api/configurar precisa aceitar POST."
+        );
+
+      }
+
+
+      if (status === 403) {
+
+        return (
+          "Autenticação do Telegram recusada. " +
+          "Abra o painel dentro do Telegram."
+        );
+
+      }
+
+
+      if (status === 500) {
+
+        return (
+          "Erro interno no servidor. " +
+          (texto || "Verifique os logs do main.py.")
+        );
+
+      }
+
+
+      return (
+        "Não foi possível iniciar as postagens. " +
+        "HTTP " +
+        status
+      );
+
+    }
+
+
+    /* ======================================================
+       ENVIA CONFIGURAÇÃO
+       ====================================================== */
+
     async function enviarConfiguracao() {
 
       const btn =
-        document.getElementById("btnSubmit");
+        document.getElementById(
+          "btnSubmit"
+        );
+
+      const inputLink =
+        document.getElementById(
+          "linkVitrine"
+        );
+
+      const inputIntervalo =
+        document.getElementById(
+          "intervalo"
+        );
+
+      const inputQuantidade =
+        document.getElementById(
+          "quantidade"
+        );
+
 
       const link =
-        document
-          .getElementById("linkVitrine")
-          .value
-          .trim();
+        inputLink.value.trim();
+
 
       const intervalo =
         parseInt(
-          document
-            .getElementById("intervalo")
-            .value
+          inputIntervalo.value,
+          10
         );
+
 
       const quantidade =
         parseInt(
-          document
-            .getElementById("quantidade")
-            .value
+          inputQuantidade.value,
+          10
         );
 
 
-      if (!link) {
+      /* ----------------------------------------------------
+         LIMPA ERRO
+         ---------------------------------------------------- */
+
+      limparMensagem();
+
+
+      /* ----------------------------------------------------
+         VALIDAR LINK
+         ---------------------------------------------------- */
+
+      if (!validarLink(link)) {
 
         mostrarMensagem(
-          "⚠️ Cole o link da vitrine antes de iniciar.",
+          "⚠️ Informe um link válido começando com http:// ou https://.",
           "erro"
         );
+
+        if (
+          tg &&
+          tg.showAlert
+        ) {
+
+          tg.showAlert(
+            "Cole o link da vitrine ou do produto."
+          );
+
+        }
 
         return;
 
       }
 
 
+      /* ----------------------------------------------------
+         VALIDAR QUANTIDADE
+         ---------------------------------------------------- */
+
       if (
-        !Number.isInteger(quantidade) ||
+        !Number.isInteger(
+          quantidade
+        ) ||
         quantidade < 1 ||
         quantidade > 50
       ) {
@@ -668,10 +1403,19 @@
       }
 
 
-      if (!tg) {
+      /* ----------------------------------------------------
+         VALIDAR INTERVALO
+         ---------------------------------------------------- */
+
+      if (
+        !Number.isInteger(
+          intervalo
+        ) ||
+        intervalo < 10
+      ) {
 
         mostrarMensagem(
-          "❌ Este aplicativo precisa ser aberto dentro do Telegram.",
+          "⚠️ O intervalo mínimo é de 10 segundos.",
           "erro"
         );
 
@@ -679,6 +1423,26 @@
 
       }
 
+
+      /* ----------------------------------------------------
+         TELEGRAM
+         ---------------------------------------------------- */
+
+      if (!tg) {
+
+        mostrarMensagem(
+          "❌ Este painel precisa ser aberto dentro do Telegram.",
+          "erro"
+        );
+
+        return;
+
+      }
+
+
+      /* ----------------------------------------------------
+         INIT DATA
+         ---------------------------------------------------- */
 
       const initData =
         tg.initData || "";
@@ -687,107 +1451,159 @@
       if (!initData) {
 
         mostrarMensagem(
-          "❌ Não foi possível obter a autenticação do Telegram.",
+          "❌ Não foi possível obter a autenticação do Telegram. Abra o Mini App pelo bot.",
           "erro"
         );
+
+        if (tg.showAlert) {
+
+          tg.showAlert(
+            "Abra o painel pelo Telegram para continuar."
+          );
+
+        }
 
         return;
 
       }
 
 
-      btn.disabled = true;
+      /* ----------------------------------------------------
+         FEEDBACK
+         ---------------------------------------------------- */
+
+      try {
+
+        if (
+          tg.HapticFeedback
+        ) {
+
+          tg.HapticFeedback
+            .impactOccurred(
+              "medium"
+            );
+
+        }
+
+      } catch (erro) {
+
+        console.warn(
+          "HapticFeedback:",
+          erro
+        );
+
+      }
+
+
+      /* ----------------------------------------------------
+         LOADING
+         ---------------------------------------------------- */
+
+      btn.disabled =
+        true;
 
       btn.innerHTML =
         '<i class="fa-solid fa-spinner fa-spin"></i> ENVIANDO...';
 
+
       mostrarMensagem(
-        "⏳ Enviando configuração...",
+        "⏳ Enviando configuração para o servidor...",
         "sucesso"
       );
 
 
+      /* ----------------------------------------------------
+         PAYLOAD
+         ---------------------------------------------------- */
+
       const payload = {
 
-        link: link,
+        link:
+          link,
 
-        intervalo: intervalo,
+        intervalo:
+          intervalo,
 
-        quantidade: quantidade,
+        quantidade:
+          quantidade,
 
-        initData: initData
+        initData:
+          initData
 
       };
 
 
-      /*
-       * IMPORTANTE:
-       *
-       * Usa a origem da própria página.
-       *
-       * Assim, se o Mini App estiver em:
-       *
-       * https://meusite.com/app
-       *
-       * ele chama:
-       *
-       * https://meusite.com/api/configurar
-       *
-       * e não algum servidor diferente.
-       */
-
-      const apiUrl =
-        new URL(
-          "/api/configurar",
-          window.location.origin
-        ).toString();
-
-
       console.log(
-        "🌐 API:",
-        apiUrl
+        "📤 Enviando para:",
+        "/api/configurar"
       );
 
+      console.log(
+        "📦 Payload:",
+        {
+          link: link,
+          intervalo: intervalo,
+          quantidade: quantidade,
+          initData:
+            initData
+              ? "[PRESENTE]"
+              : "[VAZIO]"
+        }
+      );
+
+
+      /* ====================================================
+         POST CORRETO
+         ==================================================== */
 
       try {
 
         const resposta =
           await fetch(
-            apiUrl,
+            "/api/configurar",
             {
 
-              method: "POST",
+              method:
+                "POST",
 
               headers: {
                 "Content-Type":
                   "application/json",
+
                 "Accept":
                   "application/json"
               },
 
               body:
-                JSON.stringify(payload)
+                JSON.stringify(
+                  payload
+                )
 
             }
           );
 
+
+        /* --------------------------------------------------
+           LER RESPOSTA
+           -------------------------------------------------- */
 
         const texto =
           await resposta.text();
 
 
         console.log(
-          "📡 HTTP:",
+          "📥 HTTP:",
           resposta.status
         );
 
         console.log(
-          "📡 RESPOSTA:",
+          "📥 Resposta:",
           texto
         );
 
 
-        let resultado = null;
+        let resultado =
+          null;
 
 
         if (texto) {
@@ -795,7 +1611,9 @@
           try {
 
             resultado =
-              JSON.parse(texto);
+              JSON.parse(
+                texto
+              );
 
           } catch (erroJson) {
 
@@ -809,25 +1627,18 @@
         }
 
 
+        /* --------------------------------------------------
+           HTTP ERROR
+           -------------------------------------------------- */
+
         if (!resposta.ok) {
 
-          let mensagemErro =
-            "Erro HTTP " +
-            resposta.status;
-
-          if (resultado && resultado.erro) {
-
-            mensagemErro =
-              resultado.erro;
-
-          }
-
-          else if (texto) {
-
-            mensagemErro =
-              texto.substring(0, 500);
-
-          }
+          const mensagemErro =
+            obterMensagemErro(
+              resposta.status,
+              resultado,
+              texto
+            );
 
           throw new Error(
             mensagemErro
@@ -836,41 +1647,84 @@
         }
 
 
+        /* --------------------------------------------------
+           RESPOSTA SEM JSON
+           -------------------------------------------------- */
+
         if (
           !resultado ||
+          typeof resultado !== "object"
+        ) {
+
+          throw new Error(
+            "O servidor respondeu HTTP " +
+            resposta.status +
+            ", mas não retornou JSON válido."
+          );
+
+        }
+
+
+        /* --------------------------------------------------
+           API RETORNOU OK FALSE
+           -------------------------------------------------- */
+
+        if (
           resultado.ok !== true
         ) {
 
           throw new Error(
-            (
-              resultado &&
-              resultado.erro
-            ) ||
-            "O servidor não confirmou a operação."
+            resultado.erro ||
+            resultado.mensagem ||
+            "O servidor recusou a configuração."
           );
 
         }
 
 
+        /* ==================================================
+           SUCESSO
+           ================================================== */
+
         mostrarMensagem(
           "🚀 <b>Postagens iniciadas!</b><br><br>" +
-          "O sistema está processando sua vitrine.",
+          "📦 Quantidade: <b>" +
+          quantidade +
+          "</b><br>" +
+          "⏱️ Intervalo: <b>" +
+          intervalo +
+          " segundos</b><br><br>" +
+          "🦊 O sistema está processando sua vitrine.",
           "sucesso"
         );
 
 
-        if (
-          tg.HapticFeedback
-        ) {
+        try {
 
-          tg.HapticFeedback.notificationOccurred(
-            "success"
+          if (
+            tg.HapticFeedback
+          ) {
+
+            tg.HapticFeedback
+              .notificationOccurred(
+                "success"
+              );
+
+          }
+
+        } catch (erro) {
+
+          console.warn(
+            "HapticFeedback:",
+            erro
           );
 
         }
 
 
-        if (tg.showAlert) {
+        if (
+          tg.showAlert
+        ) {
 
           tg.showAlert(
             "✅ Postagens iniciadas com sucesso!"
@@ -883,45 +1737,79 @@
           '<i class="fa-solid fa-check"></i> POSTAGENS INICIADAS';
 
 
-        setTimeout(function() {
+        /* --------------------------------------------------
+           FECHAR MINI APP
+           -------------------------------------------------- */
 
-          if (
-            tg &&
-            tg.close
-          ) {
+        setTimeout(
+          function() {
 
-            tg.close();
+            try {
 
-          }
+              if (
+                tg &&
+                tg.close
+              ) {
 
-        }, 1800);
+                tg.close();
+
+              }
+
+            } catch (erro) {
+
+              console.warn(
+                "Não foi possível fechar:",
+                erro
+              );
+
+            }
+
+          },
+          1800
+        );
 
 
       } catch (erro) {
 
         console.error(
-          "❌ Erro:",
+          "❌ ERRO AO ENVIAR:",
           erro
         );
 
 
+        const mensagemErro =
+          erro &&
+          erro.message
+            ? erro.message
+            : "Erro ao enviar configuração.";
+
+
         mostrarMensagem(
-          "❌ " +
-          (
-            erro.message ||
-            "Erro ao enviar configuração."
-          ),
+          "❌ <b>Erro:</b><br>" +
+          mensagemErro,
           "erro"
         );
 
 
-        if (
-          tg &&
-          tg.HapticFeedback
-        ) {
+        try {
 
-          tg.HapticFeedback.notificationOccurred(
-            "error"
+          if (
+            tg &&
+            tg.HapticFeedback
+          ) {
+
+            tg.HapticFeedback
+              .notificationOccurred(
+                "error"
+              );
+
+          }
+
+        } catch (erroHaptic) {
+
+          console.warn(
+            "HapticFeedback:",
+            erroHaptic
           );
 
         }
@@ -934,16 +1822,14 @@
 
           tg.showAlert(
             "❌ " +
-            (
-              erro.message ||
-              "Erro ao enviar configuração."
-            )
+            mensagemErro
           );
 
         }
 
 
-        btn.disabled = false;
+        btn.disabled =
+          false;
 
         btn.innerHTML =
           '<i class="fa-solid fa-rocket"></i> INICIAR POSTAGENS AUTO';
@@ -952,7 +1838,58 @@
 
     }
 
+
+    /* ======================================================
+       ENTER NO CAMPO
+       ====================================================== */
+
+    document
+      .getElementById("linkVitrine")
+      .addEventListener(
+        "keydown",
+        function(event) {
+
+          if (
+            event.key === "Enter"
+          ) {
+
+            event.preventDefault();
+
+            enviarConfiguracao();
+
+          }
+
+        }
+      );
+
+
+    /* ======================================================
+       LOG DE INICIALIZAÇÃO
+       ====================================================== */
+
+    console.log(
+      "🦊 Raposa Caçadora Mini App carregado."
+    );
+
+    console.log(
+      "📡 Endpoint:",
+      "/api/configurar"
+    );
+
+    console.log(
+      "📡 Método:",
+      "POST"
+    );
+
+    console.log(
+      "📱 Telegram:",
+      tg
+        ? "detectado"
+        : "não detectado"
+    );
+
   </script>
 
 </body>
+
 </html>

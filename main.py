@@ -66,29 +66,54 @@ def enviar_oferta(foto_url, legenda, link_afiliado):
         return False
 
 def processar_e_postar_vitrine(url_vitrine, quantidade_maxima, intervalo_seg):
-    print(f"\n🦊 Lendo vitrine do Mercado Livre: {url_vitrine}")
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
-    
+
+    # 1. RESOLVE O REDIRECIONAMENTO DE LINKS CURTOS (meli.la)
+    print(f"\n🦊 Processando URL informada: {url_vitrine}")
     try:
-        res = requests.get(url_vitrine, headers=headers, timeout=15)
+        # Faz uma requisição inicial para descobrir para onde o link encurtado aponta
+        res_redir = requests.get(url_vitrine, headers=headers, allow_redirects=True, timeout=15)
+        url_final = res_redir.url  # URL expandida completa do Mercado Livre
+        print(f"🔗 Link expandido com sucesso: {url_final}")
+    except Exception as e:
+        print(f"❌ Erro ao expandir o link encurtado: {e}")
+        return
+
+    # 2. FAZ O SCRAPING DA PÁGINA FINAL
+    try:
+        res = requests.get(url_final, headers=headers, timeout=15)
         soup = BeautifulSoup(res.text, 'html.parser')
     except Exception as e:
         print(f"❌ Erro ao acessar a vitrine: {e}")
         return
 
     links_encontrados = []
+    
+    # Procura por links de produtos padrão ou de listas/vitrines
     for a in soup.find_all('a', href=True):
         href = a['href']
-        if "produto.mercadolivre.com.br" in href or "/p/MLB" in href:
+        if any(padrao in href for padrao in ["produto.mercadolivre.com.br", "/p/MLB", "MLB-", "/sec/"]):
             links_encontrados.append(href.split('#')[0])
 
+    # Caso a URL colada seja DIRETAMENTE a de um produto (ex: um link direto de meli.la)
+    if not links_encontrados and any(padrao in url_final for padrao in ["produto.mercadolivre.com.br", "/p/MLB", "MLB-"]):
+        links_encontrados.append(url_final)
+
     links_unicos = list(dict.fromkeys(links_encontrados))
-    historico = carregar_historico()
     
+    if not links_unicos:
+        print("⚠️ Nenhum produto encontrado nesta vitrine.")
+        # Opcional: envia um aviso no canal informando que não achou produtos
+        url_api = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+        requests.post(url_api, data={"chat_id": CHAT_ID, "text": "⚠️ Nenhum produto foi localizado no link fornecido."})
+        return
+
+    historico = carregar_historico()
     postados_nesta_rodada = 0
 
+    # 3. EXTRAI AS INFORMAÇÕES E POSTA NO CANAL
     for link in links_unicos:
         if postados_nesta_rodada >= quantidade_maxima:
             break
@@ -99,14 +124,18 @@ def processar_e_postar_vitrine(url_vitrine, quantidade_maxima, intervalo_seg):
         print(f"🔍 Extraindo item: {link}")
         
         try:
-            prod_res = requests.get(link, headers=headers, timeout=10)
+            prod_res = requests.get(link, headers=headers, allow_redirects=True, timeout=10)
             prod_soup = BeautifulSoup(prod_res.text, 'html.parser')
             
+            # Busca do Título
             titulo_elem = prod_soup.find("h1", {"class": "ui-pdp-title"})
             titulo = titulo_elem.text.strip() if titulo_elem else "Oferta Imperdível Mercado Livre!"
             
+            # Busca da Imagem Principal
             foto_elem = prod_soup.find("img", {"class": "ui-pdp-image"})
-            foto_url = foto_elem["src"] if foto_elem and "src" in foto_elem.attrs else ""
+            foto_url = ""
+            if foto_elem:
+                foto_url = foto_elem.get("src") or foto_elem.get("data-src") or ""
             
             if not foto_url:
                 continue
@@ -117,6 +146,7 @@ def processar_e_postar_vitrine(url_vitrine, quantidade_maxima, intervalo_seg):
                 f"👉 <b>Clique abaixo para ver a oferta:</b>"
             )
             
+            # Envia para o canal usando o link do produto
             if enviar_oferta(foto_url, legenda, link):
                 salvar_historico(link)
                 postados_nesta_rodada += 1

@@ -1,9 +1,26 @@
 import json
 import os
-import re
+import threading
 import time
 import requests
 from bs4 import BeautifulSoup
+from flask import Flask
+
+# ==========================================
+# SERVIDOR WEB PARA O RENDER (PORT BINDING)
+# ==========================================
+app = Flask(__name__)
+
+
+@app.route("/")
+def home():
+    return "Bot Raposa Caçadora está Online 24/7!"
+
+
+def iniciar_servidor_web():
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
+
 
 # ==========================================
 # CONFIGURAÇÕES DO BOT VIA NUVEM
@@ -63,14 +80,12 @@ def processar_e_postar_vitrine(url_vitrine, quantidade_maxima, intervalo_seg):
         print(f"❌ Erro ao acessar a vitrine: {e}")
         return
 
-    # Busca os links dos produtos na página
     links_encontrados = []
     for a in soup.find_all("a", href=True):
         href = a["href"]
         if "produto.mercadolivre.com.br" in href or "/p/MLB" in href:
             links_encontrados.append(href.split("#")[0])
 
-    # Remove duplicados
     links_unicos = list(dict.fromkeys(links_encontrados))
     historico = carregar_historico()
 
@@ -104,6 +119,82 @@ def processar_e_postar_vitrine(url_vitrine, quantidade_maxima, intervalo_seg):
             )
 
             if not foto_url:
+                continue
+
+            legenda = (
+                f"🔥 <b>{titulo}</b>\n\n"
+                f"⚡ <i>Aproveite esta promoção por tempo limitado!</i>\n\n"
+                f"👉 <b>Clique abaixo para ver a oferta:</b>"
+            )
+
+            if enviar_oferta(foto_url, legenda, link):
+                salvar_historico(link)
+                postados_nesta_rodada += 1
+                print(
+                    f"✅ [POSTADO {postados_nesta_rodada}/{quantidade_maxima}] {titulo[:30]}..."
+                )
+
+                if postados_nesta_rodada < quantidade_maxima:
+                    print(f"⏳ Aguardando {intervalo_seg}s para o próximo...")
+                    time.sleep(intervalo_seg)
+
+        except Exception as err:
+            print(f"⚠️ Falha ao processar produto: {err}")
+
+    print(
+        f"\n🎯 Concluído! Total de {postados_nesta_rodada} ofertas enviadas para o canal."
+    )
+
+
+# ------------------------------------------
+# ESCUTADOR DE COMANDOS DO TELEGRAM
+# ------------------------------------------
+
+
+def escutar_mini_app():
+    print("🚀 Bot Raposa Caçadora Iniciado e Aguardando Ordens do Mini App...")
+    offset = 0
+
+    while True:
+        try:
+            url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/getUpdates?offset={offset}&timeout=30"
+            res = requests.get(url, timeout=35).json()
+
+            if "result" in res:
+                for update in res["result"]:
+                    offset = update["update_id"] + 1
+
+                    if (
+                        "message" in update
+                        and "web_app_data" in update["message"]
+                    ):
+                        dados_raw = update["message"]["web_app_data"]["data"]
+                        config = json.loads(dados_raw)
+
+                        link = config.get("link")
+                        intervalo = config.get("intervalo", 300)
+                        quantidade = config.get("quantidade", 5)
+
+                        print("\n📩 ORDEM RECEBIDA DO MINI APP!")
+                        print(f"🔗 Link: {link}")
+                        print(f"⏱️ Intervalo: {intervalo} segundos")
+                        print(f"📦 Quantidade: {quantidade} itens")
+
+                        processar_e_postar_vitrine(link, quantidade, intervalo)
+
+        except Exception as e:
+            print(f"⚠️ Conexão oscilou, reconectando... ({e})")
+            time.sleep(5)
+
+
+if __name__ == "__main__":
+    # Inicia o servidor Web em uma Thread separada
+    t = threading.Thread(target=iniciar_servidor_web)
+    t.daemon = True
+    t.start()
+
+    # Inicia o bot do Telegram
+    escutar_mini_app()            if not foto_url:
                 continue
 
             legenda = (

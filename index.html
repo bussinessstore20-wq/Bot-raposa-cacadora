@@ -30,8 +30,7 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
-        Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       -webkit-tap-highlight-color: transparent;
     }
 
@@ -154,7 +153,6 @@
       color: #64748b;
       font-size: 0.95rem;
       pointer-events: none;
-      z-index: 2;
     }
 
     input,
@@ -194,12 +192,6 @@
       align-items: center;
       gap: 6px;
       white-space: nowrap;
-      transition: all 0.2s ease;
-    }
-
-    .btn-colar:active {
-      transform: scale(0.95);
-      background: rgba(249, 115, 22, 0.3);
     }
 
     .time-grid {
@@ -219,7 +211,6 @@
       font-weight: 600;
       cursor: pointer;
       text-align: center;
-      transition: all 0.2s ease;
     }
 
     .time-btn.active {
@@ -244,13 +235,6 @@
       gap: 10px;
       cursor: pointer;
       box-shadow: 0 8px 25px var(--accent-glow);
-      transition: all 0.25s ease;
-      margin-top: 6px;
-    }
-
-    .btn-submit:active {
-      transform: scale(0.98);
-      box-shadow: 0 4px 15px var(--accent-glow);
     }
 
     .btn-submit:disabled {
@@ -309,26 +293,17 @@
 <body>
 
   <div class="brand-header">
-
-    <div class="brand-avatar">
-      🦊
-    </div>
+    <div class="brand-avatar">🦊</div>
 
     <div class="brand-title">
-
-      <h1>
-        Raposa Caçadora VIP
-      </h1>
+      <h1>Raposa Caçadora VIP</h1>
 
       <p>
         <span class="status-badge"></span>
         Sistema de Postagens Conectado
       </p>
-
     </div>
-
   </div>
-
 
   <div class="card">
 
@@ -337,12 +312,11 @@
       Painel de Automação
     </div>
 
-
     <div class="field-group">
 
       <label>
         <i class="fa-solid fa-link"></i>
-        Link da Vitrine ou Produto
+        Link da Vitrine Mercado Livre
       </label>
 
       <div class="input-wrapper-paste">
@@ -352,13 +326,12 @@
           <i class="fa-solid fa-store"></i>
 
           <input
-            type="url"
+            type="text"
             id="linkVitrine"
-            placeholder="Cole o link da vitrine ou produto..."
+            placeholder="Cole aqui o link da vitrine..."
             autocomplete="off"
             autocapitalize="off"
             spellcheck="false"
-            inputmode="url"
           >
 
         </div>
@@ -375,7 +348,6 @@
       </div>
 
     </div>
-
 
     <div class="field-group">
 
@@ -448,7 +420,6 @@
 
     </div>
 
-
     <div class="field-group">
 
       <label>
@@ -475,12 +446,7 @@
 
   </div>
 
-
-  <div
-    id="mensagem"
-    class="mensagem"
-  ></div>
-
+  <div id="mensagem" class="mensagem"></div>
 
   <button
     class="btn-submit"
@@ -488,28 +454,16 @@
     type="button"
     onclick="enviarConfiguracao()"
   >
-
     <i class="fa-solid fa-rocket"></i>
-
     INICIAR POSTAGENS AUTO
-
   </button>
 
-
   <div class="footer-note">
-
     <i class="fa-solid fa-shield-halved"></i>
-
     Integração Oficial Telegram WebApp
-
   </div>
 
-
   <script>
-
-    /* ======================================================
-       TELEGRAM
-       ====================================================== */
 
     const tg =
       window.Telegram &&
@@ -518,14 +472,9 @@
         : null;
 
 
-    /* ======================================================
-       INICIALIZA
-       ====================================================== */
-
     if (tg) {
 
       tg.ready();
-
       tg.expand();
 
       if (tg.setHeaderColor) {
@@ -539,10 +488,6 @@
     }
 
 
-    /* ======================================================
-       MENSAGEM
-       ====================================================== */
-
     function mostrarMensagem(texto, tipo) {
 
       const elemento =
@@ -554,43 +499,13 @@
       elemento.innerHTML =
         texto;
 
-      try {
-
-        elemento.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest"
-        });
-
-      } catch (e) {}
-
     }
 
-
-    /* ======================================================
-       ESCAPAR HTML
-       ====================================================== */
-
-    function escaparHtml(texto) {
-
-      return String(texto)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-
-    }
-
-
-    /* ======================================================
-       COLAR LINK
-       ====================================================== */
 
     async function colarLink() {
 
       const input =
         document.getElementById("linkVitrine");
-
 
       try {
 
@@ -602,28 +517,18 @@
           const texto =
             await navigator.clipboard.readText();
 
-
           if (texto) {
 
-            input.value =
-              texto.trim();
-
-            input.dispatchEvent(
-              new Event("input", {
-                bubbles: true
-              })
-            );
-
+            input.value = texto.trim();
 
             if (
               tg &&
               tg.HapticFeedback
             ) {
 
-              tg.HapticFeedback
-                .notificationOccurred(
-                  "success"
-                );
+              tg.HapticFeedback.notificationOccurred(
+                "success"
+              );
 
             }
 
@@ -642,14 +547,9 @@
 
       }
 
-
       input.focus();
 
-
-      if (
-        tg &&
-        tg.showAlert
-      ) {
+      if (tg && tg.showAlert) {
 
         tg.showAlert(
           "Toque e segure no campo para colar o link."
@@ -660,16 +560,10 @@
     }
 
 
-    /* ======================================================
-       TEMPO RÁPIDO
-       ====================================================== */
-
     function setTempo(segundos, elemento) {
 
-      document.getElementById(
-        "intervalo"
-      ).value = segundos;
-
+      document.getElementById("intervalo").value =
+        segundos;
 
       document
         .querySelectorAll(".time-btn")
@@ -679,15 +573,10 @@
 
         });
 
-
       elemento.classList.add("active");
 
     }
 
-
-    /* ======================================================
-       ATUALIZA BOTÕES DO TEMPO
-       ====================================================== */
 
     document
       .getElementById("intervalo")
@@ -696,8 +585,7 @@
         function() {
 
           const valor =
-            parseInt(this.value, 10);
-
+            parseInt(this.value);
 
           document
             .querySelectorAll(".time-btn")
@@ -707,363 +595,62 @@
 
             });
 
-
           const botoes =
             document.querySelectorAll(".time-btn");
 
-
           if (valor === 10) {
-
-            botoes[0]
-              .classList
-              .add("active");
-
+            botoes[0].classList.add("active");
           }
 
           else if (valor === 60) {
-
-            botoes[1]
-              .classList
-              .add("active");
-
+            botoes[1].classList.add("active");
           }
 
           else if (valor === 300) {
-
-            botoes[2]
-              .classList
-              .add("active");
-
+            botoes[2].classList.add("active");
           }
 
         }
       );
 
-
-    /* ======================================================
-       VALIDAR LINK
-       ====================================================== */
-
-    function validarLink(link) {
-
-      try {
-
-        const url =
-          new URL(link);
-
-
-        const host =
-          url.hostname
-            .toLowerCase()
-            .replace(/^www\./, "");
-
-
-        const hostsPermitidos = [
-
-          "meli.la",
-
-          "mercadolivre.com.br",
-
-          "mercadolivre.com",
-
-          "mercadolibre.com.br",
-
-          "mercadolibre.com",
-
-          "produto.mercadolivre.com.br",
-
-          "lista.mercadolivre.com.br"
-
-        ];
-
-
-        return hostsPermitidos.some(
-          function(hostPermitido) {
-
-            return (
-              host === hostPermitido ||
-              host.endsWith(
-                "." + hostPermitido
-              )
-            );
-
-          }
-        );
-
-      } catch (e) {
-
-        return false;
-
-      }
-
-    }
-
-
-    /* ======================================================
-       DETECTAR TIPO DO LINK
-       ====================================================== */
-
-    function detectarTipoLink(link) {
-
-      try {
-
-        const url =
-          new URL(link);
-
-
-        const host =
-          url.hostname
-            .toLowerCase()
-            .replace(/^www\./, "");
-
-
-        if (host === "meli.la") {
-
-          return "vitrine_ou_redirecionamento";
-
-        }
-
-
-        if (
-          host.includes(
-            "produto.mercadolivre"
-          )
-        ) {
-
-          return "produto";
-
-        }
-
-
-        if (
-          url.pathname
-            .toUpperCase()
-            .includes("/P/MLB")
-        ) {
-
-          return "produto";
-
-        }
-
-
-        if (
-          url.pathname
-            .toUpperCase()
-            .includes("MLB-")
-        ) {
-
-          return "produto";
-
-        }
-
-
-        return "vitrine_ou_lista";
-
-      } catch (e) {
-
-        return "desconhecido";
-
-      }
-
-    }
-
-
-    /* ======================================================
-       LER RESPOSTA DO SERVIDOR
-       ====================================================== */
-
-    async function lerRespostaServidor(resposta) {
-
-      const texto =
-        await resposta.text();
-
-
-      console.log(
-        "HTTP Status:",
-        resposta.status
-      );
-
-
-      console.log(
-        "Resposta bruta:",
-        texto
-      );
-
-
-      if (!texto) {
-
-        throw new Error(
-          "O servidor não retornou nenhum conteúdo. " +
-          "HTTP " +
-          resposta.status
-        );
-
-      }
-
-
-      try {
-
-        return JSON.parse(texto);
-
-      } catch (erroJson) {
-
-        console.error(
-          "Resposta não JSON:",
-          texto
-        );
-
-
-        if (
-          texto.includes("<!DOCTYPE") ||
-          texto.includes("<html")
-        ) {
-
-          throw new Error(
-            "O servidor retornou uma página HTML " +
-            "em vez de JSON. HTTP " +
-            resposta.status +
-            ". Verifique os logs do servidor."
-          );
-
-        }
-
-
-        throw new Error(
-          "O servidor retornou uma resposta inválida. " +
-          "HTTP " +
-          resposta.status +
-          "."
-        );
-
-      }
-
-    }
-
-
-    /* ======================================================
-       ENVIA CONFIGURAÇÃO
-       ====================================================== */
 
     async function enviarConfiguracao() {
 
       const btn =
-        document.getElementById(
-          "btnSubmit"
-        );
-
-
-      const inputLink =
-        document.getElementById(
-          "linkVitrine"
-        );
-
+        document.getElementById("btnSubmit");
 
       const link =
-        inputLink.value.trim();
-
+        document
+          .getElementById("linkVitrine")
+          .value
+          .trim();
 
       const intervalo =
         parseInt(
           document
             .getElementById("intervalo")
-            .value,
-          10
+            .value
         );
-
 
       const quantidade =
         parseInt(
           document
             .getElementById("quantidade")
-            .value,
-          10
+            .value
         );
 
-
-      /* ----------------------------------------------------
-         LINK VAZIO
-         ---------------------------------------------------- */
 
       if (!link) {
 
         mostrarMensagem(
-          "⚠️ Cole o link da vitrine ou do produto antes de iniciar.",
+          "⚠️ Cole o link da vitrine antes de iniciar.",
           "erro"
         );
-
-
-        if (
-          tg &&
-          tg.showAlert
-        ) {
-
-          tg.showAlert(
-            "Cole o link da vitrine ou do produto antes de iniciar."
-          );
-
-        }
 
         return;
 
       }
 
-
-      /* ----------------------------------------------------
-         NORMALIZAR
-         ---------------------------------------------------- */
-
-      let linkNormalizado =
-        link;
-
-
-      if (
-        !/^https?:\/\//i.test(
-          linkNormalizado
-        )
-      ) {
-
-        linkNormalizado =
-          "https://" +
-          linkNormalizado;
-
-      }
-
-
-      /* ----------------------------------------------------
-         VALIDAR
-         ---------------------------------------------------- */
-
-      if (
-        !validarLink(
-          linkNormalizado
-        )
-      ) {
-
-        mostrarMensagem(
-          "⚠️ Informe um link válido do Mercado Livre ou meli.la.",
-          "erro"
-        );
-
-
-        if (
-          tg &&
-          tg.showAlert
-        ) {
-
-          tg.showAlert(
-            "Link inválido. Use um link de vitrine/lista ou produto do Mercado Livre."
-          );
-
-        }
-
-        return;
-
-      }
-
-
-      /* ----------------------------------------------------
-         QUANTIDADE
-         ---------------------------------------------------- */
 
       if (
         !Number.isInteger(quantidade) ||
@@ -1081,10 +668,6 @@
       }
 
 
-      /* ----------------------------------------------------
-         TELEGRAM
-         ---------------------------------------------------- */
-
       if (!tg) {
 
         mostrarMensagem(
@@ -1097,10 +680,6 @@
       }
 
 
-      /* ----------------------------------------------------
-         INIT DATA
-         ---------------------------------------------------- */
-
       const initData =
         tg.initData || "";
 
@@ -1112,187 +691,170 @@
           "erro"
         );
 
-
-        if (tg.showAlert) {
-
-          tg.showAlert(
-            "Abra o painel pelo Telegram para continuar."
-          );
-
-        }
-
         return;
 
       }
 
 
-      /* ----------------------------------------------------
-         TIPO DO LINK
-         ---------------------------------------------------- */
-
-      const tipoLink =
-        detectarTipoLink(
-          linkNormalizado
-        );
-
-
-      console.log(
-        "Tipo de link:",
-        tipoLink
-      );
-
-
-      /* ----------------------------------------------------
-         FEEDBACK
-         ---------------------------------------------------- */
-
-      if (
-        tg.HapticFeedback
-      ) {
-
-        tg.HapticFeedback
-          .impactOccurred(
-            "medium"
-          );
-
-      }
-
-
-      /* ----------------------------------------------------
-         LOADING
-         ---------------------------------------------------- */
-
-      btn.disabled =
-        true;
-
+      btn.disabled = true;
 
       btn.innerHTML =
         '<i class="fa-solid fa-spinner fa-spin"></i> ENVIANDO...';
 
-
       mostrarMensagem(
-        "⏳ Enviando configuração para o servidor...",
+        "⏳ Enviando configuração...",
         "sucesso"
       );
 
 
-      /* ----------------------------------------------------
-         PAYLOAD
-         ---------------------------------------------------- */
-
       const payload = {
 
-        link:
-          linkNormalizado,
+        link: link,
 
-        tipo:
-          tipoLink,
+        intervalo: intervalo,
 
-        intervalo:
-          intervalo,
+        quantidade: quantidade,
 
-        quantidade:
-          quantidade,
-
-        initData:
-          initData
+        initData: initData
 
       };
 
 
+      /*
+       * IMPORTANTE:
+       *
+       * Usa a origem da própria página.
+       *
+       * Assim, se o Mini App estiver em:
+       *
+       * https://meusite.com/app
+       *
+       * ele chama:
+       *
+       * https://meusite.com/api/configurar
+       *
+       * e não algum servidor diferente.
+       */
+
+      const apiUrl =
+        new URL(
+          "/api/configurar",
+          window.location.origin
+        ).toString();
+
+
       console.log(
-        "Payload enviado:",
-        {
-          link: linkNormalizado,
-          tipo: tipoLink,
-          intervalo: intervalo,
-          quantidade: quantidade
-        }
+        "🌐 API:",
+        apiUrl
       );
 
 
       try {
 
-        /* --------------------------------------------------
-           REQUEST
-           -------------------------------------------------- */
-
         const resposta =
           await fetch(
-            "/api/configurar",
+            apiUrl,
             {
 
-              method:
-                "POST",
+              method: "POST",
 
               headers: {
-
                 "Content-Type":
                   "application/json",
-
                 "Accept":
                   "application/json"
-
               },
 
-              credentials:
-                "same-origin",
-
               body:
-                JSON.stringify(
-                  payload
-                )
+                JSON.stringify(payload)
 
             }
           );
 
 
-        /* --------------------------------------------------
-           RESPOSTA
-           -------------------------------------------------- */
-
-        const resultado =
-          await lerRespostaServidor(
-            resposta
-          );
+        const texto =
+          await resposta.text();
 
 
         console.log(
-          "Resultado do servidor:",
-          resultado
+          "📡 HTTP:",
+          resposta.status
+        );
+
+        console.log(
+          "📡 RESPOSTA:",
+          texto
         );
 
 
-        /* --------------------------------------------------
-           ERRO
-           -------------------------------------------------- */
+        let resultado = null;
 
-        if (
-          !resposta.ok ||
-          !resultado.ok
-        ) {
+
+        if (texto) {
+
+          try {
+
+            resultado =
+              JSON.parse(texto);
+
+          } catch (erroJson) {
+
+            console.error(
+              "❌ Resposta não é JSON:",
+              texto
+            );
+
+          }
+
+        }
+
+
+        if (!resposta.ok) {
+
+          let mensagemErro =
+            "Erro HTTP " +
+            resposta.status;
+
+          if (resultado && resultado.erro) {
+
+            mensagemErro =
+              resultado.erro;
+
+          }
+
+          else if (texto) {
+
+            mensagemErro =
+              texto.substring(0, 500);
+
+          }
 
           throw new Error(
-            resultado.erro ||
-            resultado.mensagem ||
-            (
-              "Não foi possível iniciar as postagens. " +
-              "HTTP " +
-              resposta.status
-            )
+            mensagemErro
           );
 
         }
 
 
-        /* --------------------------------------------------
-           SUCESSO
-           -------------------------------------------------- */
+        if (
+          !resultado ||
+          resultado.ok !== true
+        ) {
+
+          throw new Error(
+            (
+              resultado &&
+              resultado.erro
+            ) ||
+            "O servidor não confirmou a operação."
+          );
+
+        }
+
 
         mostrarMensagem(
           "🚀 <b>Postagens iniciadas!</b><br><br>" +
-          "O sistema recebeu sua solicitação e " +
-          "está processando os produtos.",
+          "O sistema está processando sua vitrine.",
           "sucesso"
         );
 
@@ -1301,17 +863,14 @@
           tg.HapticFeedback
         ) {
 
-          tg.HapticFeedback
-            .notificationOccurred(
-              "success"
-            );
+          tg.HapticFeedback.notificationOccurred(
+            "success"
+          );
 
         }
 
 
-        if (
-          tg.showAlert
-        ) {
+        if (tg.showAlert) {
 
           tg.showAlert(
             "✅ Postagens iniciadas com sucesso!"
@@ -1324,46 +883,33 @@
           '<i class="fa-solid fa-check"></i> POSTAGENS INICIADAS';
 
 
-        /* --------------------------------------------------
-           FECHAR MINI APP
-           -------------------------------------------------- */
+        setTimeout(function() {
 
-        setTimeout(
-          function() {
+          if (
+            tg &&
+            tg.close
+          ) {
 
-            if (
-              tg &&
-              tg.close
-            ) {
+            tg.close();
 
-              tg.close();
+          }
 
-            }
-
-          },
-          1800
-        );
+        }, 1800);
 
 
       } catch (erro) {
 
         console.error(
-          "❌ Erro ao enviar configuração:",
+          "❌ Erro:",
           erro
         );
 
 
-        const mensagemErro =
-          erro &&
-          erro.message
-            ? erro.message
-            : "Erro ao enviar configuração.";
-
-
         mostrarMensagem(
-          "❌ <b>Erro:</b><br>" +
-          escaparHtml(
-            mensagemErro
+          "❌ " +
+          (
+            erro.message ||
+            "Erro ao enviar configuração."
           ),
           "erro"
         );
@@ -1374,10 +920,9 @@
           tg.HapticFeedback
         ) {
 
-          tg.HapticFeedback
-            .notificationOccurred(
-              "error"
-            );
+          tg.HapticFeedback.notificationOccurred(
+            "error"
+          );
 
         }
 
@@ -1389,15 +934,16 @@
 
           tg.showAlert(
             "❌ " +
-            mensagemErro
+            (
+              erro.message ||
+              "Erro ao enviar configuração."
+            )
           );
 
         }
 
 
-        btn.disabled =
-          false;
-
+        btn.disabled = false;
 
         btn.innerHTML =
           '<i class="fa-solid fa-rocket"></i> INICIAR POSTAGENS AUTO';
@@ -1405,30 +951,6 @@
       }
 
     }
-
-
-    /* ======================================================
-       ENTER PARA ENVIAR
-       ====================================================== */
-
-    document
-      .getElementById("linkVitrine")
-      .addEventListener(
-        "keydown",
-        function(event) {
-
-          if (
-            event.key === "Enter"
-          ) {
-
-            event.preventDefault();
-
-            enviarConfiguracao();
-
-          }
-
-        }
-      );
 
   </script>
 

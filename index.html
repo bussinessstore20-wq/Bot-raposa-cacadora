@@ -21,648 +21,453 @@
   <style>
 
     :root {
-      --bg-gradient:
-        linear-gradient(
-          135deg,
-          #05070a 0%,
-          #0d111a 100%
-        );
-
-      --card-bg:
-        rgba(15, 23, 36, 0.88);
-
-      --card-border:
-        rgba(255, 255, 255, 0.08);
-
-      --primary-accent:
-        linear-gradient(
-          135deg,
-          #f97316 0%,
-          #ea580c 100%
-        );
-
-      --accent-glow:
-        rgba(249, 115, 22, 0.45);
-
-      --text-main:
-        #f8fafc;
-
-      --text-sub:
-        #94a3b8;
-
-      --input-bg:
-        rgba(6, 10, 17, 0.92);
-
-      --input-border:
-        rgba(255, 255, 255, 0.12);
-
-      --radius:
-        16px;
+      --bg: #05070a;
+      --card: rgba(15, 23, 36, 0.92);
+      --border: rgba(255,255,255,.08);
+      --orange: #f97316;
+      --orange2: #ea580c;
+      --orange-light: #fdba74;
+      --text: #f8fafc;
+      --sub: #94a3b8;
+      --input: rgba(6,10,17,.95);
+      --green: #22c55e;
+      --red: #ef4444;
+      --radius: 16px;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-
       font-family:
         -apple-system,
         BlinkMacSystemFont,
         "Segoe UI",
         Roboto,
-        Helvetica,
         Arial,
         sans-serif;
-
       -webkit-tap-highlight-color: transparent;
     }
 
     body {
       background:
-        var(--bg-gradient);
+        linear-gradient(
+          135deg,
+          #05070a 0%,
+          #0d111a 100%
+        );
 
-      color:
-        var(--text-main);
+      color: var(--text);
 
-      min-height:
-        100vh;
+      min-height: 100vh;
 
-      padding:
-        20px 16px 30px;
+      padding: 20px 16px 30px;
 
-      display:
-        flex;
+      display: flex;
 
-      flex-direction:
-        column;
+      flex-direction: column;
 
-      gap:
-        20px;
+      gap: 20px;
     }
 
     .brand-header {
-      display:
-        flex;
-
-      align-items:
-        center;
-
-      gap:
-        14px;
-
-      padding:
-        4px 0;
+      display: flex;
+      align-items: center;
+      gap: 14px;
     }
 
     .brand-avatar {
-      width:
-        56px;
+      width: 56px;
+      height: 56px;
 
-      height:
-        56px;
+      flex-shrink: 0;
 
-      flex-shrink:
-        0;
+      border-radius: 50%;
 
-      border-radius:
-        50%;
+      background: #080b11;
 
-      background:
-        #080b11;
+      border: 2px solid var(--orange);
 
-      border:
-        2px solid #f97316;
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
-      display:
-        flex;
-
-      align-items:
-        center;
-
-      justify-content:
-        center;
-
-      font-size:
-        28px;
+      font-size: 28px;
 
       box-shadow:
-        0 0 25px var(--accent-glow);
+        0 0 25px
+        rgba(249,115,22,.45);
     }
 
     .brand-title h1 {
-      font-size:
-        1.25rem;
-
-      font-weight:
-        800;
-
-      letter-spacing:
-        -0.02em;
+      font-size: 1.25rem;
+      font-weight: 800;
 
       background:
         linear-gradient(
           90deg,
-          #ffffff,
-          #fdba74
+          #fff,
+          var(--orange-light)
         );
 
-      -webkit-background-clip:
-        text;
-
-      -webkit-text-fill-color:
-        transparent;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     .brand-title p {
-      font-size:
-        0.8rem;
+      font-size: .8rem;
+      color: var(--sub);
 
-      color:
-        var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 6px;
 
-      display:
-        flex;
-
-      align-items:
-        center;
-
-      gap:
-        6px;
-
-      margin-top:
-        2px;
+      margin-top: 3px;
     }
 
     .status-badge {
-      display:
-        inline-block;
+      width: 8px;
+      height: 8px;
 
-      width:
-        8px;
+      background: var(--green);
 
-      height:
-        8px;
-
-      background-color:
-        #22c55e;
-
-      border-radius:
-        50%;
+      border-radius: 50%;
 
       box-shadow:
-        0 0 8px #22c55e;
+        0 0 8px var(--green);
     }
 
     .card {
-      background:
-        var(--card-bg);
+      background: var(--card);
 
-      backdrop-filter:
-        blur(16px);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
 
-      -webkit-backdrop-filter:
-        blur(16px);
+      border: 1px solid var(--border);
 
-      border:
-        1px solid var(--card-border);
+      border-radius: var(--radius);
 
-      border-radius:
-        var(--radius);
-
-      padding:
-        20px;
+      padding: 20px;
 
       box-shadow:
         0 10px 30px -10px
-        rgba(0, 0, 0, 0.8);
+        rgba(0,0,0,.8);
     }
 
     .card-title {
-      font-size:
-        0.9rem;
+      font-size: .9rem;
 
-      font-weight:
-        700;
+      font-weight: 700;
 
-      color:
-        #fdba74;
+      color: var(--orange-light);
 
-      text-transform:
-        uppercase;
+      text-transform: uppercase;
 
-      letter-spacing:
-        0.05em;
+      letter-spacing: .05em;
 
-      margin-bottom:
-        16px;
+      margin-bottom: 18px;
 
-      display:
-        flex;
-
-      align-items:
-        center;
-
-      gap:
-        8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .field-group {
-      display:
-        flex;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
 
-      flex-direction:
-        column;
-
-      gap:
-        8px;
-
-      margin-bottom:
-        18px;
+      margin-bottom: 18px;
     }
 
     .field-group:last-child {
-      margin-bottom:
-        0;
+      margin-bottom: 0;
     }
 
     label {
-      font-size:
-        0.82rem;
+      font-size: .82rem;
 
-      font-weight:
-        600;
+      font-weight: 600;
 
-      color:
-        var(--text-sub);
+      color: var(--sub);
 
-      display:
-        flex;
-
-      align-items:
-        center;
-
-      gap:
-        6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .input-wrapper-paste {
-      display:
-        flex;
-
-      gap:
-        8px;
-
-      align-items:
-        center;
+      display: flex;
+      gap: 8px;
+      align-items: center;
     }
 
     .input-wrapper {
-      position:
-        relative;
-
-      flex:
-        1;
+      position: relative;
+      flex: 1;
     }
 
-    .input-wrapper i {
-      position:
-        absolute;
+    .input-wrapper > i {
+      position: absolute;
 
-      left:
-        14px;
+      left: 14px;
+      top: 50%;
 
-      top:
-        50%;
+      transform: translateY(-50%);
 
-      transform:
-        translateY(-50%);
+      color: #64748b;
 
-      color:
-        #64748b;
+      font-size: .95rem;
 
-      font-size:
-        0.95rem;
-
-      pointer-events:
-        none;
-
-      z-index:
-        2;
+      pointer-events: none;
     }
 
     input,
     select {
-      width:
-        100%;
+      width: 100%;
 
       padding:
-        14px 14px 14px 42px;
+        14px
+        14px
+        14px
+        42px;
 
-      border-radius:
-        12px;
+      border-radius: 12px;
 
       border:
-        1px solid var(--input-border);
+        1px solid
+        rgba(255,255,255,.12);
 
-      background:
-        var(--input-bg);
+      background: var(--input);
 
-      color:
-        var(--text-main);
+      color: var(--text);
 
-      font-size:
-        0.92rem;
+      font-size: .92rem;
 
-      outline:
-        none;
+      outline: none;
 
-      transition:
-        all 0.25s ease;
+      transition: .25s;
     }
 
     input:focus,
     select:focus {
-      border-color:
-        #f97316;
+      border-color: var(--orange);
 
       box-shadow:
         0 0 0 3px
-        rgba(249, 115, 22, 0.2);
+        rgba(249,115,22,.2);
     }
 
     select option {
-      background:
-        #0f172a;
-
-      color:
-        #fff;
+      background: #0f172a;
+      color: white;
     }
 
     .btn-colar {
       background:
-        rgba(249, 115, 22, 0.15);
+        rgba(249,115,22,.15);
 
       border:
-        1px solid #f97316;
+        1px solid
+        var(--orange);
 
-      color:
-        #fdba74;
+      color: var(--orange-light);
 
-      padding:
-        14px 16px;
+      padding: 14px 16px;
 
-      border-radius:
-        12px;
+      border-radius: 12px;
 
-      font-size:
-        0.85rem;
+      font-size: .85rem;
 
-      font-weight:
-        700;
+      font-weight: 700;
 
-      cursor:
-        pointer;
+      cursor: pointer;
 
-      display:
-        flex;
+      display: flex;
+      align-items: center;
+      gap: 6px;
 
-      align-items:
-        center;
-
-      gap:
-        6px;
-
-      white-space:
-        nowrap;
-
-      transition:
-        all 0.2s ease;
+      white-space: nowrap;
     }
 
     .btn-colar:active {
-      transform:
-        scale(0.95);
-
-      background:
-        rgba(249, 115, 22, 0.3);
+      transform: scale(.95);
     }
 
     .time-grid {
-      display:
-        grid;
+      display: grid;
 
       grid-template-columns:
-        repeat(3, 1fr);
+        repeat(3,1fr);
 
-      gap:
-        8px;
+      gap: 8px;
 
-      margin-top:
-        6px;
+      margin-top: 6px;
     }
 
     .time-btn {
-      background:
-        var(--input-bg);
+      background: var(--input);
 
       border:
-        1px solid var(--input-border);
+        1px solid
+        rgba(255,255,255,.12);
 
-      color:
-        var(--text-sub);
+      color: var(--sub);
 
-      padding:
-        10px 6px;
+      padding: 10px 6px;
 
-      border-radius:
-        10px;
+      border-radius: 10px;
 
-      font-size:
-        0.8rem;
+      font-size: .8rem;
 
-      font-weight:
-        600;
+      font-weight: 600;
 
-      cursor:
-        pointer;
+      cursor: pointer;
 
-      text-align:
-        center;
-
-      transition:
-        all 0.2s ease;
+      transition: .2s;
     }
 
     .time-btn.active {
       background:
-        rgba(249, 115, 22, 0.2);
+        rgba(249,115,22,.2);
 
       border-color:
-        #f97316;
+        var(--orange);
 
       color:
-        #f97316;
+        var(--orange);
     }
 
     .btn-submit {
-      width:
-        100%;
+      width: 100%;
 
       background:
-        var(--primary-accent);
+        linear-gradient(
+          135deg,
+          var(--orange),
+          var(--orange2)
+        );
 
-      color:
-        white;
+      color: white;
 
-      border:
-        none;
+      border: none;
 
-      padding:
-        16px;
+      padding: 16px;
 
-      border-radius:
-        var(--radius);
+      border-radius: var(--radius);
 
-      font-size:
-        1rem;
+      font-size: 1rem;
 
-      font-weight:
-        800;
+      font-weight: 800;
 
-      letter-spacing:
-        0.02em;
+      letter-spacing: .02em;
 
-      display:
-        flex;
+      display: flex;
 
-      align-items:
-        center;
+      align-items: center;
 
-      justify-content:
-        center;
+      justify-content: center;
 
-      gap:
-        10px;
+      gap: 10px;
 
-      cursor:
-        pointer;
+      cursor: pointer;
 
       box-shadow:
         0 8px 25px
-        var(--accent-glow);
+        rgba(249,115,22,.45);
 
-      transition:
-        all 0.25s ease;
-
-      margin-top:
-        6px;
+      transition: .25s;
     }
 
     .btn-submit:active {
-      transform:
-        scale(0.98);
+      transform: scale(.98);
     }
 
     .btn-submit:disabled {
-      opacity:
-        0.7;
-
-      cursor:
-        not-allowed;
+      opacity: .7;
+      cursor: not-allowed;
     }
 
     .mensagem {
-      display:
-        none;
+      display: none;
 
-      padding:
-        13px;
+      padding: 13px;
 
-      border-radius:
-        12px;
+      border-radius: 12px;
 
-      font-size:
-        0.85rem;
+      font-size: .85rem;
 
-      text-align:
-        center;
+      text-align: center;
 
-      line-height:
-        1.5;
-
-      word-break:
-        break-word;
+      line-height: 1.5;
     }
 
     .mensagem.sucesso {
-      display:
-        block;
+      display: block;
 
-      color:
-        #86efac;
+      color: #86efac;
 
       background:
-        rgba(34, 197, 94, 0.10);
+        rgba(34,197,94,.10);
 
       border:
         1px solid
-        rgba(34, 197, 94, 0.25);
+        rgba(34,197,94,.25);
     }
 
     .mensagem.erro {
-      display:
-        block;
+      display: block;
 
-      color:
-        #fca5a5;
+      color: #fca5a5;
 
       background:
-        rgba(239, 68, 68, 0.10);
+        rgba(239,68,68,.10);
 
       border:
         1px solid
-        rgba(239, 68, 68, 0.25);
+        rgba(239,68,68,.25);
+    }
+
+    .mensagem.info {
+      display: block;
+
+      color: #93c5fd;
+
+      background:
+        rgba(59,130,246,.10);
+
+      border:
+        1px solid
+        rgba(59,130,246,.25);
     }
 
     .footer-note {
-      text-align:
-        center;
+      text-align: center;
 
-      font-size:
-        0.75rem;
+      font-size: .75rem;
 
-      color:
-        var(--text-sub);
+      color: var(--sub);
 
-      margin-top:
-        auto;
+      margin-top: auto;
 
-      display:
-        flex;
+      display: flex;
 
-      align-items:
-        center;
+      align-items: center;
 
-      justify-content:
-        center;
+      justify-content: center;
 
-      gap:
-        6px;
+      gap: 6px;
     }
 
-    @media (max-width: 380px) {
+    @media(max-width:380px) {
 
       .input-wrapper-paste {
-        flex-direction:
-          column;
-
-        align-items:
-          stretch;
+        flex-direction: column;
+        align-items: stretch;
       }
 
       .btn-colar {
-        justify-content:
-          center;
+        justify-content: center;
       }
 
     }
@@ -671,10 +476,6 @@
 </head>
 
 <body>
-
-  <!-- ======================================================
-       HEADER
-       ====================================================== -->
 
   <div class="brand-header">
 
@@ -698,10 +499,6 @@
   </div>
 
 
-  <!-- ======================================================
-       CARD
-       ====================================================== -->
-
   <div class="card">
 
     <div class="card-title">
@@ -713,9 +510,7 @@
     </div>
 
 
-    <!-- ====================================================
-         LINK
-         ==================================================== -->
+    <!-- LINK -->
 
     <div class="field-group">
 
@@ -723,10 +518,9 @@
 
         <i class="fa-solid fa-link"></i>
 
-        Link da Vitrine ou Produto
+        Link da Vitrine / Produto Mercado Livre
 
       </label>
-
 
       <div class="input-wrapper-paste">
 
@@ -737,14 +531,13 @@
           <input
             type="text"
             id="linkVitrine"
-            placeholder="Cole o link meli.la ou produto..."
+            placeholder="Cole o link da vitrine..."
             autocomplete="off"
             autocapitalize="off"
             spellcheck="false"
           >
 
         </div>
-
 
         <button
           class="btn-colar"
@@ -763,9 +556,7 @@
     </div>
 
 
-    <!-- ====================================================
-         INTERVALO
-         ==================================================== -->
+    <!-- INTERVALO -->
 
     <div class="field-group">
 
@@ -776,7 +567,6 @@
         Tempo Entre Postagens
 
       </label>
-
 
       <div class="input-wrapper">
 
@@ -818,7 +608,7 @@
         <button
           type="button"
           class="time-btn"
-          onclick="setTempo(10, this)"
+          onclick="setTempo(10,this)"
         >
           10 seg
         </button>
@@ -826,7 +616,7 @@
         <button
           type="button"
           class="time-btn"
-          onclick="setTempo(60, this)"
+          onclick="setTempo(60,this)"
         >
           1 min
         </button>
@@ -834,7 +624,7 @@
         <button
           type="button"
           class="time-btn active"
-          onclick="setTempo(300, this)"
+          onclick="setTempo(300,this)"
         >
           5 min
         </button>
@@ -844,9 +634,7 @@
     </div>
 
 
-    <!-- ====================================================
-         QUANTIDADE
-         ==================================================== -->
+    <!-- QUANTIDADE -->
 
     <div class="field-group">
 
@@ -857,7 +645,6 @@
         Quantidade de Produtos
 
       </label>
-
 
       <div class="input-wrapper">
 
@@ -879,19 +666,11 @@
   </div>
 
 
-  <!-- ======================================================
-       MENSAGEM
-       ====================================================== -->
-
   <div
     id="mensagem"
     class="mensagem"
   ></div>
 
-
-  <!-- ======================================================
-       BOTÃO
-       ====================================================== -->
 
   <button
     class="btn-submit"
@@ -907,10 +686,6 @@
   </button>
 
 
-  <!-- ======================================================
-       FOOTER
-       ====================================================== -->
-
   <div class="footer-note">
 
     <i class="fa-solid fa-shield-halved"></i>
@@ -920,788 +695,87 @@
   </div>
 
 
-  <!-- ======================================================
-       JAVASCRIPT
-       ====================================================== -->
+<script>
 
-  <script>
+  /* =========================================================
+     TELEGRAM WEB APP
+     ========================================================= */
 
-    /* ======================================================
-       TELEGRAM WEB APP
-       ====================================================== */
-
-    const tg =
-      window.Telegram &&
-      window.Telegram.WebApp
-        ? window.Telegram.WebApp
-        : null;
+  const tg =
+    window.Telegram &&
+    window.Telegram.WebApp
+      ? window.Telegram.WebApp
+      : null;
 
 
-    /* ======================================================
-       INICIALIZA TELEGRAM
-       ====================================================== */
+  if (tg) {
 
-    if (tg) {
+    tg.ready();
 
-      try {
+    tg.expand();
 
-        tg.ready();
-
-        tg.expand();
-
-        if (tg.setHeaderColor) {
-          tg.setHeaderColor("#05070a");
-        }
-
-        if (tg.setBackgroundColor) {
-          tg.setBackgroundColor("#05070a");
-        }
-
-      } catch (erro) {
-
-        console.warn(
-          "Telegram WebApp:",
-          erro
-        );
-
-      }
-
+    if (tg.setHeaderColor) {
+      tg.setHeaderColor("#05070a");
     }
 
-
-    /* ======================================================
-       MENSAGEM
-       ====================================================== */
-
-    function mostrarMensagem(
-      texto,
-      tipo
-    ) {
-
-      const elemento =
-        document.getElementById(
-          "mensagem"
-        );
-
-      elemento.className =
-        "mensagem " + tipo;
-
-      elemento.innerHTML =
-        texto;
-
+    if (tg.setBackgroundColor) {
+      tg.setBackgroundColor("#05070a");
     }
 
-
-    /* ======================================================
-       LIMPAR MENSAGEM
-       ====================================================== */
-
-    function limparMensagem() {
-
-      const elemento =
-        document.getElementById(
-          "mensagem"
-        );
-
-      elemento.className =
-        "mensagem";
-
-      elemento.innerHTML =
-        "";
-
-    }
+  }
 
 
-    /* ======================================================
-       COLAR LINK
-       ====================================================== */
+  /* =========================================================
+     MENSAGEM
+     ========================================================= */
 
-    async function colarLink() {
+  function mostrarMensagem(texto, tipo) {
 
-      const input =
-        document.getElementById(
-          "linkVitrine"
-        );
+    const elemento =
+      document.getElementById("mensagem");
 
-      try {
+    elemento.className =
+      "mensagem " + tipo;
 
-        if (
-          navigator.clipboard &&
-          navigator.clipboard.readText
-        ) {
+    elemento.innerHTML =
+      texto;
 
-          const texto =
-            await navigator.clipboard.readText();
+  }
 
-          if (texto) {
 
-            input.value =
-              texto.trim();
+  /* =========================================================
+     COLAR
+     ========================================================= */
 
-            input.dispatchEvent(
-              new Event(
-                "input",
-                {
-                  bubbles: true
-                }
-              )
-            );
+  async function colarLink() {
 
-            if (
-              tg &&
-              tg.HapticFeedback
-            ) {
+    const input =
+      document.getElementById("linkVitrine");
 
-              tg.HapticFeedback
-                .notificationOccurred(
-                  "success"
-                );
 
-            }
-
-            return;
-
-          }
-
-        }
-
-      } catch (erro) {
-
-        console.warn(
-          "Clipboard bloqueado:",
-          erro
-        );
-
-      }
-
-      input.focus();
+    try {
 
       if (
-        tg &&
-        tg.showAlert
+        navigator.clipboard &&
+        navigator.clipboard.readText
       ) {
-
-        tg.showAlert(
-          "Toque e segure no campo para colar o link."
-        );
-
-      }
-
-    }
-
-
-    /* ======================================================
-       TEMPO RÁPIDO
-       ====================================================== */
-
-    function setTempo(
-      segundos,
-      elemento
-    ) {
-
-      document.getElementById(
-        "intervalo"
-      ).value =
-        segundos;
-
-      document
-        .querySelectorAll(
-          ".time-btn"
-        )
-        .forEach(
-          function(btn) {
-
-            btn.classList.remove(
-              "active"
-            );
-
-          }
-        );
-
-      elemento.classList.add(
-        "active"
-      );
-
-    }
-
-
-    /* ======================================================
-       SINCRONIZAR BOTÕES
-       ====================================================== */
-
-    document
-      .getElementById("intervalo")
-      .addEventListener(
-        "change",
-        function() {
-
-          const valor =
-            parseInt(
-              this.value,
-              10
-            );
-
-          document
-            .querySelectorAll(
-              ".time-btn"
-            )
-            .forEach(
-              function(btn) {
-
-                btn.classList.remove(
-                  "active"
-                );
-
-              }
-            );
-
-          const botoes =
-            document.querySelectorAll(
-              ".time-btn"
-            );
-
-          if (valor === 10) {
-
-            botoes[0]
-              .classList
-              .add("active");
-
-          }
-
-          else if (valor === 60) {
-
-            botoes[1]
-              .classList
-              .add("active");
-
-          }
-
-          else if (valor === 300) {
-
-            botoes[2]
-              .classList
-              .add("active");
-
-          }
-
-        }
-      );
-
-
-    /* ======================================================
-       VALIDAR URL
-       ====================================================== */
-
-    function validarLink(link) {
-
-      if (!link) {
-        return false;
-      }
-
-      if (
-        !link.startsWith("http://") &&
-        !link.startsWith("https://")
-      ) {
-
-        return false;
-
-      }
-
-      return true;
-
-    }
-
-
-    /* ======================================================
-       FORMATAR ERRO DO SERVIDOR
-       ====================================================== */
-
-    function obterMensagemErro(
-      status,
-      resultado,
-      texto
-    ) {
-
-      if (
-        resultado &&
-        typeof resultado === "object"
-      ) {
-
-        if (resultado.erro) {
-
-          return (
-            resultado.erro +
-            " (HTTP " +
-            status +
-            ")"
-          );
-
-        }
-
-        if (resultado.message) {
-
-          return (
-            resultado.message +
-            " (HTTP " +
-            status +
-            ")"
-          );
-
-        }
-
-      }
-
-
-      if (status === 404) {
-
-        return (
-          "A rota /api/configurar não foi encontrada " +
-          "no servidor. Verifique se o index.html está " +
-          "sendo servido pelo mesmo servidor do main.py."
-        );
-
-      }
-
-
-      if (status === 405) {
-
-        return (
-          "O servidor recusou o método POST. " +
-          "A rota /api/configurar precisa aceitar POST."
-        );
-
-      }
-
-
-      if (status === 403) {
-
-        return (
-          "Autenticação do Telegram recusada. " +
-          "Abra o painel dentro do Telegram."
-        );
-
-      }
-
-
-      if (status === 500) {
-
-        return (
-          "Erro interno no servidor. " +
-          (texto || "Verifique os logs do main.py.")
-        );
-
-      }
-
-
-      return (
-        "Não foi possível iniciar as postagens. " +
-        "HTTP " +
-        status
-      );
-
-    }
-
-
-    /* ======================================================
-       ENVIA CONFIGURAÇÃO
-       ====================================================== */
-
-    async function enviarConfiguracao() {
-
-      const btn =
-        document.getElementById(
-          "btnSubmit"
-        );
-
-      const inputLink =
-        document.getElementById(
-          "linkVitrine"
-        );
-
-      const inputIntervalo =
-        document.getElementById(
-          "intervalo"
-        );
-
-      const inputQuantidade =
-        document.getElementById(
-          "quantidade"
-        );
-
-
-      const link =
-        inputLink.value.trim();
-
-
-      const intervalo =
-        parseInt(
-          inputIntervalo.value,
-          10
-        );
-
-
-      const quantidade =
-        parseInt(
-          inputQuantidade.value,
-          10
-        );
-
-
-      /* ----------------------------------------------------
-         LIMPA ERRO
-         ---------------------------------------------------- */
-
-      limparMensagem();
-
-
-      /* ----------------------------------------------------
-         VALIDAR LINK
-         ---------------------------------------------------- */
-
-      if (!validarLink(link)) {
-
-        mostrarMensagem(
-          "⚠️ Informe um link válido começando com http:// ou https://.",
-          "erro"
-        );
-
-        if (
-          tg &&
-          tg.showAlert
-        ) {
-
-          tg.showAlert(
-            "Cole o link da vitrine ou do produto."
-          );
-
-        }
-
-        return;
-
-      }
-
-
-      /* ----------------------------------------------------
-         VALIDAR QUANTIDADE
-         ---------------------------------------------------- */
-
-      if (
-        !Number.isInteger(
-          quantidade
-        ) ||
-        quantidade < 1 ||
-        quantidade > 50
-      ) {
-
-        mostrarMensagem(
-          "⚠️ A quantidade deve estar entre 1 e 50.",
-          "erro"
-        );
-
-        return;
-
-      }
-
-
-      /* ----------------------------------------------------
-         VALIDAR INTERVALO
-         ---------------------------------------------------- */
-
-      if (
-        !Number.isInteger(
-          intervalo
-        ) ||
-        intervalo < 10
-      ) {
-
-        mostrarMensagem(
-          "⚠️ O intervalo mínimo é de 10 segundos.",
-          "erro"
-        );
-
-        return;
-
-      }
-
-
-      /* ----------------------------------------------------
-         TELEGRAM
-         ---------------------------------------------------- */
-
-      if (!tg) {
-
-        mostrarMensagem(
-          "❌ Este painel precisa ser aberto dentro do Telegram.",
-          "erro"
-        );
-
-        return;
-
-      }
-
-
-      /* ----------------------------------------------------
-         INIT DATA
-         ---------------------------------------------------- */
-
-      const initData =
-        tg.initData || "";
-
-
-      if (!initData) {
-
-        mostrarMensagem(
-          "❌ Não foi possível obter a autenticação do Telegram. Abra o Mini App pelo bot.",
-          "erro"
-        );
-
-        if (tg.showAlert) {
-
-          tg.showAlert(
-            "Abra o painel pelo Telegram para continuar."
-          );
-
-        }
-
-        return;
-
-      }
-
-
-      /* ----------------------------------------------------
-         FEEDBACK
-         ---------------------------------------------------- */
-
-      try {
-
-        if (
-          tg.HapticFeedback
-        ) {
-
-          tg.HapticFeedback
-            .impactOccurred(
-              "medium"
-            );
-
-        }
-
-      } catch (erro) {
-
-        console.warn(
-          "HapticFeedback:",
-          erro
-        );
-
-      }
-
-
-      /* ----------------------------------------------------
-         LOADING
-         ---------------------------------------------------- */
-
-      btn.disabled =
-        true;
-
-      btn.innerHTML =
-        '<i class="fa-solid fa-spinner fa-spin"></i> ENVIANDO...';
-
-
-      mostrarMensagem(
-        "⏳ Enviando configuração para o servidor...",
-        "sucesso"
-      );
-
-
-      /* ----------------------------------------------------
-         PAYLOAD
-         ---------------------------------------------------- */
-
-      const payload = {
-
-        link:
-          link,
-
-        intervalo:
-          intervalo,
-
-        quantidade:
-          quantidade,
-
-        initData:
-          initData
-
-      };
-
-
-      console.log(
-        "📤 Enviando para:",
-        "/api/configurar"
-      );
-
-      console.log(
-        "📦 Payload:",
-        {
-          link: link,
-          intervalo: intervalo,
-          quantidade: quantidade,
-          initData:
-            initData
-              ? "[PRESENTE]"
-              : "[VAZIO]"
-        }
-      );
-
-
-      /* ====================================================
-         POST CORRETO
-         ==================================================== */
-
-      try {
-
-        const resposta =
-          await fetch(
-            "/api/configurar",
-            {
-
-              method:
-                "POST",
-
-              headers: {
-                "Content-Type":
-                  "application/json",
-
-                "Accept":
-                  "application/json"
-              },
-
-              body:
-                JSON.stringify(
-                  payload
-                )
-
-            }
-          );
-
-
-        /* --------------------------------------------------
-           LER RESPOSTA
-           -------------------------------------------------- */
 
         const texto =
-          await resposta.text();
-
-
-        console.log(
-          "📥 HTTP:",
-          resposta.status
-        );
-
-        console.log(
-          "📥 Resposta:",
-          texto
-        );
-
-
-        let resultado =
-          null;
+          await navigator.clipboard.readText();
 
 
         if (texto) {
 
-          try {
+          input.value =
+            texto.trim();
 
-            resultado =
-              JSON.parse(
-                texto
-              );
-
-          } catch (erroJson) {
-
-            console.error(
-              "❌ Resposta não é JSON:",
-              texto
-            );
-
-          }
-
-        }
-
-
-        /* --------------------------------------------------
-           HTTP ERROR
-           -------------------------------------------------- */
-
-        if (!resposta.ok) {
-
-          const mensagemErro =
-            obterMensagemErro(
-              resposta.status,
-              resultado,
-              texto
-            );
-
-          throw new Error(
-            mensagemErro
+          input.dispatchEvent(
+            new Event("input")
           );
 
-        }
-
-
-        /* --------------------------------------------------
-           RESPOSTA SEM JSON
-           -------------------------------------------------- */
-
-        if (
-          !resultado ||
-          typeof resultado !== "object"
-        ) {
-
-          throw new Error(
-            "O servidor respondeu HTTP " +
-            resposta.status +
-            ", mas não retornou JSON válido."
-          );
-
-        }
-
-
-        /* --------------------------------------------------
-           API RETORNOU OK FALSE
-           -------------------------------------------------- */
-
-        if (
-          resultado.ok !== true
-        ) {
-
-          throw new Error(
-            resultado.erro ||
-            resultado.mensagem ||
-            "O servidor recusou a configuração."
-          );
-
-        }
-
-
-        /* ==================================================
-           SUCESSO
-           ================================================== */
-
-        mostrarMensagem(
-          "🚀 <b>Postagens iniciadas!</b><br><br>" +
-          "📦 Quantidade: <b>" +
-          quantidade +
-          "</b><br>" +
-          "⏱️ Intervalo: <b>" +
-          intervalo +
-          " segundos</b><br><br>" +
-          "🦊 O sistema está processando sua vitrine.",
-          "sucesso"
-        );
-
-
-        try {
 
           if (
+            tg &&
             tg.HapticFeedback
           ) {
 
@@ -1712,183 +786,614 @@
 
           }
 
-        } catch (erro) {
-
-          console.warn(
-            "HapticFeedback:",
-            erro
-          );
+          return;
 
         }
-
-
-        if (
-          tg.showAlert
-        ) {
-
-          tg.showAlert(
-            "✅ Postagens iniciadas com sucesso!"
-          );
-
-        }
-
-
-        btn.innerHTML =
-          '<i class="fa-solid fa-check"></i> POSTAGENS INICIADAS';
-
-
-        /* --------------------------------------------------
-           FECHAR MINI APP
-           -------------------------------------------------- */
-
-        setTimeout(
-          function() {
-
-            try {
-
-              if (
-                tg &&
-                tg.close
-              ) {
-
-                tg.close();
-
-              }
-
-            } catch (erro) {
-
-              console.warn(
-                "Não foi possível fechar:",
-                erro
-              );
-
-            }
-
-          },
-          1800
-        );
-
-
-      } catch (erro) {
-
-        console.error(
-          "❌ ERRO AO ENVIAR:",
-          erro
-        );
-
-
-        const mensagemErro =
-          erro &&
-          erro.message
-            ? erro.message
-            : "Erro ao enviar configuração.";
-
-
-        mostrarMensagem(
-          "❌ <b>Erro:</b><br>" +
-          mensagemErro,
-          "erro"
-        );
-
-
-        try {
-
-          if (
-            tg &&
-            tg.HapticFeedback
-          ) {
-
-            tg.HapticFeedback
-              .notificationOccurred(
-                "error"
-              );
-
-          }
-
-        } catch (erroHaptic) {
-
-          console.warn(
-            "HapticFeedback:",
-            erroHaptic
-          );
-
-        }
-
-
-        if (
-          tg &&
-          tg.showAlert
-        ) {
-
-          tg.showAlert(
-            "❌ " +
-            mensagemErro
-          );
-
-        }
-
-
-        btn.disabled =
-          false;
-
-        btn.innerHTML =
-          '<i class="fa-solid fa-rocket"></i> INICIAR POSTAGENS AUTO';
 
       }
+
+    } catch (erro) {
+
+      console.warn(
+        "Clipboard bloqueado:",
+        erro
+      );
 
     }
 
 
-    /* ======================================================
-       ENTER NO CAMPO
-       ====================================================== */
+    input.focus();
+
+
+    if (
+      tg &&
+      tg.showAlert
+    ) {
+
+      tg.showAlert(
+        "Toque e segure no campo para colar o link."
+      );
+
+    }
+
+  }
+
+
+  /* =========================================================
+     TEMPO
+     ========================================================= */
+
+  function setTempo(segundos, elemento) {
+
+    document.getElementById(
+      "intervalo"
+    ).value = segundos;
+
 
     document
-      .getElementById("linkVitrine")
-      .addEventListener(
-        "keydown",
-        function(event) {
+      .querySelectorAll(".time-btn")
+      .forEach(
+        function(btn) {
 
-          if (
-            event.key === "Enter"
-          ) {
-
-            event.preventDefault();
-
-            enviarConfiguracao();
-
-          }
+          btn.classList.remove(
+            "active"
+          );
 
         }
       );
 
 
-    /* ======================================================
-       LOG DE INICIALIZAÇÃO
-       ====================================================== */
-
-    console.log(
-      "🦊 Raposa Caçadora Mini App carregado."
+    elemento.classList.add(
+      "active"
     );
 
+  }
+
+
+  document
+    .getElementById("intervalo")
+    .addEventListener(
+      "change",
+      function() {
+
+        const valor =
+          parseInt(this.value);
+
+
+        document
+          .querySelectorAll(".time-btn")
+          .forEach(
+            function(btn) {
+
+              btn.classList.remove(
+                "active"
+              );
+
+            }
+          );
+
+
+        const botoes =
+          document.querySelectorAll(
+            ".time-btn"
+          );
+
+
+        if (valor === 10) {
+
+          botoes[0]
+            .classList
+            .add("active");
+
+        }
+
+        else if (valor === 60) {
+
+          botoes[1]
+            .classList
+            .add("active");
+
+        }
+
+        else if (valor === 300) {
+
+          botoes[2]
+            .classList
+            .add("active");
+
+        }
+
+      }
+    );
+
+
+  /* =========================================================
+     VALIDAR LINK
+     ========================================================= */
+
+  function validarLink(link) {
+
+    if (!link) {
+      return false;
+    }
+
+    try {
+
+      const url =
+        new URL(link);
+
+      return (
+        url.protocol === "http:" ||
+        url.protocol === "https:"
+      );
+
+    } catch (erro) {
+
+      return false;
+
+    }
+
+  }
+
+
+  /* =========================================================
+     ENVIAR CONFIGURAÇÃO
+     ========================================================= */
+
+  async function enviarConfiguracao() {
+
+    const btn =
+      document.getElementById(
+        "btnSubmit"
+      );
+
+
+    const inputLink =
+      document.getElementById(
+        "linkVitrine"
+      );
+
+
+    const link =
+      inputLink.value.trim();
+
+
+    const intervalo =
+      parseInt(
+        document
+          .getElementById(
+            "intervalo"
+          )
+          .value
+      );
+
+
+    const quantidade =
+      parseInt(
+        document
+          .getElementById(
+            "quantidade"
+          )
+          .value
+      );
+
+
+    /* -------------------------------------------------------
+       LINK
+       ------------------------------------------------------- */
+
+    if (!link) {
+
+      mostrarMensagem(
+        "⚠️ Cole o link da vitrine ou do produto antes de iniciar.",
+        "erro"
+      );
+
+      return;
+
+    }
+
+
+    if (!validarLink(link)) {
+
+      mostrarMensagem(
+        "⚠️ Informe um link válido começando com http:// ou https://.",
+        "erro"
+      );
+
+      return;
+
+    }
+
+
+    /* -------------------------------------------------------
+       QUANTIDADE
+       ------------------------------------------------------- */
+
+    if (
+      !Number.isInteger(quantidade) ||
+      quantidade < 1 ||
+      quantidade > 50
+    ) {
+
+      mostrarMensagem(
+        "⚠️ A quantidade deve estar entre 1 e 50.",
+        "erro"
+      );
+
+      return;
+
+    }
+
+
+    /* -------------------------------------------------------
+       TELEGRAM
+       ------------------------------------------------------- */
+
+    if (!tg) {
+
+      mostrarMensagem(
+        "❌ Este painel precisa ser aberto dentro do Telegram.",
+        "erro"
+      );
+
+      return;
+
+    }
+
+
+    const initData =
+      tg.initData || "";
+
+
+    if (!initData) {
+
+      mostrarMensagem(
+        "❌ Não foi possível obter a autenticação do Telegram.",
+        "erro"
+      );
+
+      if (tg.showAlert) {
+
+        tg.showAlert(
+          "Abra o painel pelo Telegram para continuar."
+        );
+
+      }
+
+      return;
+
+    }
+
+
+    /* -------------------------------------------------------
+       LOADING
+       ------------------------------------------------------- */
+
+    btn.disabled = true;
+
+    btn.innerHTML =
+      '<i class="fa-solid fa-spinner fa-spin"></i> ENVIANDO...';
+
+
+    mostrarMensagem(
+      "⏳ Enviando configuração para o servidor...",
+      "info"
+    );
+
+
+    /* -------------------------------------------------------
+       PAYLOAD
+       ------------------------------------------------------- */
+
+    const payload = {
+
+      link: link,
+
+      intervalo: intervalo,
+
+      quantidade: quantidade,
+
+      initData: initData
+
+    };
+
+
     console.log(
-      "📡 Endpoint:",
+      "📤 Enviando para:",
+      window.location.origin +
       "/api/configurar"
     );
 
     console.log(
-      "📡 Método:",
-      "POST"
+      "📦 Payload:",
+      {
+        link: link,
+        intervalo: intervalo,
+        quantidade: quantidade,
+        initData: initData
+          ? "RECEBIDO"
+          : "VAZIO"
+      }
     );
 
-    console.log(
-      "📱 Telegram:",
-      tg
-        ? "detectado"
-        : "não detectado"
-    );
 
-  </script>
+    try {
+
+      /* =====================================================
+         IMPORTANTE:
+
+         A requisição é feita para o MESMO servidor
+         que está servindo este index.html.
+
+         Portanto:
+
+         /app
+         /api/configurar
+
+         pertencem ao mesmo domínio.
+         ===================================================== */
+
+      const endpoint =
+        window.location.origin +
+        "/api/configurar";
+
+
+      const resposta =
+        await fetch(
+          endpoint,
+          {
+
+            method: "POST",
+
+            headers: {
+
+              "Content-Type":
+                "application/json",
+
+              "Accept":
+                "application/json"
+
+            },
+
+            body:
+              JSON.stringify(
+                payload
+              )
+
+          }
+        );
+
+
+      /* -----------------------------------------------------
+         LER TEXTO PRIMEIRO
+         ----------------------------------------------------- */
+
+      const texto =
+        await resposta.text();
+
+
+      console.log(
+        "📥 HTTP:",
+        resposta.status
+      );
+
+      console.log(
+        "📥 Resposta:",
+        texto
+      );
+
+
+      /* -----------------------------------------------------
+         RESPOSTA VAZIA
+         ----------------------------------------------------- */
+
+      if (!texto) {
+
+        throw new Error(
+          "O servidor retornou uma resposta vazia. HTTP " +
+          resposta.status
+        );
+
+      }
+
+
+      /* -----------------------------------------------------
+         JSON
+         ----------------------------------------------------- */
+
+      let resultado;
+
+      try {
+
+        resultado =
+          JSON.parse(texto);
+
+      } catch (erroJson) {
+
+        console.error(
+          "Resposta não JSON:",
+          texto
+        );
+
+        throw new Error(
+          "O servidor retornou uma resposta inválida. HTTP " +
+          resposta.status
+        );
+
+      }
+
+
+      /* -----------------------------------------------------
+         ERRO HTTP
+         ----------------------------------------------------- */
+
+      if (!resposta.ok) {
+
+        throw new Error(
+          resultado.erro ||
+          resultado.detalhe ||
+          (
+            "Erro HTTP " +
+            resposta.status
+          )
+        );
+
+      }
+
+
+      /* -----------------------------------------------------
+         ERRO DA API
+         ----------------------------------------------------- */
+
+      if (
+        resultado.ok !== true
+      ) {
+
+        throw new Error(
+          resultado.erro ||
+          resultado.detalhe ||
+          "Não foi possível iniciar as postagens."
+        );
+
+      }
+
+
+      /* -----------------------------------------------------
+         SUCESSO
+         ----------------------------------------------------- */
+
+      mostrarMensagem(
+        "🚀 <b>Postagens iniciadas!</b><br><br>" +
+        "O servidor recebeu sua vitrine e começou o processamento.",
+        "sucesso"
+      );
+
+
+      if (
+        tg.HapticFeedback
+      ) {
+
+        tg.HapticFeedback
+          .notificationOccurred(
+            "success"
+          );
+
+      }
+
+
+      if (tg.showAlert) {
+
+        tg.showAlert(
+          "✅ Postagens iniciadas com sucesso!"
+        );
+
+      }
+
+
+      btn.innerHTML =
+        '<i class="fa-solid fa-check"></i> POSTAGENS INICIADAS';
+
+
+      /* -----------------------------------------------------
+         FECHAR MINI APP
+         ----------------------------------------------------- */
+
+      setTimeout(
+        function() {
+
+          if (
+            tg &&
+            tg.close
+          ) {
+
+            tg.close();
+
+          }
+
+        },
+        1800
+      );
+
+
+    } catch (erro) {
+
+      console.error(
+        "❌ ERRO COMPLETO:",
+        erro
+      );
+
+
+      const mensagemErro =
+        erro &&
+        erro.message
+          ? erro.message
+          : "Erro ao enviar configuração.";
+
+
+      mostrarMensagem(
+        "❌ <b>Erro:</b><br>" +
+        escapeHtml(mensagemErro),
+        "erro"
+      );
+
+
+      if (
+        tg &&
+        tg.HapticFeedback
+      ) {
+
+        tg.HapticFeedback
+          .notificationOccurred(
+            "error"
+          );
+
+      }
+
+
+      if (
+        tg &&
+        tg.showAlert
+      ) {
+
+        tg.showAlert(
+          "❌ " +
+          mensagemErro
+        );
+
+      }
+
+
+      btn.disabled =
+        false;
+
+      btn.innerHTML =
+        '<i class="fa-solid fa-rocket"></i> INICIAR POSTAGENS AUTO';
+
+    }
+
+  }
+
+
+  /* =========================================================
+     ESCAPAR HTML
+     ========================================================= */
+
+  function escapeHtml(texto) {
+
+    const div =
+      document.createElement(
+        "div"
+      );
+
+    div.textContent =
+      texto;
+
+    return div.innerHTML;
+
+  }
+
+</script>
 
 </body>
 

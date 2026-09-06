@@ -25,8 +25,8 @@ def iniciar_servidor_web():
 # ==========================================
 # CONFIGURAÇÕES DO BOT VIA NUVEM
 # ==========================================
-TELEGRAM_TOKEN = os.getenv("8986739105:AAHNelnHiR6iOmNp-9x6Bf3P9ciKoou7jy0")
-CHAT_ID = "@raposacacadora"  # ID ou username do seu canal
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+CHAT_ID = "@raposacacadora"
 ARQUIVO_HISTORICO = "produtos_postados.txt"
 
 # ------------------------------------------
@@ -188,77 +188,8 @@ def escutar_mini_app():
 
 
 if __name__ == "__main__":
-    # Inicia o servidor Web em uma Thread separada
     t = threading.Thread(target=iniciar_servidor_web)
     t.daemon = True
     t.start()
 
-    # Inicia o bot do Telegram
-    escutar_mini_app()            if not foto_url:
-                continue
-
-            legenda = (
-                f"🔥 <b>{titulo}</b>\n\n"
-                f"⚡ <i>Aproveite esta promoção por tempo limitado!</i>\n\n"
-                f"👉 <b>Clique abaixo para ver a oferta:</b>"
-            )
-
-            if enviar_oferta(foto_url, legenda, link):
-                salvar_historico(link)
-                postados_nesta_rodada += 1
-                print(
-                    f"✅ [POSTADO {postados_nesta_rodada}/{quantidade_maxima}] {titulo[:30]}..."
-                )
-
-                if postados_nesta_rodada < quantidade_maxima:
-                    print(f"⏳ Aguardando {intervalo_seg}s para o próximo...")
-                    time.sleep(intervalo_seg)
-
-        except Exception as err:
-            print(f"⚠️ Falha ao processar produto: {err}")
-
-    print(
-        f"\n🎯 Concluído! Total de {postados_nesta_rodada} ofertas enviadas para o canal."
-    )
-
-
-# ------------------------------------------
-# ESCUTADOR DE COMANDOS DO TELEGRAM
-# ------------------------------------------
-
-
-def escutar_mini_app():
-    print("🚀 Bot Raposa Caçadora Iniciado e Aguardando Ordens do Mini App...")
-    offset = 0
-
-    while True:
-        try:
-            url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/getUpdates?offset={offset}&timeout=30"
-            res = requests.get(url, timeout=35).json()
-
-            if "result" in res:
-                for update in res["result"]:
-                    offset = update["update_id"] + 1
-
-                    if "message" in update and "web_app_data" in update["message"]:
-                        dados_raw = update["message"]["web_app_data"]["data"]
-                        config = json.loads(dados_raw)
-
-                        link = config.get("link")
-                        intervalo = config.get("intervalo", 300)
-                        quantidade = config.get("quantidade", 5)
-
-                        print("\n📩 ORDEM RECEBIDA DO MINI APP!")
-                        print(f"🔗 Link: {link}")
-                        print(f"⏱️ Intervalo: {intervalo} segundos")
-                        print(f"📦 Quantidade: {quantidade} itens")
-
-                        processar_e_postar_vitrine(link, quantidade, intervalo)
-
-        except Exception as e:
-            print(f"⚠️ Conexão oscilou, reconectando... ({e})")
-            time.sleep(5)
-
-
-if __name__ == "__main__":
     escutar_mini_app()

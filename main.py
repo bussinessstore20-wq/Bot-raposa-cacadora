@@ -5,7 +5,7 @@ import html
 import threading
 import hashlib
 import hmac
-from urllib.parse import parse_qsl, urljoin, urlparse
+from urllib.parse import parse_qsl, urljoin, urlparse, unquote
 
 import requests
 from bs4 import BeautifulSoup
@@ -13,25 +13,17 @@ from flask import Flask, request, jsonify, send_from_directory
 
 
 # ============================================================
-# CAMINHOS
+# CONFIGURAÇÃO GERAL
 # ============================================================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-INDEX_FILE = os.path.join(
-    BASE_DIR,
-    "index.html"
-)
+INDEX_FILE = os.path.join(BASE_DIR, "index.html")
 
 ARQUIVO_HISTORICO = os.path.join(
     BASE_DIR,
     "produtos_postados.txt"
 )
-
-
-# ============================================================
-# CONFIGURAÇÕES
-# ============================================================
 
 TELEGRAM_TOKEN = os.getenv(
     "TELEGRAM_TOKEN",
@@ -58,43 +50,58 @@ PORT = int(
 MAX_QUANTIDADE = 50
 MIN_INTERVALO = 10
 
-REQUEST_TIMEOUT = 30
+TIMEOUT_HTTP = 30
 
 
 # ============================================================
 # FLASK
 # ============================================================
 
-app = Flask(
-    __name__,
-    static_folder=BASE_DIR
-)
+app = Flask(__name__)
+
+
+# ============================================================
+# SESSÃO HTTP
+# ============================================================
+
+session = requests.Session()
+
+session.headers.update({
+    "User-Agent": (
+        "Mozilla/5.0 "
+        "(Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 "
+        "(KHTML, like Gecko) "
+        "Chrome/152.0.0.0 "
+        "Safari/537.36"
+    ),
+    "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Accept": (
+        "text/html,application/xhtml+xml,"
+        "application/xml;q=0.9,"
+        "image/avif,image/webp,*/*;q=0.8"
+    ),
+    "Connection": "keep-alive"
+})
 
 
 # ============================================================
 # HOME
 # ============================================================
 
-@app.route("/")
+@app.route("/", methods=["GET"])
 def home():
 
     return """
     <!DOCTYPE html>
     <html lang="pt-BR">
-
     <head>
-
         <meta charset="UTF-8">
-
-        <meta
-            name="viewport"
-            content="width=device-width, initial-scale=1.0"
-        >
-
+        <meta name="viewport"
+              content="width=device-width, initial-scale=1.0">
         <title>Raposa Caçadora</title>
 
         <style>
-
             body {
                 margin: 0;
                 min-height: 100vh;
@@ -108,14 +115,12 @@ def home():
 
             .box {
                 width: 90%;
-                max-width: 520px;
+                max-width: 500px;
                 padding: 30px;
                 text-align: center;
                 background: #111827;
                 border-radius: 18px;
-                box-shadow:
-                    0 10px 40px
-                    rgba(0,0,0,.5);
+                box-shadow: 0 10px 40px rgba(0,0,0,.5);
             }
 
             h1 {
@@ -129,9 +134,7 @@ def home():
             a {
                 color: #fb923c;
             }
-
         </style>
-
     </head>
 
     <body>
@@ -144,29 +147,17 @@ def home():
 
             <p>
                 Mini App:
-                <a href="/app">
-                    abrir painel
-                </a>
+                <a href="/app">abrir painel</a>
             </p>
 
             <p>
                 Health:
-                <a href="/health">
-                    verificar servidor
-                </a>
-            </p>
-
-            <p>
-                API:
-                <a href="/api/configurar">
-                    /api/configurar
-                </a>
+                <a href="/health">verificar servidor</a>
             </p>
 
         </div>
 
     </body>
-
     </html>
     """
 
@@ -175,72 +166,44 @@ def home():
 # MINI APP
 # ============================================================
 
-@app.route("/app")
+@app.route("/app", methods=["GET"])
 def mini_app():
 
     print(
         f"📂 Procurando index.html em: {INDEX_FILE}"
     )
 
-    if not os.path.isfile(
-        INDEX_FILE
-    ):
+    if not os.path.isfile(INDEX_FILE):
 
-        print(
-            "❌ index.html NÃO encontrado."
-        )
-
-        try:
-
-            print(
-                "📄 Arquivos encontrados:"
-            )
-
-            for arquivo in os.listdir(
-                BASE_DIR
-            ):
-
-                print(
-                    f"   - {arquivo}"
-                )
-
-        except Exception as e:
-
-            print(
-                f"⚠️ Erro listando arquivos: {e}"
-            )
+        print("❌ index.html não encontrado.")
 
         return """
         <!DOCTYPE html>
-
         <html lang="pt-BR">
-
         <head>
-
             <meta charset="UTF-8">
-
             <title>Erro</title>
-
         </head>
 
-        <body>
+        <body style="
+            background:#05070a;
+            color:white;
+            font-family:Arial;
+            padding:30px;
+        ">
 
             <h2>❌ Mini App não encontrado</h2>
 
             <p>
-                O arquivo
-                <b>index.html</b>
-                não está junto do main.py.
+                O arquivo index.html não está
+                junto do main.py.
             </p>
 
         </body>
-
         </html>
         """, 404
 
-    print(
-        "✅ index.html encontrado."
-    )
+    print("✅ index.html encontrado.")
 
     return send_from_directory(
         BASE_DIR,
@@ -252,65 +215,24 @@ def mini_app():
 # HEALTH
 # ============================================================
 
-@app.route("/health")
+@app.route("/health", methods=["GET"])
 def health():
 
     return jsonify({
-
         "ok": True,
-
-        "servico":
-            "Raposa Caçadora",
-
-        "status":
-            "online",
-
-        "telegram_configurado":
-            bool(TELEGRAM_TOKEN),
-
-        "chat_configurado":
-            bool(CHAT_ID),
-
-        "mini_app":
-            os.path.isfile(INDEX_FILE),
-
+        "servico": "Raposa Caçadora",
+        "status": "online",
+        "mini_app": os.path.isfile(INDEX_FILE),
+        "telegram_configurado": bool(TELEGRAM_TOKEN),
+        "chat_configurado": bool(CHAT_ID),
         "rotas": [
-
             "/",
             "/app",
             "/health",
             "/api/configurar",
             "/configurar"
-
         ]
-
     })
-
-
-# ============================================================
-# TESTE GET /api/configurar
-# ============================================================
-
-@app.route(
-    "/api/configurar",
-    methods=["GET"]
-)
-def configurar_get():
-
-    return jsonify({
-
-        "ok": False,
-
-        "erro":
-            "A rota /api/configurar não aceita o método GET.",
-
-        "metodo_correto":
-            "POST",
-
-        "rota":
-            "/api/configurar"
-
-    }), 405
 
 
 # ============================================================
@@ -320,19 +242,11 @@ def configurar_get():
 def verificar_configuracao():
 
     if not TELEGRAM_TOKEN:
-
-        print(
-            "❌ TELEGRAM_TOKEN não configurado."
-        )
-
+        print("❌ TELEGRAM_TOKEN não configurado.")
         return False
 
     if not CHAT_ID:
-
-        print(
-            "❌ CHAT_ID não configurado."
-        )
-
+        print("❌ CHAT_ID não configurado.")
         return False
 
     return True
@@ -342,9 +256,7 @@ def verificar_configuracao():
 # VALIDAR INIT DATA TELEGRAM
 # ============================================================
 
-def validar_init_data(
-    init_data
-):
+def validar_init_data(init_data):
 
     if not init_data:
         return False
@@ -372,33 +284,19 @@ def validar_init_data(
         data_check_string = "\n".join(
             f"{chave}={valor}"
             for chave, valor
-            in sorted(
-                dados.items()
-            )
+            in sorted(dados.items())
         )
 
         secret_key = hmac.new(
-
             b"WebAppData",
-
-            TELEGRAM_TOKEN.encode(
-                "utf-8"
-            ),
-
+            TELEGRAM_TOKEN.encode("utf-8"),
             hashlib.sha256
-
         ).digest()
 
         calculado = hmac.new(
-
             secret_key,
-
-            data_check_string.encode(
-                "utf-8"
-            ),
-
+            data_check_string.encode("utf-8"),
             hashlib.sha256
-
         ).hexdigest()
 
         return hmac.compare_digest(
@@ -424,10 +322,7 @@ historico_lock = threading.Lock()
 
 def carregar_historico():
 
-    if not os.path.exists(
-        ARQUIVO_HISTORICO
-    ):
-
+    if not os.path.exists(ARQUIVO_HISTORICO):
         return set()
 
     try:
@@ -447,15 +342,13 @@ def carregar_historico():
     except Exception as e:
 
         print(
-            f"⚠️ Erro carregando histórico: {e}"
+            f"⚠️ Erro lendo histórico: {e}"
         )
 
         return set()
 
 
-def salvar_historico(
-    link
-):
+def salvar_historico(link):
 
     try:
 
@@ -504,13 +397,9 @@ def telegram_api(
     try:
 
         resposta = requests.post(
-
             url,
-
             data=dados or {},
-
-            timeout=20
-
+            timeout=TIMEOUT_HTTP
         )
 
         print(
@@ -525,7 +414,11 @@ def telegram_api(
         except Exception:
 
             print(
-                "❌ Telegram retornou resposta não-JSON."
+                "❌ Telegram não retornou JSON."
+            )
+
+            print(
+                resposta.text[:1000]
             )
 
             return None
@@ -565,25 +458,16 @@ def telegram_api(
 # ENVIAR MENSAGEM
 # ============================================================
 
-def enviar_mensagem(
-    texto
-):
+def enviar_mensagem(texto):
 
     resultado = telegram_api(
-
         "sendMessage",
-
         {
-            "chat_id":
-                CHAT_ID,
-
-            "text":
-                texto,
-
-            "parse_mode":
-                "HTML"
+            "chat_id": CHAT_ID,
+            "text": texto,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": False
         }
-
     )
 
     sucesso = bool(
@@ -592,7 +476,7 @@ def enviar_mensagem(
     )
 
     print(
-        f"📨 Aviso enviado: {sucesso}"
+        f"📨 Mensagem Telegram enviada: {sucesso}"
     )
 
     return sucesso
@@ -608,62 +492,26 @@ def enviar_oferta(
     link_afiliado
 ):
 
-    if not foto_url:
-
-        print(
-            "❌ Oferta sem foto."
-        )
-
-        return False
-
-    if not link_afiliado:
-
-        print(
-            "❌ Oferta sem link."
-        )
-
-        return False
-
     teclado = {
-
         "inline_keyboard": [
-
             [
-
                 {
-                    "text":
-                        "🛒 COMPRAR NO MERCADO LIVRE",
-
-                    "url":
-                        link_afiliado
+                    "text": "🛒 COMPRAR NO MERCADO LIVRE",
+                    "url": link_afiliado
                 }
-
             ]
-
         ]
-
     }
 
     dados = {
-
-        "chat_id":
-            CHAT_ID,
-
-        "photo":
-            foto_url,
-
-        "caption":
-            legenda,
-
-        "parse_mode":
-            "HTML",
-
-        "reply_markup":
-            json.dumps(
-                teclado,
-                ensure_ascii=False
-            )
-
+        "chat_id": CHAT_ID,
+        "photo": foto_url,
+        "caption": legenda,
+        "parse_mode": "HTML",
+        "reply_markup": json.dumps(
+            teclado,
+            ensure_ascii=False
+        )
     }
 
     resultado = telegram_api(
@@ -676,97 +524,66 @@ def enviar_oferta(
         and resultado.get("ok")
     )
 
-    if sucesso:
-
-        print(
-            "✅ Oferta enviada ao Telegram."
-        )
-
-    else:
-
-        print(
-            "❌ Falha enviando oferta."
-        )
+    print(
+        f"📸 Oferta enviada: {sucesso}"
+    )
 
     return sucesso
 
 
 # ============================================================
-# HEADERS
+# NORMALIZAR URL
 # ============================================================
 
-def obter_headers():
-
-    return {
-
-        "User-Agent":
-            (
-                "Mozilla/5.0 "
-                "(Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 "
-                "(KHTML, like Gecko) "
-                "Chrome/120.0.0.0 "
-                "Safari/537.36"
-            ),
-
-        "Accept-Language":
-            "pt-BR,pt;q=0.9,en;q=0.8",
-
-        "Accept":
-            (
-                "text/html,"
-                "application/xhtml+xml,"
-                "application/xml;q=0.9,"
-                "image/avif,image/webp,"
-                "*/*;q=0.8"
-            ),
-
-        "Cache-Control":
-            "no-cache",
-
-        "Pragma":
-            "no-cache"
-
-    }
-
-
-# ============================================================
-# VALIDAR URL
-# ============================================================
-
-def url_http_valida(
-    url
-):
+def normalizar_url(url):
 
     if not url:
-        return False
+        return None
 
     try:
 
-        url = str(
-            url
-        ).strip()
+        url = str(url).strip()
 
-        parsed = urlparse(
-            url
+        url = url.replace(
+            "\n",
+            ""
+        ).replace(
+            "\r",
+            ""
         )
 
-        if parsed.scheme not in (
+        url = url.strip(
+            "\"'<> "
+        )
+
+        if not url:
+            return None
+
+        if not url.startswith(
+            ("http://", "https://")
+        ):
+            url = "https://" + url
+
+        partes = urlparse(url)
+
+        if partes.scheme not in (
             "http",
             "https"
         ):
+            return None
 
-            return False
+        if not partes.netloc:
+            return None
 
-        if not parsed.netloc:
+        return url
 
-            return False
+    except Exception as e:
 
-        return True
+        print(
+            f"⚠️ URL inválida: {e}"
+        )
 
-    except Exception:
-
-        return False
+        return None
 
 
 # ============================================================
@@ -775,78 +592,50 @@ def url_http_valida(
 
 def expandir_link(
     url,
-    headers
+    headers=None
 ):
+
+    url = normalizar_url(url)
+
+    if not url:
+        return None
 
     print(
         f"🔗 Expandindo: {url}"
     )
 
-    if not url_http_valida(
-        url
-    ):
-
-        print(
-            f"❌ URL inicial inválida: {url}"
-        )
-
-        return None
-
     try:
 
-        resposta = requests.get(
-
+        resposta = session.get(
             url,
-
-            headers=headers,
-
+            headers=headers or {},
             allow_redirects=True,
-
-            timeout=REQUEST_TIMEOUT
-
+            timeout=TIMEOUT_HTTP
         )
 
         print(
-            f"📡 Status expansão: "
+            f"📡 HTTP expansão: "
             f"{resposta.status_code}"
         )
 
         print(
-            f"📍 URL final recebida: "
+            f"🔗 URL final recebida: "
             f"{resposta.url}"
         )
 
-        print(
-            f"📄 Content-Type: "
-            f"{resposta.headers.get('Content-Type', '')}"
+        url_final = normalizar_url(
+            resposta.url
         )
 
-        resposta.raise_for_status()
-
-        url_final = str(
-            resposta.url or ""
-        ).strip()
-
-        if not url_http_valida(
-            url_final
-        ):
-
-            print(
-                f"❌ URL final inválida: {url_final}"
-            )
-
+        if not url_final:
             return None
-
-        print(
-            f"✅ URL final válida: {url_final}"
-        )
 
         return url_final
 
     except requests.RequestException as e:
 
         print(
-            f"❌ Erro HTTP ao expandir URL: {e}"
+            f"❌ Erro HTTP expandindo URL: {e}"
         )
 
         return None
@@ -854,136 +643,33 @@ def expandir_link(
     except Exception as e:
 
         print(
-            f"❌ Erro inesperado ao expandir URL: {e}"
+            f"❌ Erro expandindo URL: {e}"
         )
 
         return None
 
 
 # ============================================================
-# NORMALIZAR URL
+# IDENTIFICAR PRODUTO
 # ============================================================
 
-def normalizar_url(
-    base_url,
-    encontrada
-):
-
-    if not encontrada:
-
-        return None
-
-    encontrada = str(
-        encontrada
-    ).strip()
-
-    if not encontrada:
-
-        return None
-
-    if encontrada.startswith(
-        (
-            "javascript:",
-            "mailto:",
-            "tel:",
-            "#"
-        )
-    ):
-
-        return None
-
-    try:
-
-        # URL absoluta
-        if encontrada.startswith(
-            (
-                "http://",
-                "https://"
-            )
-        ):
-
-            resultado = encontrada
-
-        else:
-
-            # Base obrigatoriamente válida
-            if not url_http_valida(
-                base_url
-            ):
-
-                print(
-                    f"⚠️ Base inválida para urljoin: "
-                    f"{base_url}"
-                )
-
-                return None
-
-            resultado = urljoin(
-                base_url,
-                encontrada
-            )
-
-        if not url_http_valida(
-            resultado
-        ):
-
-            return None
-
-        resultado = resultado.split(
-            "#",
-            1
-        )[0]
-
-        return resultado
-
-    except ValueError as e:
-
-        print(
-            f"⚠️ URL ignorada por erro de parsing: "
-            f"{encontrada[:200]} | {e}"
-        )
-
-        return None
-
-    except Exception as e:
-
-        print(
-            f"⚠️ Erro normalizando URL: "
-            f"{encontrada[:200]} | {e}"
-        )
-
-        return None
-
-
-# ============================================================
-# IDENTIFICAR LINK DE PRODUTO
-# ============================================================
-
-def parece_produto(
-    url
-):
+def parece_produto_mercadolivre(url):
 
     if not url:
         return False
 
-    texto = url.lower()
+    texto = unquote(
+        url
+    ).lower()
 
     padroes = [
-
         "produto.mercadolivre.com.br",
-
-        "produto.mercadolibre.com.br",
-
-        "/p/mlb",
-
-        "mlb-",
-
-        "/mlb-",
-
+        "mercadolivre.com.br/p/",
         "mercadolivre.com.br/mlb-",
-
-        "mercadolibre.com/mlb-"
-
+        "mercadolivre.com.br/mla-",
+        "/p/mlb",
+        "/p/mla",
+        "mlb-"
     ]
 
     return any(
@@ -993,118 +679,170 @@ def parece_produto(
 
 
 # ============================================================
-# DESCOBRIR LINKS DE PRODUTOS
+# LIMPAR LINK
+# ============================================================
+
+def limpar_link_produto(
+    href,
+    base_url
+):
+
+    if not href:
+        return None
+
+    try:
+
+        href = html.unescape(
+            href.strip()
+        )
+
+        href = href.strip(
+            "\"'<> "
+        )
+
+        if not href:
+            return None
+
+        # Alguns links possuem escapes
+        href = href.replace(
+            "\\/",
+            "/"
+        )
+
+        # Link absoluto
+        if href.startswith(
+            "http://"
+        ) or href.startswith(
+            "https://"
+        ):
+
+            resultado = href
+
+        else:
+
+            # Só fazemos urljoin com uma base
+            # comprovadamente válida.
+            base_normalizada = normalizar_url(
+                base_url
+            )
+
+            if not base_normalizada:
+                return None
+
+            resultado = urljoin(
+                base_normalizada,
+                href
+            )
+
+        resultado = normalizar_url(
+            resultado
+        )
+
+        if not resultado:
+            return None
+
+        resultado = resultado.split(
+            "#"
+        )[0]
+
+        return resultado
+
+    except Exception as e:
+
+        print(
+            f"⚠️ Erro normalizando link: "
+            f"{href[:200]} | {e}"
+        )
+
+        return None
+
+
+# ============================================================
+# DESCOBRIR LINKS DOS PRODUTOS
 # ============================================================
 
 def encontrar_links_produtos(
     url_vitrine,
-    headers
+    headers=None
 ):
 
-    print(
-        f"🔎 Acessando vitrine: "
-        f"{url_vitrine}"
+    url_vitrine = normalizar_url(
+        url_vitrine
     )
 
-    if not url_http_valida(
-        url_vitrine
-    ):
-
-        print(
-            f"❌ URL da vitrine inválida: "
-            f"{url_vitrine}"
-        )
-
+    if not url_vitrine:
         return []
+
+    print(
+        ""
+    )
+
+    print(
+        "=" * 60
+    )
+
+    print(
+        "🔎 PROCURANDO PRODUTOS"
+    )
+
+    print(
+        "=" * 60
+    )
+
+    print(
+        f"🌐 URL: {url_vitrine}"
+    )
 
     try:
 
-        resposta = requests.get(
-
+        resposta = session.get(
             url_vitrine,
-
-            headers=headers,
-
-            timeout=REQUEST_TIMEOUT,
-
-            allow_redirects=True
-
+            headers=headers or {},
+            allow_redirects=True,
+            timeout=TIMEOUT_HTTP
         )
 
         print(
-            f"📡 Status vitrine: "
+            f"📡 HTTP vitrine: "
             f"{resposta.status_code}"
         )
 
         print(
-            f"📍 URL realmente acessada: "
+            f"🔗 URL efetiva: "
             f"{resposta.url}"
-        )
-
-        print(
-            f"📄 Content-Type: "
-            f"{resposta.headers.get('Content-Type', '')}"
         )
 
         resposta.raise_for_status()
 
-    except requests.RequestException as e:
-
-        print(
-            f"❌ Erro ao acessar vitrine: {e}"
-        )
-
-        return []
-
     except Exception as e:
 
         print(
-            f"❌ Erro inesperado acessando vitrine: {e}"
+            f"❌ Erro acessando vitrine: {e}"
         )
 
         return []
 
-    # --------------------------------------------------------
-    # BASE SEGURA
-    # --------------------------------------------------------
+    base_url = normalizar_url(
+        resposta.url
+    )
 
-    base_url = str(
-        resposta.url or url_vitrine
-    ).strip()
-
-    if not url_http_valida(
-        base_url
-    ):
+    if not base_url:
 
         print(
-            f"❌ Base URL inválida: {base_url}"
+            "❌ URL base inválida."
         )
 
         return []
 
-    # --------------------------------------------------------
-    # ANALISAR HTML
-    # --------------------------------------------------------
-
-    try:
-
-        soup = BeautifulSoup(
-            resposta.text,
-            "html.parser"
-        )
-
-    except Exception as e:
-
-        print(
-            f"❌ Erro analisando HTML: {e}"
-        )
-
-        return []
+    soup = BeautifulSoup(
+        resposta.text,
+        "html.parser"
+    )
 
     links = []
 
     # --------------------------------------------------------
-    # LINKS <A>
+    # LINKS <a>
     # --------------------------------------------------------
 
     for a in soup.find_all(
@@ -1112,74 +850,121 @@ def encontrar_links_produtos(
         href=True
     ):
 
-        encontrado = a.get(
+        href = a.get(
             "href"
         )
 
-        url_produto = normalizar_url(
-            base_url,
-            encontrado
+        encontrado = limpar_link_produto(
+            href,
+            base_url
         )
 
-        if not url_produto:
-
+        if not encontrado:
             continue
 
-        if parece_produto(
-            url_produto
+        if parece_produto_mercadolivre(
+            encontrado
         ):
 
             links.append(
-                url_produto
+                encontrado
             )
 
     # --------------------------------------------------------
-    # ATRIBUTOS DE LINKS
+    # LINKS EM ATRIBUTOS
     # --------------------------------------------------------
 
     atributos = [
-
         "data-href",
-
         "data-url",
-
         "data-link",
-
-        "data-product-url",
-
-        "data-product-link",
-
-        "data-item-url"
-
+        "href"
     ]
 
-    for elemento in soup.find_all(
-        True
-    ):
+    for elemento in soup.find_all():
 
         for atributo in atributos:
 
-            encontrado = elemento.get(
+            valor = elemento.get(
                 atributo
             )
 
-            if not encontrado:
-
+            if not valor:
                 continue
 
-            url_produto = normalizar_url(
+            encontrado = limpar_link_produto(
+                valor,
+                base_url
+            )
 
-                base_url,
+            if not encontrado:
+                continue
 
+            if parece_produto_mercadolivre(
                 encontrado
+            ):
 
+                links.append(
+                    encontrado
+                )
+
+    # --------------------------------------------------------
+    # BUSCAR PADRÕES NO HTML
+    # --------------------------------------------------------
+
+    texto_html = resposta.text
+
+    import re
+
+    padroes_regex = [
+
+        r'https?://produto\.mercadolivre\.com\.br/[^\s"\'<>]+',
+
+        r'https?://www\.mercadolivre\.com\.br/[^\s"\'<>]+',
+
+        r'https?://mercadolivre\.com\.br/[^\s"\'<>]+',
+
+        r'https?:\\/\\/produto\.mercadolivre\.com\.br\\/[^\s"\'<>]+',
+
+        r'https?:\\/\\/www\.mercadolivre\.com\.br\\/[^\s"\'<>]+'
+    ]
+
+    for padrao in padroes_regex:
+
+        try:
+
+            encontrados_regex = re.findall(
+                padrao,
+                texto_html,
+                flags=re.IGNORECASE
+            )
+
+        except Exception:
+            encontrados_regex = []
+
+        for encontrado in encontrados_regex:
+
+            encontrado = encontrado.replace(
+                "\\/",
+                "/"
+            )
+
+            encontrado = html.unescape(
+                encontrado
+            )
+
+            encontrado = encontrado.rstrip(
+                "\"'<>),;"
+            )
+
+            url_produto = normalizar_url(
+                encontrado
             )
 
             if not url_produto:
-
                 continue
 
-            if parece_produto(
+            if parece_produto_mercadolivre(
                 url_produto
             ):
 
@@ -1188,88 +973,10 @@ def encontrar_links_produtos(
                 )
 
     # --------------------------------------------------------
-    # META / JSON-LD
-    # --------------------------------------------------------
-
-    # Alguns layouts carregam URLs de produtos
-    # dentro de scripts ou JSON.
-
-    try:
-
-        textos_scripts = soup.find_all(
-            "script"
-        )
-
-        for script in textos_scripts:
-
-            conteudo = script.string
-
-            if not conteudo:
-
-                continue
-
-            conteudo = str(
-                conteudo
-            )
-
-            # Procurar ocorrências completas
-            # de URLs Mercado Livre.
-
-            partes = conteudo.replace(
-                '"',
-                " "
-            ).replace(
-                "'",
-                " "
-            ).replace(
-                "\\/",
-                "/"
-            ).split()
-
-            for parte in partes:
-
-                if (
-                    "mercadolivre.com.br"
-                    not in parte.lower()
-                    and
-                    "mercadolibre.com" 
-                    not in parte.lower()
-                ):
-
-                    continue
-
-                candidato = parte.strip(
-                    " ,;()[]{}<>"
-                )
-
-                if not candidato.startswith(
-                    (
-                        "http://",
-                        "https://"
-                    )
-                ):
-
-                    continue
-
-                if parece_produto(
-                    candidato
-                ):
-
-                    links.append(
-                        candidato
-                    )
-
-    except Exception as e:
-
-        print(
-            f"⚠️ Erro analisando scripts: {e}"
-        )
-
-    # --------------------------------------------------------
     # REMOVER DUPLICADOS
     # --------------------------------------------------------
 
-    links_limpos = []
+    resultado_final = []
 
     vistos = set()
 
@@ -1278,44 +985,69 @@ def encontrar_links_produtos(
         if not link:
             continue
 
-        link = str(
-            link
-        ).strip()
-
-        if not url_http_valida(
-            link
-        ):
-
-            continue
-
-        chave = link.lower()
+        chave = link.rstrip(
+            "/"
+        ).lower()
 
         if chave in vistos:
-
             continue
 
         vistos.add(
             chave
         )
 
-        links_limpos.append(
+        resultado_final.append(
             link
         )
 
     print(
-        f"📦 {len(links_limpos)} produtos encontrados."
+        f"📦 Produtos encontrados: "
+        f"{len(resultado_final)}"
     )
 
-    for numero, produto in enumerate(
-        links_limpos[:20],
+    for numero, produto_link in enumerate(
+        resultado_final[:20],
         start=1
     ):
 
         print(
-            f"   {numero}. {produto}"
+            f"   {numero}. {produto_link}"
         )
 
-    return links_limpos
+    print(
+        "=" * 60
+    )
+
+    return resultado_final
+
+
+# ============================================================
+# EXTRAIR TEXTO META
+# ============================================================
+
+def obter_meta(
+    soup,
+    atributo,
+    valor
+):
+
+    elemento = soup.find(
+        "meta",
+        attrs={
+            atributo: valor
+        }
+    )
+
+    if not elemento:
+        return ""
+
+    return (
+        elemento.get(
+            "content",
+            ""
+        )
+        or ""
+    ).strip()
 
 
 # ============================================================
@@ -1324,50 +1056,37 @@ def encontrar_links_produtos(
 
 def extrair_produto(
     link,
-    headers
+    headers=None
 ):
+
+    link = normalizar_url(
+        link
+    )
+
+    if not link:
+        return None
 
     print(
         f"🔍 Extraindo produto: {link}"
     )
 
-    if not url_http_valida(
-        link
-    ):
-
-        print(
-            "⚠️ Link de produto inválido."
-        )
-
-        return None
-
     try:
 
-        resposta = requests.get(
-
+        resposta = session.get(
             link,
-
-            headers=headers,
-
+            headers=headers or {},
             allow_redirects=True,
-
-            timeout=REQUEST_TIMEOUT
-
+            timeout=TIMEOUT_HTTP
         )
 
         print(
-            f"📡 Produto HTTP: "
+            f"📡 HTTP produto: "
             f"{resposta.status_code}"
-        )
-
-        print(
-            f"📍 Produto URL final: "
-            f"{resposta.url}"
         )
 
         resposta.raise_for_status()
 
-    except requests.RequestException as e:
+    except Exception as e:
 
         print(
             f"⚠️ Erro acessando produto: {e}"
@@ -1375,28 +1094,14 @@ def extrair_produto(
 
         return None
 
-    except Exception as e:
+    url_final = normalizar_url(
+        resposta.url
+    ) or link
 
-        print(
-            f"⚠️ Erro inesperado acessando produto: {e}"
-        )
-
-        return None
-
-    try:
-
-        soup = BeautifulSoup(
-            resposta.text,
-            "html.parser"
-        )
-
-    except Exception as e:
-
-        print(
-            f"⚠️ Erro analisando produto: {e}"
-        )
-
-        return None
+    soup = BeautifulSoup(
+        resposta.text,
+        "html.parser"
+    )
 
     # --------------------------------------------------------
     # TÍTULO
@@ -1418,36 +1123,38 @@ def extrair_produto(
 
     if not titulo:
 
-        elemento = soup.find(
-            "h1"
+        titulo = obter_meta(
+            soup,
+            "property",
+            "og:title"
         )
 
-        if elemento:
+    if not titulo:
 
-            titulo = elemento.get_text(
+        titulo = obter_meta(
+            soup,
+            "name",
+            "twitter:title"
+        )
+
+    if not titulo:
+
+        elemento_title = soup.find(
+            "title"
+        )
+
+        if elemento_title:
+
+            titulo = elemento_title.get_text(
                 " ",
                 strip=True
             )
 
     if not titulo:
 
-        og_title = soup.find(
-            "meta",
-            property="og:title"
-        )
-
-        if og_title:
-
-            titulo = og_title.get(
-                "content",
-                ""
-            ).strip()
-
-    if not titulo:
-
         titulo = (
             "Oferta Imperdível "
-            "Mercado Livre!"
+            "no Mercado Livre!"
         )
 
     # --------------------------------------------------------
@@ -1456,114 +1163,90 @@ def extrair_produto(
 
     foto_url = ""
 
-    og_image = soup.find(
-        "meta",
-        property="og:image"
+    foto_url = obter_meta(
+        soup,
+        "property",
+        "og:image"
     )
 
-    if og_image:
+    if not foto_url:
 
-        foto_url = og_image.get(
-            "content",
-            ""
-        ).strip()
+        foto_url = obter_meta(
+            soup,
+            "name",
+            "twitter:image"
+        )
 
     # --------------------------------------------------------
-    # TWITTER IMAGE
+    # IMAGEM IMG
     # --------------------------------------------------------
 
     if not foto_url:
 
-        twitter_image = soup.find(
-            "meta",
-            attrs={
-                "name":
-                    "twitter:image"
-            }
-        )
+        classes_imagem = [
+            "ui-pdp-image",
+            "ui-pdp-gallery__figure__image"
+        ]
 
-        if twitter_image:
+        for classe in classes_imagem:
 
-            foto_url = twitter_image.get(
-                "content",
-                ""
-            ).strip()
+            imagem = soup.find(
+                "img",
+                class_=classe
+            )
 
-    # --------------------------------------------------------
-    # IMG PRINCIPAL
-    # --------------------------------------------------------
-
-    if not foto_url:
-
-        elemento_img = soup.find(
-            "img",
-            class_="ui-pdp-image"
-        )
-
-        if elemento_img:
+            if not imagem:
+                continue
 
             foto_url = (
+                imagem.get("src")
+                or imagem.get("data-src")
+                or imagem.get("data-lazy")
+                or ""
+            )
 
-                elemento_img.get(
-                    "src"
-                )
-
-                or
-
-                elemento_img.get(
-                    "data-src"
-                )
-
-                or
-
-                ""
-
-            ).strip()
+            if foto_url:
+                break
 
     # --------------------------------------------------------
-    # QUALQUER IMG
+    # QUALQUER IMAGEM HTTPS
     # --------------------------------------------------------
 
     if not foto_url:
 
-        for img in soup.find_all(
+        for imagem in soup.find_all(
             "img"
         ):
 
             candidato = (
+                imagem.get("src")
+                or imagem.get("data-src")
+                or imagem.get("data-lazy")
+                or ""
+            )
 
-                img.get(
-                    "src"
-                )
-
-                or
-
-                img.get(
-                    "data-src"
-                )
-
-                or
-
-                img.get(
-                    "data-lazy"
-                )
-
-                or
-
-                ""
-
-            ).strip()
+            if not candidato:
+                continue
 
             if candidato.startswith(
-                (
-                    "http://",
-                    "https://"
-                )
+                "http://"
+            ) or candidato.startswith(
+                "https://"
             ):
 
                 foto_url = candidato
 
                 break
+
+    # --------------------------------------------------------
+    # NORMALIZAR IMAGEM
+    # --------------------------------------------------------
+
+    if foto_url:
+
+        foto_url = html.unescape(
+            foto_url
+        ).strip()
 
     if not foto_url:
 
@@ -1573,54 +1256,20 @@ def extrair_produto(
 
         return None
 
-    if not url_http_valida(
-        foto_url
-    ):
-
-        print(
-            f"⚠️ Imagem inválida: {foto_url}"
-        )
-
-        return None
-
-    # --------------------------------------------------------
-    # URL FINAL
-    # --------------------------------------------------------
-
-    link_final = str(
-        resposta.url or link
-    ).strip()
-
-    if not url_http_valida(
-        link_final
-    ):
-
-        link_final = link
-
-    # --------------------------------------------------------
-    # ESCAPAR TÍTULO
-    # --------------------------------------------------------
-
-    titulo = html.escape(
-        titulo
+    titulo_limpo = html.escape(
+        titulo,
+        quote=False
     )
 
     return {
-
-        "titulo":
-            titulo,
-
-        "foto_url":
-            foto_url,
-
-        "link":
-            link_final
-
+        "titulo": titulo_limpo,
+        "foto_url": foto_url,
+        "link": url_final
     }
 
 
 # ============================================================
-# PROCESSAR E POSTAR VITRINE
+# PROCESSAR VITRINE
 # ============================================================
 
 def processar_e_postar_vitrine(
@@ -1631,10 +1280,30 @@ def processar_e_postar_vitrine(
 
     try:
 
-        headers = obter_headers()
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 "
+                "(Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 "
+                "(KHTML, like Gecko) "
+                "Chrome/152.0.0.0 "
+                "Safari/537.36"
+            ),
+            "Accept-Language":
+                "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+            "Accept": (
+                "text/html,application/xhtml+xml,"
+                "application/xml;q=0.9,"
+                "image/avif,image/webp,*/*;q=0.8"
+            )
+        }
 
         print(
-            "\n" + "=" * 60
+            ""
+        )
+
+        print(
+            "=" * 60
         )
 
         print(
@@ -1650,13 +1319,11 @@ def processar_e_postar_vitrine(
         )
 
         print(
-            f"📦 Quantidade: "
-            f"{quantidade_maxima}"
+            f"📦 Quantidade: {quantidade_maxima}"
         )
 
         print(
-            f"⏱️ Intervalo: "
-            f"{intervalo_seg}s"
+            f"⏱️ Intervalo: {intervalo_seg}s"
         )
 
         print(
@@ -1664,45 +1331,58 @@ def processar_e_postar_vitrine(
         )
 
         # ----------------------------------------------------
-        # EXPANDIR LINK
+        # NORMALIZAR
+        # ----------------------------------------------------
+
+        url_vitrine = normalizar_url(
+            url_vitrine
+        )
+
+        if not url_vitrine:
+
+            enviar_mensagem(
+                "❌ <b>Link inválido.</b>\n\n"
+                "Não foi possível interpretar "
+                "o link enviado."
+            )
+
+            return
+
+        # ----------------------------------------------------
+        # EXPANDIR
         # ----------------------------------------------------
 
         url_final = expandir_link(
-
             url_vitrine,
-
             headers
-
         )
 
         if not url_final:
 
             enviar_mensagem(
-
                 "❌ <b>Não foi possível acessar "
-                "a vitrine.</b>\n\n"
-                "O link informado não pôde ser "
-                "expandido ou acessado."
-
+                "o link informado.</b>\n\n"
+                "Verifique se o link está público "
+                "e tente novamente."
             )
 
             return
 
         print(
-            f"🔗 URL final confirmada: "
-            f"{url_final}"
+            f"🔗 URL final: {url_final}"
         )
 
         # ----------------------------------------------------
-        # IDENTIFICAR PRODUTO
+        # IDENTIFICAR PRODUTO OU VITRINE
         # ----------------------------------------------------
 
-        if parece_produto(
+        if parece_produto_mercadolivre(
             url_final
         ):
 
             print(
-                "🛒 Link identificado como produto."
+                "🛒 O link final parece ser "
+                "um produto."
             )
 
             links_produtos = [
@@ -1712,7 +1392,8 @@ def processar_e_postar_vitrine(
         else:
 
             print(
-                "🏪 Link identificado como vitrine/lista."
+                "🏪 O link final parece ser "
+                "uma vitrine/lista."
             )
 
             links_produtos = (
@@ -1728,22 +1409,17 @@ def processar_e_postar_vitrine(
 
         if not links_produtos:
 
-            print(
-                "⚠️ Nenhum produto encontrado."
+            enviar_mensagem(
+                "⚠️ <b>Nenhum produto encontrado.</b>\n\n"
+                "O link foi acessado, mas não foi "
+                "possível localizar produtos públicos "
+                "na página.\n\n"
+                "Se for uma vitrine do Mercado Livre, "
+                "verifique se ela está pública."
             )
 
-            enviar_mensagem(
-
-                "⚠️ <b>Nenhum produto encontrado.</b>\n\n"
-
-                "O Mercado Livre pode ter carregado "
-                "os produtos dinamicamente ou a página "
-                "não disponibilizou os links no HTML "
-                "recebido pelo servidor.\n\n"
-
-                f"🔗 URL analisada:\n"
-                f"{html.escape(url_final)}"
-
+            print(
+                "⚠️ Nenhum produto encontrado."
             )
 
             return
@@ -1756,7 +1432,12 @@ def processar_e_postar_vitrine(
 
         postados = 0
 
-        tentados = 0
+        tentativas = 0
+
+        max_tentativas = max(
+            len(links_produtos),
+            quantidade_maxima
+        )
 
         # ----------------------------------------------------
         # LOOP
@@ -1765,24 +1446,33 @@ def processar_e_postar_vitrine(
         for link in links_produtos:
 
             if postados >= quantidade_maxima:
-
                 break
 
+            if tentativas >= max_tentativas:
+                break
+
+            tentativas += 1
+
             if not link:
-
                 continue
 
-            link = str(
+            link = normalizar_url(
                 link
-            ).strip()
+            )
 
-            if not url_http_valida(
-                link
-            ):
-
+            if not link:
                 continue
 
-            if link in historico:
+            # ------------------------------------------------
+            # HISTÓRICO
+            # ------------------------------------------------
+
+            if link.rstrip(
+                "/"
+            ).lower() in {
+                x.rstrip("/").lower()
+                for x in historico
+            }:
 
                 print(
                     f"⏭️ Já postado: {link}"
@@ -1790,20 +1480,20 @@ def processar_e_postar_vitrine(
 
                 continue
 
-            tentados += 1
+            # ------------------------------------------------
+            # EXTRAIR
+            # ------------------------------------------------
 
             produto = extrair_produto(
-
                 link,
-
                 headers
-
             )
 
             if not produto:
 
                 print(
-                    "⚠️ Produto ignorado."
+                    "⚠️ Não foi possível "
+                    "extrair produto."
                 )
 
                 continue
@@ -1820,26 +1510,30 @@ def processar_e_postar_vitrine(
                 "link"
             ]
 
+            # ------------------------------------------------
+            # LEGENDA
+            # ------------------------------------------------
+
             legenda = (
-
                 f"🔥 <b>{titulo}</b>\n\n"
+                f"⚡ <i>Aproveite esta oferta "
+                f"por tempo limitado!</i>\n\n"
+                f"🛒 <b>Confira o preço e "
+                f"as condições no Mercado Livre.</b>"
+            )
 
-                f"⚡ <i>Aproveite esta "
-                f"promoção por tempo limitado!</i>\n\n"
+            # ------------------------------------------------
+            # PUBLICAR
+            # ------------------------------------------------
 
-                f"👉 <b>Clique abaixo para "
-                f"ver a oferta:</b>"
-
+            print(
+                f"📤 Publicando: {titulo}"
             )
 
             sucesso = enviar_oferta(
-
                 foto_url,
-
                 legenda,
-
                 link_produto
-
             )
 
             if sucesso:
@@ -1852,23 +1546,11 @@ def processar_e_postar_vitrine(
                     link_produto
                 )
 
-                # Também marca o link original
-                if link_produto != link:
-
-                    salvar_historico(
-                        link
-                    )
-
-                    historico.add(
-                        link
-                    )
-
                 postados += 1
 
                 print(
                     f"✅ POSTADO "
-                    f"{postados}/"
-                    f"{quantidade_maxima}"
+                    f"{postados}/{quantidade_maxima}"
                 )
 
                 if postados < quantidade_maxima:
@@ -1885,7 +1567,7 @@ def processar_e_postar_vitrine(
             else:
 
                 print(
-                    "❌ Falha ao publicar produto."
+                    "❌ Falha ao publicar oferta."
                 )
 
         # ----------------------------------------------------
@@ -1893,17 +1575,16 @@ def processar_e_postar_vitrine(
         # ----------------------------------------------------
 
         print(
-            "\n" + "=" * 60
+            ""
+        )
+
+        print(
+            "=" * 60
         )
 
         print(
             f"🎯 FINALIZADO: "
             f"{postados} ofertas."
-        )
-
-        print(
-            f"🔎 Produtos analisados: "
-            f"{tentados}"
         )
 
         print(
@@ -1913,79 +1594,46 @@ def processar_e_postar_vitrine(
         if postados > 0:
 
             enviar_mensagem(
-
                 "✅ <b>Postagens finalizadas!</b>\n\n"
-
                 f"🦊 Ofertas publicadas: "
                 f"<b>{postados}</b>\n"
-
-                f"📦 Solicitação: "
+                f"📦 Solicitadas: "
                 f"<b>{quantidade_maxima}</b>"
-
             )
 
         else:
 
             enviar_mensagem(
-
                 "⚠️ <b>Automação finalizada.</b>\n\n"
-
-                "Nenhuma oferta foi publicada.\n\n"
-
-                "Verifique os logs do servidor para "
-                "identificar os produtos encontrados."
-
+                "Nenhuma oferta conseguiu ser publicada."
             )
 
     except Exception as e:
 
         print(
-            "\n❌ ERRO FATAL NA AUTOMAÇÃO:"
+            ""
+        )
+
+        print(
+            "❌ ERRO FATAL NA AUTOMAÇÃO"
         )
 
         print(
             repr(e)
         )
 
-        import traceback
-
-        traceback.print_exc()
-
-        try:
-
-            enviar_mensagem(
-
-                "❌ <b>Erro durante a automação.</b>\n\n"
-                f"{html.escape(str(e))}"
-
-            )
-
-        except Exception:
-
-            pass
+        enviar_mensagem(
+            "❌ <b>Erro durante a automação.</b>\n\n"
+            "O processamento foi interrompido.\n"
+            "Verifique os logs do servidor."
+        )
 
 
 # ============================================================
-# POST /api/configurar
+# PROCESSAR POST
 # ============================================================
 
-@app.route(
-    "/api/configurar",
-    methods=["POST"]
-)
-def configurar():
-
-    print(
-        "\n" + "=" * 60
-    )
-
-    print(
-        "📩 POST /api/configurar RECEBIDO"
-    )
-
-    print(
-        "=" * 60
-    )
+def processar_configuracao():
 
     # --------------------------------------------------------
     # CONFIGURAÇÃO
@@ -1994,13 +1642,8 @@ def configurar():
     if not verificar_configuracao():
 
         return jsonify({
-
-            "ok":
-                False,
-
-            "erro":
-                "Bot não configurado."
-
+            "ok": False,
+            "erro": "Bot não configurado."
         }), 500
 
     # --------------------------------------------------------
@@ -2016,29 +1659,10 @@ def configurar():
         dict
     ):
 
-        print(
-            "❌ JSON inválido."
-        )
-
         return jsonify({
-
-            "ok":
-                False,
-
-            "erro":
-                "Dados inválidos."
-
+            "ok": False,
+            "erro": "Dados JSON inválidos."
         }), 400
-
-    print(
-        "📦 Campos recebidos:"
-    )
-
-    print(
-        list(
-            dados.keys()
-        )
-    )
 
     # --------------------------------------------------------
     # LINK
@@ -2060,7 +1684,7 @@ def configurar():
             "initData",
             ""
         )
-    )
+    ).strip()
 
     # --------------------------------------------------------
     # INTERVALO
@@ -2109,77 +1733,42 @@ def configurar():
         )
 
         return jsonify({
-
-            "ok":
-                False,
-
+            "ok": False,
             "erro":
                 "Autenticação do Telegram inválida."
-
         }), 403
-
-    print(
-        "✅ initData validado."
-    )
 
     # --------------------------------------------------------
     # VALIDAR LINK
     # --------------------------------------------------------
 
-    if not link:
-
-        return jsonify({
-
-            "ok":
-                False,
-
-            "erro":
-                "Informe o link da vitrine."
-
-        }), 400
-
-    if not url_http_valida(
+    link_normalizado = normalizar_url(
         link
-    ):
+    )
+
+    if not link_normalizado:
 
         return jsonify({
-
-            "ok":
-                False,
-
+            "ok": False,
             "erro":
-                "O link informado não é uma URL válida."
-
+                "Informe um link válido."
         }), 400
 
     # --------------------------------------------------------
-    # INTERVALO
+    # LIMITES
     # --------------------------------------------------------
 
     intervalo = max(
-
         intervalo,
-
         MIN_INTERVALO
-
     )
 
-    # --------------------------------------------------------
-    # QUANTIDADE
-    # --------------------------------------------------------
-
     quantidade = max(
-
         1,
-
         min(
-
             quantidade,
-
             MAX_QUANTIDADE
-
         )
-
     )
 
     # --------------------------------------------------------
@@ -2187,7 +1776,11 @@ def configurar():
     # --------------------------------------------------------
 
     print(
-        "\n" + "=" * 60
+        ""
+    )
+
+    print(
+        "=" * 60
     )
 
     print(
@@ -2199,7 +1792,7 @@ def configurar():
     )
 
     print(
-        f"🔗 Link: {link}"
+        f"🔗 Link: {link_normalizado}"
     )
 
     print(
@@ -2219,109 +1812,84 @@ def configurar():
     # --------------------------------------------------------
 
     aviso = enviar_mensagem(
-
         "🚀 <b>Nova automação iniciada!</b>\n\n"
-
+        f"🔗 Link recebido:\n"
+        f"<code>{html.escape(link_normalizado)}</code>\n\n"
         f"📦 Quantidade: <b>{quantidade}</b>\n"
+        f"⏱️ Intervalo: <b>{intervalo}s</b>"
+    )
 
-        f"⏱️ Intervalo: <b>{intervalo}s</b>\n\n"
-
-        "🔎 Processando vitrine..."
-
+    print(
+        f"📨 Aviso enviado: {aviso}"
     )
 
     # --------------------------------------------------------
     # THREAD
     # --------------------------------------------------------
 
-    try:
+    thread = threading.Thread(
+        target=processar_e_postar_vitrine,
+        args=(
+            link_normalizado,
+            quantidade,
+            intervalo
+        ),
+        daemon=True
+    )
 
-        thread = threading.Thread(
+    thread.start()
 
-            target=processar_e_postar_vitrine,
-
-            args=(
-
-                link,
-
-                quantidade,
-
-                intervalo
-
-            ),
-
-            daemon=True
-
-        )
-
-        thread.start()
-
-        print(
-            "✅ Thread da automação iniciada."
-        )
-
-    except Exception as e:
-
-        print(
-            f"❌ Erro iniciando thread: {e}"
-        )
-
-        return jsonify({
-
-            "ok":
-                False,
-
-            "erro":
-                "Não foi possível iniciar a automação."
-
-        }), 500
+    print(
+        "✅ Thread da automação iniciada."
+    )
 
     # --------------------------------------------------------
-    # RESPOSTA
+    # RESPOSTA IMEDIATA
     # --------------------------------------------------------
 
     return jsonify({
-
-        "ok":
-            True,
-
+        "ok": True,
         "mensagem":
             "Postagens iniciadas.",
-
         "link":
-            link,
-
-        "intervalo":
-            intervalo,
-
+            link_normalizado,
         "quantidade":
             quantidade,
-
-        "telegram_aviso":
-            aviso
-
+        "intervalo":
+            intervalo
     }), 200
 
 
 # ============================================================
-# POST /configurar
+# API PRINCIPAL
+#
+# IMPORTANTE:
+# Existe SOMENTE UMA função para /api/configurar.
 # ============================================================
+
+@app.route(
+    "/api/configurar",
+    methods=["POST"]
+)
+def configurar():
+
+    return processar_configuracao()
+
+
+# ============================================================
+# ROTA ALTERNATIVA
 #
-# Compatibilidade com versões antigas do Mini App.
-#
+# Também aceita POST.
+# NÃO existe função configurar_get.
 # ============================================================
 
 @app.route(
     "/configurar",
     methods=["POST"]
 )
-def configurar_compatibilidade():
+def configurar_alternativa():
 
-    print(
-        "🔄 POST /configurar recebido."
-    )
-
-    return configurar()
+    return processar_configuracao()
 
 
 # ============================================================
@@ -2332,26 +1900,43 @@ def configurar_compatibilidade():
     "/configurar",
     methods=["GET"]
 )
-def configurar_get():
+def configurar_info():
 
     return jsonify({
-
-        "ok":
-            False,
-
-        "erro":
-            "A rota /configurar existe. "
-            "Para iniciar uma automação use POST.",
-
-        "metodo":
-            "POST",
-
+        "ok": True,
+        "servico": "Raposa Caçadora",
         "rota_recomendada":
             "/api/configurar",
+        "metodo":
+            "POST",
+        "mensagem":
+            "A rota /configurar existe. "
+            "Para iniciar uma automação use POST."
+    })
 
-        "servico":
-            "Raposa Caçadora"
 
+# ============================================================
+# GET /api/configurar
+#
+# Serve apenas para teste no navegador.
+# O Mini App continua usando POST.
+# ============================================================
+
+@app.route(
+    "/api/configurar",
+    methods=["GET"]
+)
+def configurar_api_info():
+
+    return jsonify({
+        "ok": False,
+        "erro":
+            "A rota /api/configurar "
+            "não aceita o método GET.",
+        "metodo_correto":
+            "POST",
+        "rota":
+            "/api/configurar"
     }), 405
 
 
@@ -2362,72 +1947,38 @@ def configurar_get():
 @app.errorhandler(404)
 def erro_404(e):
 
-    caminho = request.path
-
-    if caminho.startswith(
+    if request.path.startswith(
         "/api/"
-    ) or caminho == "/configurar":
+    ) or request.path == "/configurar":
 
         return jsonify({
-
-            "ok":
-                False,
-
+            "ok": False,
             "erro":
                 "Rota não encontrada.",
-
             "rota":
-                caminho,
-
+                request.path,
             "metodo":
-                request.method,
-
-            "rotas_disponiveis": [
-
-                "/",
-                "/app",
-                "/health",
-                "/api/configurar",
-                "/configurar"
-
-            ]
-
+                request.method
         }), 404
 
     return e
 
 
 # ============================================================
-# ERRO 405
+# ERRO 405 JSON PARA API
 # ============================================================
 
 @app.errorhandler(405)
 def erro_405(e):
 
     return jsonify({
-
-        "ok":
-            False,
-
+        "ok": False,
         "erro":
-            "Método não permitido.",
-
-        "metodo":
-            request.method,
-
+            "Método HTTP não permitido.",
         "rota":
             request.path,
-
-        "metodo_correto":
-            "POST"
-
-        if request.path in (
-            "/api/configurar",
-            "/configurar"
-        )
-
-        else None
-
+        "metodo":
+            request.method
     }), 405
 
 
@@ -2438,29 +1989,52 @@ def erro_405(e):
 @app.errorhandler(500)
 def erro_500(e):
 
-    print(
-        f"❌ Erro interno Flask: {e}"
-    )
-
     return jsonify({
-
-        "ok":
-            False,
-
+        "ok": False,
         "erro":
             "Erro interno no servidor.",
-
         "detalhe":
             str(e)
-
     }), 500
 
 
 # ============================================================
-# EXECUÇÃO
+# INFORMAÇÕES DAS ROTAS
+# ============================================================
+
+def mostrar_rotas():
+
+    print(
+        ""
+    )
+
+    print(
+        "📚 ROTAS REGISTRADAS:"
+    )
+
+    for regra in app.url_map.iter_rules():
+
+        metodos = ",".join(
+            sorted(
+                regra.methods
+            )
+        )
+
+        print(
+            f"   {regra.rule} "
+            f"[{metodos}]"
+        )
+
+
+# ============================================================
+# EXECUÇÃO LOCAL
 # ============================================================
 
 if __name__ == "__main__":
+
+    print(
+        ""
+    )
 
     print(
         "=" * 60
@@ -2479,33 +2053,26 @@ if __name__ == "__main__":
     )
 
     print(
-        f"📄 index.html: "
-        f"{'ENCONTRADO' if os.path.isfile(INDEX_FILE) else 'NÃO ENCONTRADO'}"
+        "📄 index.html: "
+        + (
+            "ENCONTRADO"
+            if os.path.isfile(INDEX_FILE)
+            else "NÃO ENCONTRADO"
+        )
     )
 
-    if TELEGRAM_TOKEN:
-
-        print(
-            "✅ TELEGRAM_TOKEN configurado."
+    print(
+        "🤖 Telegram Token: "
+        + (
+            "CONFIGURADO"
+            if TELEGRAM_TOKEN
+            else "NÃO CONFIGURADO"
         )
+    )
 
-    else:
-
-        print(
-            "⚠️ TELEGRAM_TOKEN não configurado."
-        )
-
-    if CHAT_ID:
-
-        print(
-            f"💬 CHAT_ID: {CHAT_ID}"
-        )
-
-    else:
-
-        print(
-            "⚠️ CHAT_ID não configurado."
-        )
+    print(
+        f"💬 CHAT_ID: {CHAT_ID}"
+    )
 
     print(
         f"🌐 Porta: {PORT}"
@@ -2524,44 +2091,15 @@ if __name__ == "__main__":
             "⚠️ WEBAPP_URL não configurada."
         )
 
-    print(
-        "=" * 60
-    )
-
-    print(
-        "📌 Rotas:"
-    )
-
-    print(
-        "   GET  /"
-    )
-
-    print(
-        "   GET  /app"
-    )
-
-    print(
-        "   GET  /health"
-    )
-
-    print(
-        "   POST /api/configurar"
-    )
-
-    print(
-        "   POST /configurar"
-    )
+    mostrar_rotas()
 
     print(
         "=" * 60
     )
 
     app.run(
-
         host="0.0.0.0",
-
         port=PORT,
-
-        debug=False
-
+        debug=False,
+        threaded=True
     )

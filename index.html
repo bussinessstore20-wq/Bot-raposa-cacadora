@@ -2,2098 +2,1258 @@
 <html lang="pt-BR">
 
 <head>
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    >
-
-    <title>Raposa Caçadora - Painel VIP</title>
-
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-    <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    >
-
-    <style>
-
-        :root {
-            --bg-gradient:
-                linear-gradient(
-                    135deg,
-                    #05070a 0%,
-                    #0d111a 100%
-                );
-
-            --card-bg:
-                rgba(15, 23, 36, 0.88);
-
-            --card-border:
-                rgba(255, 255, 255, 0.08);
-
-            --primary:
-                #f97316;
-
-            --primary-dark:
-                #ea580c;
-
-            --primary-light:
-                #fdba74;
-
-            --accent-glow:
-                rgba(249, 115, 22, 0.45);
-
-            --text-main:
-                #f8fafc;
-
-            --text-sub:
-                #94a3b8;
-
-            --input-bg:
-                rgba(6, 10, 17, 0.95);
-
-            --input-border:
-                rgba(255, 255, 255, 0.12);
-
-            --radius:
-                16px;
-        }
-
-
-        * {
-            box-sizing: border-box;
-
-            margin: 0;
-            padding: 0;
-
-            font-family:
-                -apple-system,
-                BlinkMacSystemFont,
-                "Segoe UI",
-                Roboto,
-                Helvetica,
-                Arial,
-                sans-serif;
-
-            -webkit-tap-highlight-color:
-                transparent;
-        }
-
-
-        html {
-            background:
-                #05070a;
-        }
-
-
-        body {
-            background:
-                var(--bg-gradient);
-
-            color:
-                var(--text-main);
-
-            min-height:
-                100vh;
-
-            padding:
-                20px 16px 30px;
-
-            display:
-                flex;
-
-            flex-direction:
-                column;
-
-            gap:
-                18px;
-        }
-
-
-        /* =====================================================
-           HEADER
-        ===================================================== */
-
-        .brand-header {
-            display:
-                flex;
-
-            align-items:
-                center;
-
-            gap:
-                14px;
-
-            padding:
-                4px 2px;
-        }
-
-
-        .brand-avatar {
-            width:
-                56px;
-
-            height:
-                56px;
-
-            min-width:
-                56px;
-
-            border-radius:
-                50%;
-
-            background:
-                #080b11;
-
-            border:
-                2px solid var(--primary);
-
-            display:
-                flex;
-
-            align-items:
-                center;
-
-            justify-content:
-                center;
-
-            font-size:
-                28px;
-
-            box-shadow:
-                0 0 25px var(--accent-glow);
-        }
-
-
-        .brand-title {
-            min-width:
-                0;
-        }
-
-
-        .brand-title h1 {
-            font-size:
-                1.22rem;
-
-            font-weight:
-                800;
-
-            letter-spacing:
-                -0.02em;
-
-            background:
-                linear-gradient(
-                    90deg,
-                    #ffffff,
-                    #fdba74
-                );
-
-            -webkit-background-clip:
-                text;
-
-            -webkit-text-fill-color:
-                transparent;
-        }
-
-
-        .brand-title p {
-            font-size:
-                0.78rem;
-
-            color:
-                var(--text-sub);
-
-            display:
-                flex;
-
-            align-items:
-                center;
-
-            gap:
-                6px;
-
-            margin-top:
-                3px;
-        }
-
-
-        .status-badge {
-            display:
-                inline-block;
-
-            width:
-                8px;
-
-            height:
-                8px;
-
-            background:
-                #22c55e;
-
-            border-radius:
-                50%;
-
-            box-shadow:
-                0 0 8px #22c55e;
-        }
-
-
-        /* =====================================================
-           CARD
-        ===================================================== */
-
-        .card {
-            background:
-                var(--card-bg);
-
-            backdrop-filter:
-                blur(16px);
-
-            -webkit-backdrop-filter:
-                blur(16px);
-
-            border:
-                1px solid var(--card-border);
-
-            border-radius:
-                var(--radius);
-
-            padding:
-                20px;
-
-            box-shadow:
-                0 10px 30px -10px
-                rgba(0, 0, 0, 0.8);
-        }
-
-
-        .card-title {
-            font-size:
-                0.9rem;
-
-            font-weight:
-                700;
-
-            color:
-                var(--primary-light);
-
-            text-transform:
-                uppercase;
-
-            letter-spacing:
-                0.05em;
-
-            margin-bottom:
-                18px;
-
-            display:
-                flex;
-
-            align-items:
-                center;
-
-            gap:
-                8px;
-        }
-
-
-        /* =====================================================
-           CAMPOS
-        ===================================================== */
-
-        .field-group {
-            display:
-                flex;
-
-            flex-direction:
-                column;
-
-            gap:
-                8px;
-
-            margin-bottom:
-                18px;
-        }
-
-
-        .field-group:last-child {
-            margin-bottom:
-                0;
-        }
-
-
-        label {
-            font-size:
-                0.82rem;
-
-            font-weight:
-                600;
-
-            color:
-                var(--text-sub);
-
-            display:
-                flex;
-
-            align-items:
-                center;
-
-            gap:
-                6px;
-        }
-
-
-        .input-wrapper-paste {
-            display:
-                flex;
-
-            gap:
-                8px;
-
-            align-items:
-                stretch;
-        }
-
-
-        .input-wrapper {
-            position:
-                relative;
-
-            flex:
-                1;
-
-            min-width:
-                0;
-        }
-
-
-        .input-wrapper i {
-            position:
-                absolute;
-
-            left:
-                14px;
-
-            top:
-                50%;
-
-            transform:
-                translateY(-50%);
-
-            color:
-                #64748b;
-
-            font-size:
-                0.95rem;
-
-            pointer-events:
-                none;
-
-            z-index:
-                2;
-        }
-
-
-        input,
-        select {
-            width:
-                100%;
-
-            padding:
-                14px 14px 14px 42px;
-
-            border-radius:
-                12px;
-
-            border:
-                1px solid var(--input-border);
-
-            background:
-                var(--input-bg);
-
-            color:
-                var(--text-main);
-
-            font-size:
-                0.92rem;
-
-            outline:
-                none;
-
-            transition:
-                all 0.25s ease;
-        }
-
-
-        input:focus,
-        select:focus {
-            border-color:
-                var(--primary);
-
-            box-shadow:
-                0 0 0 3px
-                rgba(249, 115, 22, 0.18);
-        }
-
-
-        input::placeholder {
-            color:
-                #64748b;
-        }
-
-
-        select {
-            appearance:
-                auto;
-        }
-
-
-        select option {
-            background:
-                #0f172a;
-
-            color:
-                #ffffff;
-        }
-
-
-        /* =====================================================
-           BOTÃO COLAR
-        ===================================================== */
-
-        .btn-colar {
-            background:
-                rgba(249, 115, 22, 0.15);
-
-            border:
-                1px solid var(--primary);
-
-            color:
-                var(--primary-light);
-
-            padding:
-                14px 15px;
-
-            border-radius:
-                12px;
-
-            font-size:
-                0.82rem;
-
-            font-weight:
-                700;
-
-            cursor:
-                pointer;
-
-            display:
-                flex;
-
-            align-items:
-                center;
-
-            justify-content:
-                center;
-
-            gap:
-                6px;
-
-            white-space:
-                nowrap;
-
-            transition:
-                all 0.2s ease;
-        }
-
-
-        .btn-colar:active {
-            transform:
-                scale(0.96);
-
-            background:
-                rgba(249, 115, 22, 0.3);
-        }
-
-
-        /* =====================================================
-           TEMPOS
-        ===================================================== */
-
-        .time-grid {
-            display:
-                grid;
-
-            grid-template-columns:
-                repeat(3, 1fr);
-
-            gap:
-                8px;
-
-            margin-top:
-                4px;
-        }
-
-
-        .time-btn {
-            background:
-                var(--input-bg);
-
-            border:
-                1px solid var(--input-border);
-
-            color:
-                var(--text-sub);
-
-            padding:
-                10px 6px;
-
-            border-radius:
-                10px;
-
-            font-size:
-                0.8rem;
-
-            font-weight:
-                600;
-
-            cursor:
-                pointer;
-
-            text-align:
-                center;
-
-            transition:
-                all 0.2s ease;
-        }
-
-
-        .time-btn.active {
-            background:
-                rgba(249, 115, 22, 0.2);
-
-            border-color:
-                var(--primary);
-
-            color:
-                var(--primary);
-        }
-
-
-        /* =====================================================
-           INFO
-        ===================================================== */
-
-        .info-box {
-            margin-top:
-                14px;
-
-            padding:
-                11px 12px;
-
-            border-radius:
-                10px;
-
-            background:
-                rgba(249, 115, 22, 0.07);
-
-            border:
-                1px solid
-                rgba(249, 115, 22, 0.15);
-
-            color:
-                #cbd5e1;
-
-            font-size:
-                0.76rem;
-
-            line-height:
-                1.45;
-        }
-
-
-        .info-box i {
-            color:
-                var(--primary-light);
-
-            margin-right:
-                5px;
-        }
-
-
-        /* =====================================================
-           MENSAGEM
-        ===================================================== */
-
-        .mensagem {
-            display:
-                none;
-
-            padding:
-                13px;
-
-            border-radius:
-                12px;
-
-            font-size:
-                0.85rem;
-
-            text-align:
-                center;
-
-            line-height:
-                1.45;
-        }
-
-
-        .mensagem.sucesso {
-            display:
-                block;
-
-            color:
-                #86efac;
-
-            background:
-                rgba(34, 197, 94, 0.10);
-
-            border:
-                1px solid
-                rgba(34, 197, 94, 0.25);
-        }
-
-
-        .mensagem.erro {
-            display:
-                block;
-
-            color:
-                #fca5a5;
-
-            background:
-                rgba(239, 68, 68, 0.10);
-
-            border:
-                1px solid
-                rgba(239, 68, 68, 0.25);
-        }
-
-
-        .mensagem.info {
-            display:
-                block;
-
-            color:
-                #93c5fd;
-
-            background:
-                rgba(59, 130, 246, 0.10);
-
-            border:
-                1px solid
-                rgba(59, 130, 246, 0.25);
-        }
-
-
-        /* =====================================================
-           BOTÃO PRINCIPAL
-        ===================================================== */
-
-        .btn-submit {
-            width:
-                100%;
-
-            background:
-                linear-gradient(
-                    135deg,
-                    var(--primary) 0%,
-                    var(--primary-dark) 100%
-                );
-
-            color:
-                white;
-
-            border:
-                none;
-
-            padding:
-                16px;
-
-            border-radius:
-                var(--radius);
-
-            font-size:
-                1rem;
-
-            font-weight:
-                800;
-
-            letter-spacing:
-                0.02em;
-
-            display:
-                flex;
-
-            align-items:
-                center;
-
-            justify-content:
-                center;
-
-            gap:
-                10px;
-
-            cursor:
-                pointer;
-
-            box-shadow:
-                0 8px 25px
-                var(--accent-glow);
-
-            transition:
-                all 0.25s ease;
-
-            margin-top:
-                2px;
-        }
-
-
-        .btn-submit:active {
-            transform:
-                scale(0.98);
-        }
-
-
-        .btn-submit:disabled {
-            opacity:
-                0.7;
-
-            cursor:
-                not-allowed;
-        }
-
-
-        /* =====================================================
-           FOOTER
-        ===================================================== */
-
-        .footer-note {
-            text-align:
-                center;
-
-            font-size:
-                0.72rem;
-
-            color:
-                var(--text-sub);
-
-            margin-top:
-                auto;
-
-            display:
-                flex;
-
-            align-items:
-                center;
-
-            justify-content:
-                center;
-
-            gap:
-                6px;
-        }
-
-
-        /* =====================================================
-           RESPONSIVO
-        ===================================================== */
-
-        @media (max-width: 380px) {
-
-            .input-wrapper-paste {
-                flex-direction:
-                    column;
-            }
-
-            .btn-colar {
-                width:
-                    100%;
-            }
-
-            .brand-title h1 {
-                font-size:
-                    1.08rem;
-            }
-
-        }
-
-    </style>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  >
+
+  <title>Raposa Caçadora - Painel VIP</title>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  >
+
+  <style>
+
+    :root {
+      --bg: #05070a;
+      --card: rgba(15, 23, 36, .88);
+      --border: rgba(255,255,255,.08);
+      --orange: #f97316;
+      --orange2: #ea580c;
+      --text: #f8fafc;
+      --sub: #94a3b8;
+      --input: rgba(6,10,17,.95);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Arial,
+        sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      min-height: 100vh;
+      padding: 20px 16px 30px;
+      background:
+        linear-gradient(
+          135deg,
+          #05070a 0%,
+          #0d111a 100%
+        );
+      color: var(--text);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .avatar {
+      width: 58px;
+      height: 58px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #080b11;
+      border: 2px solid var(--orange);
+      font-size: 29px;
+      box-shadow: 0 0 25px rgba(249,115,22,.45);
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 800;
+    }
+
+    .status {
+      margin-top: 3px;
+      color: var(--sub);
+      font-size: .8rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      background: #22c55e;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #22c55e;
+    }
+
+    .card {
+      padding: 20px;
+      border-radius: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 30px rgba(0,0,0,.45);
+      backdrop-filter: blur(16px);
+    }
+
+    .title {
+      color: #fdba74;
+      font-size: .9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    .field:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--sub);
+      font-size: .82rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .input-wrap {
+      position: relative;
+      flex: 1;
+    }
+
+    .input-wrap > i {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #64748b;
+      pointer-events: none;
+    }
+
+    input,
+    select {
+      width: 100%;
+      min-height: 48px;
+      padding: 13px 14px 13px 42px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: var(--input);
+      color: white;
+      outline: none;
+      font-size: .92rem;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(249,115,22,.18);
+    }
+
+    select option {
+      background: #0f172a;
+      color: white;
+    }
+
+    .paste {
+      min-height: 48px;
+      border-radius: 12px;
+      border: 1px solid var(--orange);
+      background: rgba(249,115,22,.13);
+      color: #fdba74;
+      padding: 0 15px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .time-grid {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .time-btn {
+      padding: 10px 6px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: var(--input);
+      color: var(--sub);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .time-btn.active {
+      color: var(--orange);
+      border-color: var(--orange);
+      background: rgba(249,115,22,.16);
+    }
+
+    .message {
+      display: none;
+      margin-top: 15px;
+      padding: 13px;
+      border-radius: 12px;
+      font-size: .85rem;
+      line-height: 1.45;
+      text-align: center;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .message.success {
+      color: #86efac;
+      background: rgba(34,197,94,.10);
+      border: 1px solid rgba(34,197,94,.25);
+    }
+
+    .message.error {
+      color: #fca5a5;
+      background: rgba(239,68,68,.10);
+      border: 1px solid rgba(239,68,68,.25);
+    }
+
+    .submit {
+      width: 100%;
+      min-height: 54px;
+      margin-top: 16px;
+      border: 0;
+      border-radius: 16px;
+      background:
+        linear-gradient(
+          135deg,
+          var(--orange),
+          var(--orange2)
+        );
+      color: white;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(249,115,22,.35);
+    }
+
+    .submit:disabled {
+      opacity: .7;
+      cursor: not-allowed;
+    }
+
+    .footer {
+      margin-top: 20px;
+      text-align: center;
+      color: var(--sub);
+      font-size: .75rem;
+    }
+
+    .debug {
+      margin-top: 14px;
+      padding: 10px;
+      border-radius: 10px;
+      background: rgba(255,255,255,.04);
+      color: #64748b;
+      font-size: .68rem;
+      word-break: break-all;
+      display: none;
+    }
+
+    @media(max-width:380px) {
+      .input-row {
+        flex-direction: column;
+      }
+
+      .paste {
+        width: 100%;
+      }
+    }
+
+  </style>
 </head>
-
 
 <body>
 
-    <!-- =====================================================
-         HEADER
-    ===================================================== -->
+<div class="container">
 
-    <div class="brand-header">
+  <div class="brand">
 
-        <div class="brand-avatar">
-            🦊
+    <div class="avatar">
+      🦊
+    </div>
+
+    <div>
+      <h1>Raposa Caçadora VIP</h1>
+
+      <div class="status">
+        <span class="dot"></span>
+        Sistema de Postagens Conectado
+      </div>
+    </div>
+
+  </div>
+
+
+  <div class="card">
+
+    <div class="title">
+      <i class="fa-solid fa-sliders"></i>
+      Painel de Automação
+    </div>
+
+
+    <div class="field">
+
+      <label>
+        <i class="fa-solid fa-link"></i>
+        Link da Vitrine / Produto
+      </label>
+
+      <div class="input-row">
+
+        <div class="input-wrap">
+
+          <i class="fa-solid fa-store"></i>
+
+          <input
+            id="linkVitrine"
+            type="text"
+            placeholder="Cole o link da vitrine ou produto..."
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+          >
+
         </div>
 
-        <div class="brand-title">
+        <button
+          type="button"
+          class="paste"
+          onclick="colarLink()"
+        >
+          <i class="fa-solid fa-paste"></i>
+          Colar
+        </button>
 
-            <h1>
-                Raposa Caçadora VIP
-            </h1>
-
-            <p>
-                <span class="status-badge"></span>
-                Sistema de Postagens Conectado
-            </p>
-
-        </div>
+      </div>
 
     </div>
 
 
-    <!-- =====================================================
-         PAINEL
-    ===================================================== -->
+    <div class="field">
 
-    <div class="card">
+      <label>
+        <i class="fa-solid fa-clock"></i>
+        Tempo entre postagens
+      </label>
 
-        <div class="card-title">
+      <div class="input-wrap">
 
-            <i class="fa-solid fa-sliders"></i>
+        <i class="fa-solid fa-stopwatch"></i>
 
-            Painel de Automação
+        <select id="intervalo">
 
-        </div>
+          <option value="10">
+            10 segundos - teste
+          </option>
 
+          <option value="30">
+            30 segundos
+          </option>
 
-        <!-- =================================================
-             LINK
-        ================================================= -->
+          <option value="60">
+            1 minuto
+          </option>
 
-        <div class="field-group">
+          <option value="300" selected>
+            5 minutos - recomendado
+          </option>
 
-            <label>
+          <option value="1800">
+            30 minutos
+          </option>
 
-                <i class="fa-solid fa-link"></i>
+          <option value="3600">
+            1 hora
+          </option>
 
-                Link da Vitrine ou Produto
+        </select>
 
-            </label>
+      </div>
 
 
-            <div class="input-wrapper-paste">
+      <div class="time-grid">
 
-                <div class="input-wrapper">
+        <button
+          type="button"
+          class="time-btn"
+          onclick="setTempo(10,this)"
+        >
+          10 seg
+        </button>
 
-                    <i class="fa-solid fa-store"></i>
+        <button
+          type="button"
+          class="time-btn"
+          onclick="setTempo(60,this)"
+        >
+          1 min
+        </button>
 
-                    <input
-                        type="text"
-                        id="linkVitrine"
-                        placeholder="Cole o link meli.la ou produto..."
-                        autocomplete="off"
-                        autocapitalize="off"
-                        spellcheck="false"
-                    >
+        <button
+          type="button"
+          class="time-btn active"
+          onclick="setTempo(300,this)"
+        >
+          5 min
+        </button>
 
-                </div>
-
-
-                <button
-                    class="btn-colar"
-                    type="button"
-                    onclick="colarLink()"
-                >
-
-                    <i class="fa-solid fa-paste"></i>
-
-                    Colar
-
-                </button>
-
-            </div>
-
-
-            <div class="info-box">
-
-                <i class="fa-solid fa-circle-info"></i>
-
-                Você pode enviar um link de <b>vitrine</b>
-                ou um <b>produto individual</b>.
-                O servidor fará a pesquisa e publicará
-                as ofertas no canal.
-
-            </div>
-
-        </div>
-
-
-        <!-- =================================================
-             INTERVALO
-        ================================================= -->
-
-        <div class="field-group">
-
-            <label>
-
-                <i class="fa-solid fa-clock"></i>
-
-                Tempo Entre Postagens
-
-            </label>
-
-
-            <div class="input-wrapper">
-
-                <i class="fa-solid fa-stopwatch"></i>
-
-                <select id="intervalo">
-
-                    <option value="10">
-                        10 Segundos (Teste)
-                    </option>
-
-                    <option value="30">
-                        30 Segundos
-                    </option>
-
-                    <option value="60">
-                        1 Minuto
-                    </option>
-
-                    <option value="300" selected>
-                        5 Minutos (Recomendado)
-                    </option>
-
-                    <option value="1800">
-                        30 Minutos
-                    </option>
-
-                    <option value="3600">
-                        1 Hora
-                    </option>
-
-                </select>
-
-            </div>
-
-
-            <div class="time-grid">
-
-                <button
-                    type="button"
-                    class="time-btn"
-                    onclick="setTempo(10, this)"
-                >
-                    10 seg
-                </button>
-
-
-                <button
-                    type="button"
-                    class="time-btn"
-                    onclick="setTempo(60, this)"
-                >
-                    1 min
-                </button>
-
-
-                <button
-                    type="button"
-                    class="time-btn active"
-                    onclick="setTempo(300, this)"
-                >
-                    5 min
-                </button>
-
-            </div>
-
-        </div>
-
-
-        <!-- =================================================
-             QUANTIDADE
-        ================================================= -->
-
-        <div class="field-group">
-
-            <label>
-
-                <i class="fa-solid fa-layer-group"></i>
-
-                Quantidade de Produtos
-
-            </label>
-
-
-            <div class="input-wrapper">
-
-                <i class="fa-solid fa-hashtag"></i>
-
-                <input
-                    type="number"
-                    id="quantidade"
-                    value="5"
-                    min="1"
-                    max="50"
-                    inputmode="numeric"
-                >
-
-            </div>
-
-        </div>
+      </div>
 
     </div>
 
 
-    <!-- =====================================================
-         MENSAGEM
-    ===================================================== -->
+    <div class="field">
 
-    <div
-        id="mensagem"
-        class="mensagem"
-    ></div>
+      <label>
+        <i class="fa-solid fa-layer-group"></i>
+        Quantidade de produtos
+      </label>
 
+      <div class="input-wrap">
 
-    <!-- =====================================================
-         BOTÃO
-    ===================================================== -->
+        <i class="fa-solid fa-hashtag"></i>
 
-    <button
-        class="btn-submit"
-        id="btnSubmit"
-        type="button"
-        onclick="enviarConfiguracao()"
-    >
+        <input
+          id="quantidade"
+          type="number"
+          value="5"
+          min="1"
+          max="50"
+          inputmode="numeric"
+        >
 
-        <i class="fa-solid fa-rocket"></i>
-
-        INICIAR POSTAGENS AUTO
-
-    </button>
-
-
-    <!-- =====================================================
-         FOOTER
-    ===================================================== -->
-
-    <div class="footer-note">
-
-        <i class="fa-solid fa-shield-halved"></i>
-
-        Integração Oficial Telegram WebApp
+      </div>
 
     </div>
 
-
-    <script>
-
-        /* ==================================================
-           TELEGRAM WEB APP
-        ================================================== */
-
-        const tg =
-            window.Telegram &&
-            window.Telegram.WebApp
-                ? window.Telegram.WebApp
-                : null;
+  </div>
 
 
-        /* ==================================================
-           INICIALIZAÇÃO
-        ================================================== */
+  <div
+    id="message"
+    class="message"
+  ></div>
 
-        if (tg) {
 
-            tg.ready();
+  <button
+    id="submit"
+    type="button"
+    class="submit"
+    onclick="enviarConfiguracao()"
+  >
+    <i class="fa-solid fa-rocket"></i>
+    INICIAR POSTAGENS AUTO
+  </button>
 
-            tg.expand();
 
-            if (tg.setHeaderColor) {
+  <div id="debug" class="debug"></div>
 
-                tg.setHeaderColor(
-                    "#05070a"
-                );
 
-            }
+  <div class="footer">
+    <i class="fa-solid fa-shield-halved"></i>
+    Integração Oficial Telegram WebApp
+  </div>
 
-            if (tg.setBackgroundColor) {
+</div>
 
-                tg.setBackgroundColor(
-                    "#05070a"
-                );
 
-            }
+<script>
+
+  /*
+   * ==========================================================
+   * TELEGRAM
+   * ==========================================================
+   */
+
+  const tg =
+    window.Telegram &&
+    window.Telegram.WebApp
+      ? window.Telegram.WebApp
+      : null;
+
+
+  if (tg) {
+
+    tg.ready();
+
+    tg.expand();
+
+    if (tg.setHeaderColor) {
+      tg.setHeaderColor("#05070a");
+    }
+
+    if (tg.setBackgroundColor) {
+      tg.setBackgroundColor("#05070a");
+    }
+
+  }
+
+
+  /*
+   * ==========================================================
+   * URL DO SERVIDOR
+   *
+   * IMPORTANTE:
+   * NÃO usar domínio fixo.
+   *
+   * Se o app abriu em:
+   *
+   * https://bot-raposa-cacadora.onrender.com/app
+   *
+   * então a API será:
+   *
+   * https://bot-raposa-cacadora.onrender.com/api/configurar
+   *
+   * ==========================================================
+   */
+
+  const API_URL =
+    window.location.origin +
+    "/api/configurar";
+
+
+  /*
+   * ==========================================================
+   * DEBUG
+   * ==========================================================
+   */
+
+  function mostrarDebug(texto) {
+
+    const debug =
+      document.getElementById("debug");
+
+    debug.style.display = "block";
+
+    debug.textContent =
+      "API: " + API_URL +
+      "\n" +
+      texto;
+
+  }
+
+
+  /*
+   * ==========================================================
+   * MENSAGEM
+   * ==========================================================
+   */
+
+  function mostrarMensagem(
+    texto,
+    tipo
+  ) {
+
+    const elemento =
+      document.getElementById("message");
+
+    elemento.className =
+      "message show " + tipo;
+
+    elemento.innerHTML =
+      texto;
+
+  }
+
+
+  /*
+   * ==========================================================
+   * COLAR
+   * ==========================================================
+   */
+
+  async function colarLink() {
+
+    const input =
+      document.getElementById(
+        "linkVitrine"
+      );
+
+    try {
+
+      if (
+        navigator.clipboard &&
+        navigator.clipboard.readText
+      ) {
+
+        const texto =
+          await navigator.clipboard.readText();
+
+        if (texto) {
+
+          input.value =
+            texto.trim();
+
+          if (
+            tg &&
+            tg.HapticFeedback
+          ) {
+
+            tg.HapticFeedback
+              .notificationOccurred(
+                "success"
+              );
+
+          }
+
+          return;
 
         }
 
+      }
 
-        /* ==================================================
-           MOSTRAR MENSAGEM
-        ================================================== */
+    } catch (erro) {
 
-        function mostrarMensagem(
-            texto,
-            tipo
-        ) {
+      console.warn(
+        "Clipboard bloqueado:",
+        erro
+      );
 
-            const elemento =
-                document.getElementById(
-                    "mensagem"
-                );
+    }
 
+    input.focus();
 
-            elemento.className =
-                "mensagem " + tipo;
+    if (
+      tg &&
+      tg.showAlert
+    ) {
 
+      tg.showAlert(
+        "Toque e segure no campo para colar o link."
+      );
 
-            elemento.innerHTML =
-                texto;
+    }
 
-
-            try {
-
-                elemento.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center"
-                });
-
-            } catch (e) {}
-
-        }
+  }
 
 
-        /* ==================================================
-           ESCAPAR HTML
-        ================================================== */
+  /*
+   * ==========================================================
+   * TEMPO
+   * ==========================================================
+   */
 
-        function escaparHtml(
-            texto
-        ) {
+  function setTempo(
+    segundos,
+    elemento
+  ) {
 
-            return String(texto)
-                .replace(
-                    /&/g,
-                    "&amp;"
-                )
-                .replace(
-                    /</g,
-                    "&lt;"
-                )
-                .replace(
-                    />/g,
-                    "&gt;"
-                )
-                .replace(
-                    /"/g,
-                    "&quot;"
-                )
-                .replace(
-                    /'/g,
-                    "&#039;"
-                );
+    document.getElementById(
+      "intervalo"
+    ).value =
+      segundos;
+
+    document
+      .querySelectorAll(".time-btn")
+      .forEach(
+        function(btn) {
+
+          btn.classList.remove(
+            "active"
+          );
 
         }
+      );
+
+    elemento.classList.add(
+      "active"
+    );
+
+  }
 
 
-        /* ==================================================
-           COLAR LINK
-        ================================================== */
+  /*
+   * ==========================================================
+   * SINCRONIZAR BOTÕES
+   * ==========================================================
+   */
 
-        async function colarLink() {
+  document
+    .getElementById("intervalo")
+    .addEventListener(
+      "change",
+      function() {
 
-            const input =
-                document.getElementById(
-                    "linkVitrine"
-                );
+        const valor =
+          parseInt(this.value);
 
+        document
+          .querySelectorAll(".time-btn")
+          .forEach(
+            function(btn) {
 
-            try {
-
-                if (
-                    navigator.clipboard &&
-                    navigator.clipboard.readText
-                ) {
-
-                    const texto =
-                        await navigator
-                            .clipboard
-                            .readText();
-
-
-                    if (texto) {
-
-                        input.value =
-                            texto.trim();
-
-
-                        mostrarMensagem(
-                            "✅ Link colado com sucesso.",
-                            "sucesso"
-                        );
-
-
-                        if (
-                            tg &&
-                            tg.HapticFeedback
-                        ) {
-
-                            tg.HapticFeedback
-                                .notificationOccurred(
-                                    "success"
-                                );
-
-                        }
-
-
-                        return;
-
-                    }
-
-                }
-
-            } catch (erro) {
-
-                console.warn(
-                    "Clipboard bloqueado:",
-                    erro
-                );
-
-            }
-
-
-            input.focus();
-
-
-            mostrarMensagem(
-                "📋 Toque e segure no campo para colar o link.",
-                "info"
-            );
-
-
-            if (
-                tg &&
-                tg.showAlert
-            ) {
-
-                tg.showAlert(
-                    "Toque e segure no campo para colar o link."
-                );
-
-            }
-
-        }
-
-
-        /* ==================================================
-           TEMPO RÁPIDO
-        ================================================== */
-
-        function setTempo(
-            segundos,
-            elemento
-        ) {
-
-            document.getElementById(
-                "intervalo"
-            ).value =
-                segundos;
-
-
-            document
-                .querySelectorAll(
-                    ".time-btn"
-                )
-                .forEach(
-                    function(btn) {
-
-                        btn.classList.remove(
-                            "active"
-                        );
-
-                    }
-                );
-
-
-            elemento.classList.add(
+              btn.classList.remove(
                 "active"
-            );
+              );
 
+            }
+          );
+
+        const botoes =
+          document.querySelectorAll(
+            ".time-btn"
+          );
+
+        if (valor === 10) {
+          botoes[0].classList.add("active");
         }
 
+        if (valor === 60) {
+          botoes[1].classList.add("active");
+        }
 
-        /* ==================================================
-           ATUALIZA BOTÕES DE TEMPO
-        ================================================== */
+        if (valor === 300) {
+          botoes[2].classList.add("active");
+        }
 
-        document
-            .getElementById(
-                "intervalo"
-            )
-            .addEventListener(
-                "change",
-                function() {
-
-                    const valor =
-                        parseInt(
-                            this.value,
-                            10
-                        );
+      }
+    );
 
 
-                    document
-                        .querySelectorAll(
-                            ".time-btn"
-                        )
-                        .forEach(
-                            function(btn) {
+  /*
+   * ==========================================================
+   * ENVIAR CONFIGURAÇÃO
+   * ==========================================================
+   */
 
-                                btn.classList.remove(
-                                    "active"
-                                );
+  async function enviarConfiguracao() {
 
-                            }
-                        );
+    const btn =
+      document.getElementById(
+        "submit"
+      );
 
+    const link =
+      document
+        .getElementById(
+          "linkVitrine"
+        )
+        .value
+        .trim();
 
-                    const botoes =
-                        document.querySelectorAll(
-                            ".time-btn"
-                        );
+    const intervalo =
+      parseInt(
+        document.getElementById(
+          "intervalo"
+        ).value
+      );
 
-
-                    if (valor === 10) {
-
-                        botoes[0]
-                            .classList
-                            .add("active");
-
-                    }
-
-                    else if (valor === 60) {
-
-                        botoes[1]
-                            .classList
-                            .add("active");
-
-                    }
-
-                    else if (valor === 300) {
-
-                        botoes[2]
-                            .classList
-                            .add("active");
-
-                    }
-
-                }
-            );
+    const quantidade =
+      parseInt(
+        document.getElementById(
+          "quantidade"
+        ).value
+      );
 
 
-        /* ==================================================
-           VALIDAR LINK
-        ================================================== */
+    /*
+     * --------------------------------------------------------
+     * VALIDAR LINK
+     * --------------------------------------------------------
+     */
 
-        function validarLink(
-            link
+    if (!link) {
+
+      mostrarMensagem(
+        "⚠️ Cole o link da vitrine ou do produto.",
+        "error"
+      );
+
+      return;
+
+    }
+
+
+    /*
+     * --------------------------------------------------------
+     * VALIDAR QUANTIDADE
+     * --------------------------------------------------------
+     */
+
+    if (
+      !Number.isInteger(quantidade) ||
+      quantidade < 1 ||
+      quantidade > 50
+    ) {
+
+      mostrarMensagem(
+        "⚠️ A quantidade deve estar entre 1 e 50.",
+        "error"
+      );
+
+      return;
+
+    }
+
+
+    /*
+     * --------------------------------------------------------
+     * VALIDAR TELEGRAM
+     * --------------------------------------------------------
+     */
+
+    if (!tg) {
+
+      mostrarMensagem(
+        "❌ Abra o painel dentro do Telegram.",
+        "error"
+      );
+
+      return;
+
+    }
+
+
+    /*
+     * --------------------------------------------------------
+     * INIT DATA
+     * --------------------------------------------------------
+     */
+
+    const initData =
+      tg.initData || "";
+
+
+    if (!initData) {
+
+      mostrarMensagem(
+        "❌ Não foi possível obter a autenticação do Telegram.",
+        "error"
+      );
+
+      if (tg.showAlert) {
+
+        tg.showAlert(
+          "Abra o Mini App pelo Telegram."
+        );
+
+      }
+
+      return;
+
+    }
+
+
+    /*
+     * --------------------------------------------------------
+     * LOADING
+     * --------------------------------------------------------
+     */
+
+    btn.disabled = true;
+
+    btn.innerHTML =
+      '<i class="fa-solid fa-spinner fa-spin"></i> ENVIANDO...';
+
+
+    mostrarMensagem(
+      "⏳ Enviando configuração para o servidor...",
+      "success"
+    );
+
+
+    mostrarDebug(
+      "Preparando requisição..."
+    );
+
+
+    /*
+     * --------------------------------------------------------
+     * PAYLOAD
+     * --------------------------------------------------------
+     */
+
+    const payload = {
+
+      link: link,
+
+      intervalo: intervalo,
+
+      quantidade: quantidade,
+
+      initData: initData
+
+    };
+
+
+    console.log(
+      "================================"
+    );
+
+    console.log(
+      "API:",
+      API_URL
+    );
+
+    console.log(
+      "PAYLOAD:",
+      {
+        link: link,
+        intervalo: intervalo,
+        quantidade: quantidade,
+        initData:
+          initData
+            ? "PRESENTE"
+            : "AUSENTE"
+      }
+    );
+
+    console.log(
+      "================================"
+    );
+
+
+    try {
+
+      /*
+       * ------------------------------------------------------
+       * POST
+       * ------------------------------------------------------
+       */
+
+      const resposta =
+        await fetch(
+          API_URL,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+
+              "Accept":
+                "application/json"
+            },
+
+            body:
+              JSON.stringify(
+                payload
+              )
+          }
+        );
+
+
+      /*
+       * ------------------------------------------------------
+       * LER TEXTO
+       * ------------------------------------------------------
+       */
+
+      const texto =
+        await resposta.text();
+
+
+      console.log(
+        "HTTP:",
+        resposta.status
+      );
+
+      console.log(
+        "RESPOSTA:",
+        texto
+      );
+
+
+      mostrarDebug(
+        "HTTP " +
+        resposta.status +
+        "\n" +
+        texto
+      );
+
+
+      /*
+       * ------------------------------------------------------
+       * TENTAR JSON
+       * ------------------------------------------------------
+       */
+
+      let resultado = null;
+
+      try {
+
+        resultado =
+          texto
+            ? JSON.parse(texto)
+            : null;
+
+      } catch (erro) {
+
+        resultado = null;
+
+      }
+
+
+      /*
+       * ------------------------------------------------------
+       * ERRO HTTP
+       * ------------------------------------------------------
+       */
+
+      if (!resposta.ok) {
+
+        let mensagemErro =
+          "Erro HTTP " +
+          resposta.status;
+
+        if (
+          resultado &&
+          resultado.erro
         ) {
 
-            if (!link) {
-
-                return false;
-
-            }
-
-
-            if (
-                !/^https?:\/\//i.test(
-                    link
-                )
-            ) {
-
-                return false;
-
-            }
-
-
-            return true;
+          mensagemErro =
+            resultado.erro;
 
         }
 
+        else if (texto) {
 
-        /* ==================================================
-           ENVIAR CONFIGURAÇÃO
-        ================================================== */
-
-        async function enviarConfiguracao() {
-
-            const btn =
-                document.getElementById(
-                    "btnSubmit"
-                );
-
-
-            const inputLink =
-                document.getElementById(
-                    "linkVitrine"
-                );
-
-
-            const inputIntervalo =
-                document.getElementById(
-                    "intervalo"
-                );
-
-
-            const inputQuantidade =
-                document.getElementById(
-                    "quantidade"
-                );
-
-
-            const link =
-                inputLink.value.trim();
-
-
-            const intervalo =
-                parseInt(
-                    inputIntervalo.value,
-                    10
-                );
-
-
-            const quantidade =
-                parseInt(
-                    inputQuantidade.value,
-                    10
-                );
-
-
-            /* ==============================================
-               VALIDAR LINK
-            ============================================== */
-
-            if (!link) {
-
-                mostrarMensagem(
-                    "⚠️ Cole o link da vitrine ou do produto antes de iniciar.",
-                    "erro"
-                );
-
-
-                if (
-                    tg &&
-                    tg.showAlert
-                ) {
-
-                    tg.showAlert(
-                        "Cole o link da vitrine ou do produto."
-                    );
-
-                }
-
-
-                return;
-
-            }
-
-
-            if (
-                !validarLink(
-                    link
-                )
-            ) {
-
-                mostrarMensagem(
-                    "⚠️ O link precisa começar com http:// ou https://",
-                    "erro"
-                );
-
-
-                return;
-
-            }
-
-
-            /* ==============================================
-               VALIDAR QUANTIDADE
-            ============================================== */
-
-            if (
-                !Number.isInteger(
-                    quantidade
-                ) ||
-                quantidade < 1 ||
-                quantidade > 50
-            ) {
-
-                mostrarMensagem(
-                    "⚠️ A quantidade deve estar entre 1 e 50.",
-                    "erro"
-                );
-
-
-                return;
-
-            }
-
-
-            /* ==============================================
-               VALIDAR INTERVALO
-            ============================================== */
-
-            if (
-                !Number.isInteger(
-                    intervalo
-                ) ||
-                intervalo < 10
-            ) {
-
-                mostrarMensagem(
-                    "⚠️ O intervalo mínimo é de 10 segundos.",
-                    "erro"
-                );
-
-
-                return;
-
-            }
-
-
-            /* ==============================================
-               VALIDAR TELEGRAM
-            ============================================== */
-
-            if (!tg) {
-
-                mostrarMensagem(
-                    "❌ Este painel precisa ser aberto dentro do Telegram.",
-                    "erro"
-                );
-
-
-                return;
-
-            }
-
-
-            /* ==============================================
-               INIT DATA
-            ============================================== */
-
-            const initData =
-                tg.initData || "";
-
-
-            if (!initData) {
-
-                mostrarMensagem(
-                    "❌ Não foi possível obter a autenticação do Telegram.",
-                    "erro"
-                );
-
-
-                if (
-                    tg.showAlert
-                ) {
-
-                    tg.showAlert(
-                        "Abra o painel pelo Telegram para continuar."
-                    );
-
-                }
-
-
-                return;
-
-            }
-
-
-            /* ==============================================
-               FEEDBACK
-            ============================================== */
-
-            if (
-                tg.HapticFeedback
-            ) {
-
-                tg.HapticFeedback
-                    .impactOccurred(
-                        "medium"
-                    );
-
-            }
-
-
-            /* ==============================================
-               LOADING
-            ============================================== */
-
-            btn.disabled =
-                true;
-
-
-            btn.innerHTML =
-                '<i class="fa-solid fa-spinner fa-spin"></i> ENVIANDO...';
-
-
-            mostrarMensagem(
-                "⏳ Enviando configuração para o servidor...",
-                "info"
-            );
-
-
-            /* ==============================================
-               PAYLOAD
-            ============================================== */
-
-            const payload = {
-
-                link:
-                    link,
-
-                intervalo:
-                    intervalo,
-
-                quantidade:
-                    quantidade,
-
-                initData:
-                    initData
-
-            };
-
-
-            console.log(
-                "📤 Enviando para:",
-                window.location.origin +
-                "/api/configurar"
-            );
-
-
-            console.log(
-                "📦 Payload:",
-                {
-                    link:
-                        link,
-
-                    intervalo:
-                        intervalo,
-
-                    quantidade:
-                        quantidade,
-
-                    initData:
-                        initData
-                        ? "PRESENTE"
-                        : "AUSENTE"
-                }
-            );
-
-
-            /* ==============================================
-               REQUISIÇÃO
-               
-               IMPORTANTE:
-               A ROTA CORRETA É /api/configurar
-               
-               E O MÉTODO É POST.
-            ============================================== */
-
-            try {
-
-                const endpoint =
-                    "/api/configurar";
-
-
-                const resposta =
-                    await fetch(
-                        endpoint,
-                        {
-
-                            method:
-                                "POST",
-
-                            headers: {
-
-                                "Content-Type":
-                                    "application/json",
-
-                                "Accept":
-                                    "application/json"
-
-                            },
-
-                            body:
-                                JSON.stringify(
-                                    payload
-                                )
-
-                        }
-                    );
-
-
-                /* ==========================================
-                   LER RESPOSTA
-                ========================================== */
-
-                const texto =
-                    await resposta.text();
-
-
-                console.log(
-                    "📥 HTTP:",
-                    resposta.status
-                );
-
-
-                console.log(
-                    "📥 Resposta:",
-                    texto
-                );
-
-
-                let resultado =
-                    null;
-
-
-                if (
-                    texto &&
-                    texto.trim()
-                ) {
-
-                    try {
-
-                        resultado =
-                            JSON.parse(
-                                texto
-                            );
-
-                    } catch (
-                        erroJson
-                    ) {
-
-                        console.error(
-                            "❌ Resposta não é JSON:",
-                            texto
-                        );
-
-
-                        throw new Error(
-                            "O servidor retornou uma resposta inválida. HTTP " +
-                            resposta.status +
-                            ". Resposta: " +
-                            texto.substring(
-                                0,
-                                300
-                            )
-                        );
-
-                    }
-
-                }
-
-
-                /* ==========================================
-                   HTTP ERROR
-                ========================================== */
-
-                if (
-                    !resposta.ok
-                ) {
-
-                    let mensagemErro =
-                        "Erro HTTP " +
-                        resposta.status;
-
-
-                    if (
-                        resultado &&
-                        resultado.erro
-                    ) {
-
-                        mensagemErro =
-                            resultado.erro;
-
-                    }
-
-                    else if (
-                        resultado &&
-                        resultado.error
-                    ) {
-
-                        if (
-                            typeof resultado.error === "string"
-                        ) {
-
-                            mensagemErro =
-                                resultado.error;
-
-                        }
-
-                        else if (
-                            resultado.error.message
-                        ) {
-
-                            mensagemErro =
-                                resultado.error.message;
-
-                        }
-
-                    }
-
-
-                    throw new Error(
-                        mensagemErro +
-                        " HTTP " +
-                        resposta.status
-                    );
-
-                }
-
-
-                /* ==========================================
-                   RESPOSTA JSON INVÁLIDA
-                ========================================== */
-
-                if (
-                    !resultado ||
-                    typeof resultado !== "object"
-                ) {
-
-                    throw new Error(
-                        "O servidor não retornou JSON válido. HTTP " +
-                        resposta.status
-                    );
-
-                }
-
-
-                /* ==========================================
-                   API RETORNOU ERRO
-                ========================================== */
-
-                if (
-                    resultado.ok !== true
-                ) {
-
-                    throw new Error(
-                        resultado.erro ||
-                        resultado.mensagem ||
-                        "Não foi possível iniciar as postagens."
-                    );
-
-                }
-
-
-                /* ==========================================
-                   SUCESSO
-                ========================================== */
-
-                console.log(
-                    "✅ Automação iniciada:",
-                    resultado
-                );
-
-
-                mostrarMensagem(
-                    "🚀 <b>Postagens iniciadas!</b><br><br>" +
-                    "O servidor recebeu sua solicitação " +
-                    "e está processando os produtos.",
-                    "sucesso"
-                );
-
-
-                if (
-                    tg &&
-                    tg.HapticFeedback
-                ) {
-
-                    tg.HapticFeedback
-                        .notificationOccurred(
-                            "success"
-                        );
-
-                }
-
-
-                if (
-                    tg &&
-                    tg.showAlert
-                ) {
-
-                    tg.showAlert(
-                        "✅ Automação iniciada com sucesso!"
-                    );
-
-                }
-
-
-                btn.innerHTML =
-                    '<i class="fa-solid fa-check"></i> POSTAGENS INICIADAS';
-
-
-                /* ==========================================
-                   FECHAR MINI APP
-                   
-                   Não fecha imediatamente para permitir
-                   visualizar a confirmação.
-                ========================================== */
-
-                setTimeout(
-                    function() {
-
-                        if (
-                            tg &&
-                            typeof tg.close === "function"
-                        ) {
-
-                            tg.close();
-
-                        }
-
-                    },
-                    2500
-                );
-
-            }
-
-
-            /* ==============================================
-               ERRO
-            ============================================== */
-
-            catch (
-                erro
-            ) {
-
-                console.error(
-                    "❌ Erro ao enviar:",
-                    erro
-                );
-
-
-                const mensagemErro =
-                    erro &&
-                    erro.message
-                        ? erro.message
-                        : "Erro desconhecido ao comunicar com o servidor.";
-
-
-                mostrarMensagem(
-                    "❌ <b>Erro:</b><br>" +
-                    escaparHtml(
-                        mensagemErro
-                    ),
-                    "erro"
-                );
-
-
-                if (
-                    tg &&
-                    tg.HapticFeedback
-                ) {
-
-                    tg.HapticFeedback
-                        .notificationOccurred(
-                            "error"
-                        );
-
-                }
-
-
-                if (
-                    tg &&
-                    tg.showAlert
-                ) {
-
-                    tg.showAlert(
-                        "❌ " +
-                        mensagemErro
-                    );
-
-                }
-
-
-                btn.disabled =
-                    false;
-
-
-                btn.innerHTML =
-                    '<i class="fa-solid fa-rocket"></i> INICIAR POSTAGENS AUTO';
-
-            }
+          mensagemErro =
+            texto;
 
         }
 
-
-        /* ==================================================
-           ENTER NO CAMPO
-        ================================================== */
-
-        document
-            .getElementById(
-                "linkVitrine"
-            )
-            .addEventListener(
-                "keydown",
-                function(event) {
-
-                    if (
-                        event.key === "Enter"
-                    ) {
-
-                        event.preventDefault();
-
-                        enviarConfiguracao();
-
-                    }
-
-                }
-            );
-
-
-        /* ==================================================
-           LOG INICIAL
-        ================================================== */
-
-        console.log(
-            "🦊 Raposa Caçadora Mini App carregado."
+        throw new Error(
+          mensagemErro
         );
 
+      }
 
-        console.log(
-            "🌐 Origem:",
-            window.location.origin
+
+      /*
+       * ------------------------------------------------------
+       * RESPOSTA SEM JSON
+       * ------------------------------------------------------
+       */
+
+      if (!resultado) {
+
+        throw new Error(
+          "O servidor não retornou JSON válido."
         );
 
+      }
 
-        console.log(
-            "📡 Endpoint da API:",
-            window.location.origin +
-            "/api/configurar"
+
+      /*
+       * ------------------------------------------------------
+       * API RETORNOU ERRO
+       * ------------------------------------------------------
+       */
+
+      if (!resultado.ok) {
+
+        throw new Error(
+          resultado.erro ||
+          resultado.error ||
+          "Não foi possível iniciar as postagens."
         );
 
+      }
 
-        console.log(
-            "📱 Telegram:",
-            tg
-                ? "Detectado"
-                : "Não detectado"
+
+      /*
+       * ------------------------------------------------------
+       * SUCESSO
+       * ------------------------------------------------------
+       */
+
+      mostrarMensagem(
+        "🚀 <b>Postagens iniciadas!</b><br><br>" +
+        "O servidor recebeu sua vitrine e começou o processamento.",
+        "success"
+      );
+
+
+      if (
+        tg &&
+        tg.HapticFeedback
+      ) {
+
+        tg.HapticFeedback
+          .notificationOccurred(
+            "success"
+          );
+
+      }
+
+
+      if (
+        tg &&
+        tg.showAlert
+      ) {
+
+        tg.showAlert(
+          "✅ Automação iniciada com sucesso!"
         );
 
-    </script>
+      }
+
+
+      btn.innerHTML =
+        '<i class="fa-solid fa-check"></i> POSTAGENS INICIADAS';
+
+
+      /*
+       * NÃO FECHAR IMEDIATAMENTE.
+       *
+       * O usuário pode verificar a mensagem.
+       */
+
+      setTimeout(
+        function() {
+
+          btn.disabled =
+            false;
+
+        },
+        3000
+      );
+
+
+    } catch (erro) {
+
+      console.error(
+        "❌ ERRO FINAL:",
+        erro
+      );
+
+
+      mostrarMensagem(
+        "❌ Erro:<br>" +
+        escapeHtml(
+          erro.message ||
+          "Erro desconhecido."
+        ),
+        "error"
+      );
+
+
+      if (
+        tg &&
+        tg.HapticFeedback
+      ) {
+
+        tg.HapticFeedback
+          .notificationOccurred(
+            "error"
+          );
+
+      }
+
+
+      if (
+        tg &&
+        tg.showAlert
+      ) {
+
+        tg.showAlert(
+          "❌ " +
+          (
+            erro.message ||
+            "Erro ao enviar configuração."
+          )
+        );
+
+      }
+
+
+      btn.disabled =
+        false;
+
+      btn.innerHTML =
+        '<i class="fa-solid fa-rocket"></i> INICIAR POSTAGENS AUTO';
+
+    }
+
+  }
+
+
+  /*
+   * ==========================================================
+   * ESCAPAR HTML
+   * ==========================================================
+   */
+
+  function escapeHtml(texto) {
+
+    const div =
+      document.createElement(
+        "div"
+      );
+
+    div.textContent =
+      texto;
+
+    return div.innerHTML;
+
+  }
+
+
+  /*
+   * ==========================================================
+   * VERIFICAÇÃO INICIAL
+   * ==========================================================
+   */
+
+  console.log(
+    "🦊 Raposa Caçadora carregada."
+  );
+
+  console.log(
+    "Página:",
+    window.location.href
+  );
+
+  console.log(
+    "API:",
+    API_URL
+  );
+
+</script>
 
 </body>
-
 </html>

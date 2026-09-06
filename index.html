@@ -1,1257 +1,1438 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-  <meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-  >
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
 
-  <title>Raposa Caçadora - Painel VIP</title>
+    <title>Raposa Caçadora - Painel VIP</title>
 
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-  >
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    >
 
-  <style>
+    <style>
+        :root {
+            --bg: #05070a;
+            --card: rgba(15, 23, 36, .92);
+            --border: rgba(255,255,255,.09);
+            --orange: #f97316;
+            --orange2: #ea580c;
+            --text: #f8fafc;
+            --sub: #94a3b8;
+            --input: rgba(6,10,17,.95);
+            --green: #22c55e;
+            --red: #ef4444;
+            --radius: 16px;
+        }
 
-    :root {
-      --bg: #05070a;
-      --card: rgba(15, 23, 36, .88);
-      --border: rgba(255,255,255,.08);
-      --orange: #f97316;
-      --orange2: #ea580c;
-      --text: #f8fafc;
-      --sub: #94a3b8;
-      --input: rgba(6,10,17,.95);
-    }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Roboto,
+                Arial,
+                sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        Roboto,
-        Arial,
-        sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
+        body {
+            min-height: 100vh;
+            padding: 20px 16px 30px;
+            color: var(--text);
+            background:
+                linear-gradient(
+                    135deg,
+                    #05070a 0%,
+                    #0d111a 100%
+                );
+        }
 
-    body {
-      min-height: 100vh;
-      padding: 20px 16px 30px;
-      background:
-        linear-gradient(
-          135deg,
-          #05070a 0%,
-          #0d111a 100%
-        );
-      color: var(--text);
-    }
+        .container {
+            width: 100%;
+            max-width: 520px;
+            margin: 0 auto;
+        }
 
-    .container {
-      width: 100%;
-      max-width: 520px;
-      margin: 0 auto;
-    }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
 
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 20px;
-    }
+        .avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #080b11;
+            border: 2px solid var(--orange);
+            font-size: 28px;
+            box-shadow: 0 0 25px rgba(249,115,22,.45);
+        }
 
-    .avatar {
-      width: 58px;
-      height: 58px;
-      flex-shrink: 0;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #080b11;
-      border: 2px solid var(--orange);
-      font-size: 29px;
-      box-shadow: 0 0 25px rgba(249,115,22,.45);
-    }
+        .brand h1 {
+            font-size: 1.25rem;
+            font-weight: 800;
+        }
 
-    h1 {
-      font-size: 1.25rem;
-      font-weight: 800;
-    }
+        .brand p {
+            margin-top: 3px;
+            color: var(--sub);
+            font-size: .8rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
 
-    .status {
-      margin-top: 3px;
-      color: var(--sub);
-      font-size: .8rem;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+        .status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+        }
 
-    .dot {
-      width: 8px;
-      height: 8px;
-      background: #22c55e;
-      border-radius: 50%;
-      box-shadow: 0 0 8px #22c55e;
-    }
+        .card {
+            padding: 20px;
+            border-radius: var(--radius);
+            background: var(--card);
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,.45);
+        }
 
-    .card {
-      padding: 20px;
-      border-radius: 16px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      box-shadow: 0 10px 30px rgba(0,0,0,.45);
-      backdrop-filter: blur(16px);
-    }
+        .title {
+            color: #fdba74;
+            font-size: .9rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-    .title {
-      color: #fdba74;
-      font-size: .9rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-      margin-bottom: 18px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+        .field {
+            margin-bottom: 18px;
+        }
 
-    .field {
-      margin-bottom: 18px;
-    }
+        .field:last-child {
+            margin-bottom: 0;
+        }
 
-    .field:last-child {
-      margin-bottom: 0;
-    }
+        label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 8px;
+            color: var(--sub);
+            font-size: .82rem;
+            font-weight: 600;
+        }
 
-    label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--sub);
-      font-size: .82rem;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
+        .input-row {
+            display: flex;
+            gap: 8px;
+        }
 
-    .input-row {
-      display: flex;
-      gap: 8px;
-    }
+        .input-box {
+            position: relative;
+            flex: 1;
+        }
 
-    .input-wrap {
-      position: relative;
-      flex: 1;
-    }
+        .input-box > i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            pointer-events: none;
+        }
 
-    .input-wrap > i {
-      position: absolute;
-      left: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #64748b;
-      pointer-events: none;
-    }
+        input,
+        select {
+            width: 100%;
+            min-height: 48px;
+            padding: 13px 14px 13px 42px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,.12);
+            outline: none;
+            background: var(--input);
+            color: var(--text);
+            font-size: .92rem;
+        }
 
-    input,
-    select {
-      width: 100%;
-      min-height: 48px;
-      padding: 13px 14px 13px 42px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: var(--input);
-      color: white;
-      outline: none;
-      font-size: .92rem;
-    }
+        input:focus,
+        select:focus {
+            border-color: var(--orange);
+            box-shadow:
+                0 0 0 3px rgba(249,115,22,.15);
+        }
 
-    input:focus,
-    select:focus {
-      border-color: var(--orange);
-      box-shadow: 0 0 0 3px rgba(249,115,22,.18);
-    }
+        select option {
+            background: #0f172a;
+            color: white;
+        }
 
-    select option {
-      background: #0f172a;
-      color: white;
-    }
+        .paste {
+            min-height: 48px;
+            padding: 0 15px;
+            border-radius: 12px;
+            border: 1px solid var(--orange);
+            background: rgba(249,115,22,.13);
+            color: #fdba74;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        }
 
-    .paste {
-      min-height: 48px;
-      border-radius: 12px;
-      border: 1px solid var(--orange);
-      background: rgba(249,115,22,.13);
-      color: #fdba74;
-      padding: 0 15px;
-      font-weight: 700;
-      cursor: pointer;
-      white-space: nowrap;
-    }
+        .paste:active {
+            transform: scale(.97);
+        }
 
-    .time-grid {
-      display: grid;
-      grid-template-columns: repeat(3,1fr);
-      gap: 8px;
-      margin-top: 8px;
-    }
+        .quick {
+            display: grid;
+            grid-template-columns: repeat(3,1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
 
-    .time-btn {
-      padding: 10px 6px;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: var(--input);
-      color: var(--sub);
-      font-weight: 600;
-      cursor: pointer;
-    }
+        .quick button {
+            padding: 10px 5px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,.1);
+            background: var(--input);
+            color: var(--sub);
+            font-weight: 700;
+            cursor: pointer;
+        }
 
-    .time-btn.active {
-      color: var(--orange);
-      border-color: var(--orange);
-      background: rgba(249,115,22,.16);
-    }
+        .quick button.active {
+            color: var(--orange);
+            border-color: var(--orange);
+            background: rgba(249,115,22,.15);
+        }
 
-    .message {
-      display: none;
-      margin-top: 15px;
-      padding: 13px;
-      border-radius: 12px;
-      font-size: .85rem;
-      line-height: 1.45;
-      text-align: center;
-    }
+        .submit {
+            width: 100%;
+            min-height: 54px;
+            margin-top: 18px;
+            border: 0;
+            border-radius: var(--radius);
+            background:
+                linear-gradient(
+                    135deg,
+                    var(--orange),
+                    var(--orange2)
+                );
+            color: white;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow:
+                0 8px 25px rgba(249,115,22,.35);
+        }
 
-    .message.show {
-      display: block;
-    }
+        .submit:active {
+            transform: scale(.985);
+        }
 
-    .message.success {
-      color: #86efac;
-      background: rgba(34,197,94,.10);
-      border: 1px solid rgba(34,197,94,.25);
-    }
+        .submit:disabled {
+            opacity: .65;
+            cursor: not-allowed;
+        }
 
-    .message.error {
-      color: #fca5a5;
-      background: rgba(239,68,68,.10);
-      border: 1px solid rgba(239,68,68,.25);
-    }
+        .message {
+            display: none;
+            margin-top: 14px;
+            padding: 13px;
+            border-radius: 12px;
+            text-align: center;
+            line-height: 1.45;
+            font-size: .86rem;
+        }
 
-    .submit {
-      width: 100%;
-      min-height: 54px;
-      margin-top: 16px;
-      border: 0;
-      border-radius: 16px;
-      background:
-        linear-gradient(
-          135deg,
-          var(--orange),
-          var(--orange2)
-        );
-      color: white;
-      font-size: 1rem;
-      font-weight: 800;
-      cursor: pointer;
-      box-shadow: 0 8px 25px rgba(249,115,22,.35);
-    }
+        .message.show {
+            display: block;
+        }
 
-    .submit:disabled {
-      opacity: .7;
-      cursor: not-allowed;
-    }
+        .message.success {
+            color: #86efac;
+            background: rgba(34,197,94,.1);
+            border: 1px solid rgba(34,197,94,.25);
+        }
 
-    .footer {
-      margin-top: 20px;
-      text-align: center;
-      color: var(--sub);
-      font-size: .75rem;
-    }
+        .message.error {
+            color: #fca5a5;
+            background: rgba(239,68,68,.1);
+            border: 1px solid rgba(239,68,68,.25);
+        }
 
-    .debug {
-      margin-top: 14px;
-      padding: 10px;
-      border-radius: 10px;
-      background: rgba(255,255,255,.04);
-      color: #64748b;
-      font-size: .68rem;
-      word-break: break-all;
-      display: none;
-    }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            color: var(--sub);
+            font-size: .72rem;
+        }
 
-    @media(max-width:380px) {
-      .input-row {
-        flex-direction: column;
-      }
+        .debug {
+            margin-top: 12px;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(0,0,0,.25);
+            color: #64748b;
+            font-size: .68rem;
+            word-break: break-all;
+            display: none;
+        }
 
-      .paste {
-        width: 100%;
-      }
-    }
+        @media (max-width: 390px) {
+            .input-row {
+                flex-direction: column;
+            }
 
-  </style>
+            .paste {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
 <div class="container">
 
-  <div class="brand">
+    <div class="brand">
+        <div class="avatar">🦊</div>
 
-    <div class="avatar">
-      🦊
+        <div>
+            <h1>Raposa Caçadora VIP</h1>
+
+            <p>
+                <span class="status"></span>
+                Sistema de Postagens Conectado
+            </p>
+        </div>
     </div>
 
-    <div>
-      <h1>Raposa Caçadora VIP</h1>
+    <div class="card">
 
-      <div class="status">
-        <span class="dot"></span>
-        Sistema de Postagens Conectado
-      </div>
-    </div>
+        <div class="title">
+            <i class="fa-solid fa-sliders"></i>
+            Painel de Automação
+        </div>
 
-  </div>
+        <!-- LINK -->
+        <div class="field">
 
+            <label>
+                <i class="fa-solid fa-link"></i>
+                Link da Vitrine ou Produto
+            </label>
 
-  <div class="card">
+            <div class="input-row">
 
-    <div class="title">
-      <i class="fa-solid fa-sliders"></i>
-      Painel de Automação
-    </div>
+                <div class="input-box">
 
+                    <i class="fa-solid fa-store"></i>
 
-    <div class="field">
+                    <input
+                        id="linkVitrine"
+                        type="url"
+                        inputmode="url"
+                        placeholder="Cole o link da vitrine..."
+                        autocomplete="off"
+                        autocapitalize="off"
+                        spellcheck="false"
+                    >
 
-      <label>
-        <i class="fa-solid fa-link"></i>
-        Link da Vitrine / Produto
-      </label>
+                </div>
 
-      <div class="input-row">
+                <button
+                    class="paste"
+                    id="btnColar"
+                    type="button"
+                >
+                    <i class="fa-solid fa-paste"></i>
+                    Colar
+                </button>
 
-        <div class="input-wrap">
+            </div>
 
-          <i class="fa-solid fa-store"></i>
+        </div>
 
-          <input
-            id="linkVitrine"
-            type="text"
-            placeholder="Cole o link da vitrine ou produto..."
-            autocomplete="off"
-            autocapitalize="off"
-            spellcheck="false"
-          >
+        <!-- INTERVALO -->
+        <div class="field">
+
+            <label>
+                <i class="fa-solid fa-clock"></i>
+                Tempo entre postagens
+            </label>
+
+            <div class="input-box">
+
+                <i class="fa-solid fa-stopwatch"></i>
+
+                <select id="intervalo">
+
+                    <option value="10">
+                        10 segundos - Teste
+                    </option>
+
+                    <option value="30">
+                        30 segundos
+                    </option>
+
+                    <option value="60">
+                        1 minuto
+                    </option>
+
+                    <option value="300" selected>
+                        5 minutos - Recomendado
+                    </option>
+
+                    <option value="1800">
+                        30 minutos
+                    </option>
+
+                    <option value="3600">
+                        1 hora
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="quick">
+
+                <button type="button" data-time="10">
+                    10 seg
+                </button>
+
+                <button type="button" data-time="60">
+                    1 min
+                </button>
+
+                <button
+                    type="button"
+                    data-time="300"
+                    class="active"
+                >
+                    5 min
+                </button>
+
+            </div>
+
+        </div>
+
+        <!-- QUANTIDADE -->
+        <div class="field">
+
+            <label>
+                <i class="fa-solid fa-layer-group"></i>
+                Quantidade de produtos
+            </label>
+
+            <div class="input-box">
+
+                <i class="fa-solid fa-hashtag"></i>
+
+                <input
+                    id="quantidade"
+                    type="number"
+                    value="5"
+                    min="1"
+                    max="50"
+                    inputmode="numeric"
+                >
+
+            </div>
 
         </div>
 
         <button
-          type="button"
-          class="paste"
-          onclick="colarLink()"
+            class="submit"
+            id="btnSubmit"
+            type="button"
         >
-          <i class="fa-solid fa-paste"></i>
-          Colar
+            <i class="fa-solid fa-rocket"></i>
+            INICIAR POSTAGENS AUTO
         </button>
 
-      </div>
+        <div
+            id="mensagem"
+            class="message"
+        ></div>
+
+        <div
+            id="debug"
+            class="debug"
+        ></div>
 
     </div>
 
-
-    <div class="field">
-
-      <label>
-        <i class="fa-solid fa-clock"></i>
-        Tempo entre postagens
-      </label>
-
-      <div class="input-wrap">
-
-        <i class="fa-solid fa-stopwatch"></i>
-
-        <select id="intervalo">
-
-          <option value="10">
-            10 segundos - teste
-          </option>
-
-          <option value="30">
-            30 segundos
-          </option>
-
-          <option value="60">
-            1 minuto
-          </option>
-
-          <option value="300" selected>
-            5 minutos - recomendado
-          </option>
-
-          <option value="1800">
-            30 minutos
-          </option>
-
-          <option value="3600">
-            1 hora
-          </option>
-
-        </select>
-
-      </div>
-
-
-      <div class="time-grid">
-
-        <button
-          type="button"
-          class="time-btn"
-          onclick="setTempo(10,this)"
-        >
-          10 seg
-        </button>
-
-        <button
-          type="button"
-          class="time-btn"
-          onclick="setTempo(60,this)"
-        >
-          1 min
-        </button>
-
-        <button
-          type="button"
-          class="time-btn active"
-          onclick="setTempo(300,this)"
-        >
-          5 min
-        </button>
-
-      </div>
-
+    <div class="footer">
+        <i class="fa-solid fa-shield-halved"></i>
+        Integração Oficial Telegram WebApp
     </div>
-
-
-    <div class="field">
-
-      <label>
-        <i class="fa-solid fa-layer-group"></i>
-        Quantidade de produtos
-      </label>
-
-      <div class="input-wrap">
-
-        <i class="fa-solid fa-hashtag"></i>
-
-        <input
-          id="quantidade"
-          type="number"
-          value="5"
-          min="1"
-          max="50"
-          inputmode="numeric"
-        >
-
-      </div>
-
-    </div>
-
-  </div>
-
-
-  <div
-    id="message"
-    class="message"
-  ></div>
-
-
-  <button
-    id="submit"
-    type="button"
-    class="submit"
-    onclick="enviarConfiguracao()"
-  >
-    <i class="fa-solid fa-rocket"></i>
-    INICIAR POSTAGENS AUTO
-  </button>
-
-
-  <div id="debug" class="debug"></div>
-
-
-  <div class="footer">
-    <i class="fa-solid fa-shield-halved"></i>
-    Integração Oficial Telegram WebApp
-  </div>
 
 </div>
 
 
 <script>
 
-  /*
-   * ==========================================================
-   * TELEGRAM
-   * ==========================================================
-   */
-
-  const tg =
-    window.Telegram &&
-    window.Telegram.WebApp
-      ? window.Telegram.WebApp
-      : null;
-
-
-  if (tg) {
-
-    tg.ready();
-
-    tg.expand();
-
-    if (tg.setHeaderColor) {
-      tg.setHeaderColor("#05070a");
-    }
-
-    if (tg.setBackgroundColor) {
-      tg.setBackgroundColor("#05070a");
-    }
-
-  }
-
-
-  /*
-   * ==========================================================
-   * URL DO SERVIDOR
-   *
-   * IMPORTANTE:
-   * NÃO usar domínio fixo.
-   *
-   * Se o app abriu em:
-   *
-   * https://bot-raposa-cacadora.onrender.com/app
-   *
-   * então a API será:
-   *
-   * https://bot-raposa-cacadora.onrender.com/api/configurar
-   *
-   * ==========================================================
-   */
-
-  const API_URL =
-    window.location.origin +
-    "/api/configurar";
-
-
-  /*
-   * ==========================================================
-   * DEBUG
-   * ==========================================================
-   */
-
-  function mostrarDebug(texto) {
-
-    const debug =
-      document.getElementById("debug");
-
-    debug.style.display = "block";
-
-    debug.textContent =
-      "API: " + API_URL +
-      "\n" +
-      texto;
-
-  }
-
-
-  /*
-   * ==========================================================
-   * MENSAGEM
-   * ==========================================================
-   */
-
-  function mostrarMensagem(
-    texto,
-    tipo
-  ) {
-
-    const elemento =
-      document.getElementById("message");
-
-    elemento.className =
-      "message show " + tipo;
-
-    elemento.innerHTML =
-      texto;
-
-  }
-
-
-  /*
-   * ==========================================================
-   * COLAR
-   * ==========================================================
-   */
-
-  async function colarLink() {
-
-    const input =
-      document.getElementById(
-        "linkVitrine"
-      );
-
-    try {
-
-      if (
-        navigator.clipboard &&
-        navigator.clipboard.readText
-      ) {
-
-        const texto =
-          await navigator.clipboard.readText();
-
-        if (texto) {
-
-          input.value =
-            texto.trim();
-
-          if (
-            tg &&
-            tg.HapticFeedback
-          ) {
-
-            tg.HapticFeedback
-              .notificationOccurred(
-                "success"
-              );
-
-          }
-
-          return;
-
-        }
-
-      }
-
-    } catch (erro) {
-
-      console.warn(
-        "Clipboard bloqueado:",
-        erro
-      );
-
-    }
-
-    input.focus();
-
-    if (
-      tg &&
-      tg.showAlert
-    ) {
-
-      tg.showAlert(
-        "Toque e segure no campo para colar o link."
-      );
-
-    }
-
-  }
-
-
-  /*
-   * ==========================================================
-   * TEMPO
-   * ==========================================================
-   */
-
-  function setTempo(
-    segundos,
-    elemento
-  ) {
-
-    document.getElementById(
-      "intervalo"
-    ).value =
-      segundos;
-
-    document
-      .querySelectorAll(".time-btn")
-      .forEach(
-        function(btn) {
-
-          btn.classList.remove(
-            "active"
-          );
-
-        }
-      );
-
-    elemento.classList.add(
-      "active"
-    );
-
-  }
-
-
-  /*
-   * ==========================================================
-   * SINCRONIZAR BOTÕES
-   * ==========================================================
-   */
-
-  document
-    .getElementById("intervalo")
-    .addEventListener(
-      "change",
-      function() {
-
-        const valor =
-          parseInt(this.value);
-
-        document
-          .querySelectorAll(".time-btn")
-          .forEach(
-            function(btn) {
-
-              btn.classList.remove(
-                "active"
-              );
-
-            }
-          );
-
-        const botoes =
-          document.querySelectorAll(
-            ".time-btn"
-          );
-
-        if (valor === 10) {
-          botoes[0].classList.add("active");
-        }
-
-        if (valor === 60) {
-          botoes[1].classList.add("active");
-        }
-
-        if (valor === 300) {
-          botoes[2].classList.add("active");
-        }
-
-      }
-    );
-
-
-  /*
-   * ==========================================================
-   * ENVIAR CONFIGURAÇÃO
-   * ==========================================================
-   */
-
-  async function enviarConfiguracao() {
-
-    const btn =
-      document.getElementById(
-        "submit"
-      );
-
-    const link =
-      document
-        .getElementById(
-          "linkVitrine"
-        )
-        .value
-        .trim();
-
-    const intervalo =
-      parseInt(
-        document.getElementById(
-          "intervalo"
-        ).value
-      );
-
-    const quantidade =
-      parseInt(
-        document.getElementById(
-          "quantidade"
-        ).value
-      );
-
-
     /*
-     * --------------------------------------------------------
-     * VALIDAR LINK
-     * --------------------------------------------------------
-     */
-
-    if (!link) {
-
-      mostrarMensagem(
-        "⚠️ Cole o link da vitrine ou do produto.",
-        "error"
-      );
-
-      return;
-
-    }
-
-
-    /*
-     * --------------------------------------------------------
-     * VALIDAR QUANTIDADE
-     * --------------------------------------------------------
-     */
-
-    if (
-      !Number.isInteger(quantidade) ||
-      quantidade < 1 ||
-      quantidade > 50
-    ) {
-
-      mostrarMensagem(
-        "⚠️ A quantidade deve estar entre 1 e 50.",
-        "error"
-      );
-
-      return;
-
-    }
-
-
-    /*
-     * --------------------------------------------------------
-     * VALIDAR TELEGRAM
-     * --------------------------------------------------------
-     */
-
-    if (!tg) {
-
-      mostrarMensagem(
-        "❌ Abra o painel dentro do Telegram.",
-        "error"
-      );
-
-      return;
-
-    }
-
-
-    /*
-     * --------------------------------------------------------
-     * INIT DATA
-     * --------------------------------------------------------
-     */
-
-    const initData =
-      tg.initData || "";
-
-
-    if (!initData) {
-
-      mostrarMensagem(
-        "❌ Não foi possível obter a autenticação do Telegram.",
-        "error"
-      );
-
-      if (tg.showAlert) {
-
-        tg.showAlert(
-          "Abra o Mini App pelo Telegram."
-        );
-
-      }
-
-      return;
-
-    }
-
-
-    /*
-     * --------------------------------------------------------
-     * LOADING
-     * --------------------------------------------------------
-     */
-
-    btn.disabled = true;
-
-    btn.innerHTML =
-      '<i class="fa-solid fa-spinner fa-spin"></i> ENVIANDO...';
-
-
-    mostrarMensagem(
-      "⏳ Enviando configuração para o servidor...",
-      "success"
-    );
-
-
-    mostrarDebug(
-      "Preparando requisição..."
-    );
-
-
-    /*
-     * --------------------------------------------------------
-     * PAYLOAD
-     * --------------------------------------------------------
-     */
-
-    const payload = {
-
-      link: link,
-
-      intervalo: intervalo,
-
-      quantidade: quantidade,
-
-      initData: initData
-
-    };
-
-
-    console.log(
-      "================================"
-    );
-
-    console.log(
-      "API:",
-      API_URL
-    );
-
-    console.log(
-      "PAYLOAD:",
-      {
-        link: link,
-        intervalo: intervalo,
-        quantidade: quantidade,
-        initData:
-          initData
-            ? "PRESENTE"
-            : "AUSENTE"
-      }
-    );
-
-    console.log(
-      "================================"
-    );
-
-
-    try {
-
-      /*
-       * ------------------------------------------------------
-       * POST
-       * ------------------------------------------------------
-       */
-
-      const resposta =
-        await fetch(
-          API_URL,
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-
-              "Accept":
-                "application/json"
-            },
-
-            body:
-              JSON.stringify(
-                payload
-              )
-          }
-        );
-
-
-      /*
-       * ------------------------------------------------------
-       * LER TEXTO
-       * ------------------------------------------------------
-       */
-
-      const texto =
-        await resposta.text();
-
-
-      console.log(
-        "HTTP:",
-        resposta.status
-      );
-
-      console.log(
-        "RESPOSTA:",
-        texto
-      );
-
-
-      mostrarDebug(
-        "HTTP " +
-        resposta.status +
-        "\n" +
-        texto
-      );
-
-
-      /*
-       * ------------------------------------------------------
-       * TENTAR JSON
-       * ------------------------------------------------------
-       */
-
-      let resultado = null;
-
-      try {
-
-        resultado =
-          texto
-            ? JSON.parse(texto)
+    ============================================================
+    TELEGRAM WEB APP
+    ============================================================
+    */
+
+    const tg =
+        window.Telegram &&
+        window.Telegram.WebApp
+            ? window.Telegram.WebApp
             : null;
 
-      } catch (erro) {
 
-        resultado = null;
+    if (tg) {
 
-      }
+        try {
+            tg.ready();
+            tg.expand();
 
+            if (tg.setHeaderColor) {
+                tg.setHeaderColor("#05070a");
+            }
 
-      /*
-       * ------------------------------------------------------
-       * ERRO HTTP
-       * ------------------------------------------------------
-       */
-
-      if (!resposta.ok) {
-
-        let mensagemErro =
-          "Erro HTTP " +
-          resposta.status;
-
-        if (
-          resultado &&
-          resultado.erro
-        ) {
-
-          mensagemErro =
-            resultado.erro;
-
+            if (tg.setBackgroundColor) {
+                tg.setBackgroundColor("#05070a");
+            }
+        } catch (e) {
+            console.warn("Telegram WebApp:", e);
         }
-
-        else if (texto) {
-
-          mensagemErro =
-            texto;
-
-        }
-
-        throw new Error(
-          mensagemErro
-        );
-
-      }
-
-
-      /*
-       * ------------------------------------------------------
-       * RESPOSTA SEM JSON
-       * ------------------------------------------------------
-       */
-
-      if (!resultado) {
-
-        throw new Error(
-          "O servidor não retornou JSON válido."
-        );
-
-      }
-
-
-      /*
-       * ------------------------------------------------------
-       * API RETORNOU ERRO
-       * ------------------------------------------------------
-       */
-
-      if (!resultado.ok) {
-
-        throw new Error(
-          resultado.erro ||
-          resultado.error ||
-          "Não foi possível iniciar as postagens."
-        );
-
-      }
-
-
-      /*
-       * ------------------------------------------------------
-       * SUCESSO
-       * ------------------------------------------------------
-       */
-
-      mostrarMensagem(
-        "🚀 <b>Postagens iniciadas!</b><br><br>" +
-        "O servidor recebeu sua vitrine e começou o processamento.",
-        "success"
-      );
-
-
-      if (
-        tg &&
-        tg.HapticFeedback
-      ) {
-
-        tg.HapticFeedback
-          .notificationOccurred(
-            "success"
-          );
-
-      }
-
-
-      if (
-        tg &&
-        tg.showAlert
-      ) {
-
-        tg.showAlert(
-          "✅ Automação iniciada com sucesso!"
-        );
-
-      }
-
-
-      btn.innerHTML =
-        '<i class="fa-solid fa-check"></i> POSTAGENS INICIADAS';
-
-
-      /*
-       * NÃO FECHAR IMEDIATAMENTE.
-       *
-       * O usuário pode verificar a mensagem.
-       */
-
-      setTimeout(
-        function() {
-
-          btn.disabled =
-            false;
-
-        },
-        3000
-      );
-
-
-    } catch (erro) {
-
-      console.error(
-        "❌ ERRO FINAL:",
-        erro
-      );
-
-
-      mostrarMensagem(
-        "❌ Erro:<br>" +
-        escapeHtml(
-          erro.message ||
-          "Erro desconhecido."
-        ),
-        "error"
-      );
-
-
-      if (
-        tg &&
-        tg.HapticFeedback
-      ) {
-
-        tg.HapticFeedback
-          .notificationOccurred(
-            "error"
-          );
-
-      }
-
-
-      if (
-        tg &&
-        tg.showAlert
-      ) {
-
-        tg.showAlert(
-          "❌ " +
-          (
-            erro.message ||
-            "Erro ao enviar configuração."
-          )
-        );
-
-      }
-
-
-      btn.disabled =
-        false;
-
-      btn.innerHTML =
-        '<i class="fa-solid fa-rocket"></i> INICIAR POSTAGENS AUTO';
 
     }
 
-  }
+
+    /*
+    ============================================================
+    ELEMENTOS
+    ============================================================
+    */
+
+    const inputLink =
+        document.getElementById("linkVitrine");
+
+    const inputQuantidade =
+        document.getElementById("quantidade");
+
+    const selectIntervalo =
+        document.getElementById("intervalo");
+
+    const btnSubmit =
+        document.getElementById("btnSubmit");
+
+    const btnColar =
+        document.getElementById("btnColar");
+
+    const mensagem =
+        document.getElementById("mensagem");
+
+    const debug =
+        document.getElementById("debug");
 
 
-  /*
-   * ==========================================================
-   * ESCAPAR HTML
-   * ==========================================================
-   */
+    /*
+    ============================================================
+    MENSAGEM
+    ============================================================
+    */
 
-  function escapeHtml(texto) {
+    function mostrarMensagem(texto, tipo) {
 
-    const div =
-      document.createElement(
-        "div"
-      );
+        mensagem.className =
+            "message show " + tipo;
 
-    div.textContent =
-      texto;
+        mensagem.innerHTML =
+            texto;
 
-    return div.innerHTML;
-
-  }
+    }
 
 
-  /*
-   * ==========================================================
-   * VERIFICAÇÃO INICIAL
-   * ==========================================================
-   */
+    function limparMensagem() {
 
-  console.log(
-    "🦊 Raposa Caçadora carregada."
-  );
+        mensagem.className =
+            "message";
 
-  console.log(
-    "Página:",
-    window.location.href
-  );
+        mensagem.innerHTML =
+            "";
 
-  console.log(
-    "API:",
-    API_URL
-  );
+    }
+
+
+    /*
+    ============================================================
+    HAPTIC
+    ============================================================
+    */
+
+    function vibrar(tipo) {
+
+        try {
+
+            if (
+                tg &&
+                tg.HapticFeedback
+            ) {
+
+                if (tipo === "success") {
+
+                    tg.HapticFeedback
+                        .notificationOccurred("success");
+
+                } else if (tipo === "error") {
+
+                    tg.HapticFeedback
+                        .notificationOccurred("error");
+
+                } else {
+
+                    tg.HapticFeedback
+                        .impactOccurred("medium");
+
+                }
+
+            }
+
+        } catch (e) {}
+
+    }
+
+
+    /*
+    ============================================================
+    COLAR
+    ============================================================
+    */
+
+    btnColar.addEventListener(
+        "click",
+        async function() {
+
+            try {
+
+                if (
+                    navigator.clipboard &&
+                    navigator.clipboard.readText
+                ) {
+
+                    const texto =
+                        await navigator.clipboard.readText();
+
+                    if (texto) {
+
+                        inputLink.value =
+                            texto.trim();
+
+                        vibrar("success");
+
+                        return;
+
+                    }
+
+                }
+
+            } catch (erro) {
+
+                console.warn(
+                    "Clipboard:",
+                    erro
+                );
+
+            }
+
+            inputLink.focus();
+
+            if (
+                tg &&
+                tg.showAlert
+            ) {
+
+                tg.showAlert(
+                    "Toque e segure no campo para colar o link."
+                );
+
+            }
+
+        }
+    );
+
+
+    /*
+    ============================================================
+    BOTÕES DE TEMPO
+    ============================================================
+    */
+
+    document
+        .querySelectorAll(".quick button")
+        .forEach(function(botao) {
+
+            botao.addEventListener(
+                "click",
+                function() {
+
+                    const valor =
+                        parseInt(
+                            this.dataset.time,
+                            10
+                        );
+
+                    selectIntervalo.value =
+                        valor;
+
+                    document
+                        .querySelectorAll(
+                            ".quick button"
+                        )
+                        .forEach(
+                            function(b) {
+                                b.classList.remove(
+                                    "active"
+                                );
+                            }
+                        );
+
+                    this.classList.add(
+                        "active"
+                    );
+
+                }
+            );
+
+        });
+
+
+    selectIntervalo.addEventListener(
+        "change",
+        function() {
+
+            const valor =
+                parseInt(
+                    this.value,
+                    10
+                );
+
+            document
+                .querySelectorAll(
+                    ".quick button"
+                )
+                .forEach(
+                    function(b) {
+                        b.classList.remove(
+                            "active"
+                        );
+                    }
+                );
+
+            document
+                .querySelectorAll(
+                    ".quick button"
+                )
+                .forEach(
+                    function(b) {
+
+                        if (
+                            parseInt(
+                                b.dataset.time,
+                                10
+                            ) === valor
+                        ) {
+
+                            b.classList.add(
+                                "active"
+                            );
+
+                        }
+
+                    }
+                );
+
+        }
+    );
+
+
+    /*
+    ============================================================
+    VALIDAR URL
+    ============================================================
+    */
+
+    function validarLink(link) {
+
+        try {
+
+            const url =
+                new URL(link);
+
+            return (
+                url.protocol === "http:" ||
+                url.protocol === "https:"
+            );
+
+        } catch (e) {
+
+            return false;
+
+        }
+
+    }
+
+
+    /*
+    ============================================================
+    OBTER INIT DATA
+    ============================================================
+    */
+
+    function obterInitData() {
+
+        if (!tg) {
+            return "";
+        }
+
+        return (
+            tg.initData ||
+            ""
+        );
+
+    }
+
+
+    /*
+    ============================================================
+    ENVIO PRINCIPAL
+    ============================================================
+    */
+
+    async function enviarConfiguracao() {
+
+        limparMensagem();
+
+        debug.style.display =
+            "none";
+
+        const link =
+            inputLink.value.trim();
+
+        const intervalo =
+            parseInt(
+                selectIntervalo.value,
+                10
+            );
+
+        const quantidade =
+            parseInt(
+                inputQuantidade.value,
+                10
+            );
+
+
+        /*
+        --------------------------------------------------------
+        LINK
+        --------------------------------------------------------
+        */
+
+        if (!link) {
+
+            mostrarMensagem(
+                "⚠️ Cole o link da vitrine ou do produto.",
+                "error"
+            );
+
+            vibrar("error");
+
+            return;
+
+        }
+
+
+        if (!validarLink(link)) {
+
+            mostrarMensagem(
+                "⚠️ Informe um link válido começando com https://",
+                "error"
+            );
+
+            vibrar("error");
+
+            return;
+
+        }
+
+
+        /*
+        --------------------------------------------------------
+        QUANTIDADE
+        --------------------------------------------------------
+        */
+
+        if (
+            !Number.isInteger(quantidade) ||
+            quantidade < 1 ||
+            quantidade > 50
+        ) {
+
+            mostrarMensagem(
+                "⚠️ A quantidade deve estar entre 1 e 50.",
+                "error"
+            );
+
+            vibrar("error");
+
+            return;
+
+        }
+
+
+        /*
+        --------------------------------------------------------
+        TELEGRAM
+        --------------------------------------------------------
+        */
+
+        if (!tg) {
+
+            mostrarMensagem(
+                "❌ Abra este painel dentro do Telegram.",
+                "error"
+            );
+
+            vibrar("error");
+
+            return;
+
+        }
+
+
+        /*
+        --------------------------------------------------------
+        INIT DATA
+        --------------------------------------------------------
+        */
+
+        const initData =
+            obterInitData();
+
+        if (!initData) {
+
+            mostrarMensagem(
+                "❌ Não foi possível obter a autenticação do Telegram. Abra o painel pelo botão do bot.",
+                "error"
+            );
+
+            try {
+
+                if (tg.showAlert) {
+
+                    tg.showAlert(
+                        "Abra o painel pelo botão do bot no Telegram."
+                    );
+
+                }
+
+            } catch (e) {}
+
+            vibrar("error");
+
+            return;
+
+        }
+
+
+        /*
+        --------------------------------------------------------
+        IMPORTANTE:
+        USA A ORIGEM DA PRÓPRIA PÁGINA.
+        NÃO USA /configurar.
+        NÃO USA URL FIXA.
+        --------------------------------------------------------
+        */
+
+        const endpoint =
+            window.location.origin +
+            "/api/configurar";
+
+
+        /*
+        --------------------------------------------------------
+        PAYLOAD
+        --------------------------------------------------------
+        */
+
+        const payload = {
+
+            link: link,
+
+            intervalo: intervalo,
+
+            quantidade: quantidade,
+
+            initData: initData
+
+        };
+
+
+        /*
+        --------------------------------------------------------
+        DEBUG
+        --------------------------------------------------------
+        */
+
+        console.log(
+            "================================"
+        );
+
+        console.log(
+            "RAPOSA CAÇADORA"
+        );
+
+        console.log(
+            "Endpoint:",
+            endpoint
+        );
+
+        console.log(
+            "Método: POST"
+        );
+
+        console.log(
+            "Payload:",
+            {
+                link: link,
+                intervalo: intervalo,
+                quantidade: quantidade,
+                initData:
+                    initData
+                        ? "PRESENTE"
+                        : "AUSENTE"
+            }
+        );
+
+        console.log(
+            "================================"
+        );
+
+
+        /*
+        --------------------------------------------------------
+        BOTÃO
+        --------------------------------------------------------
+        */
+
+        btnSubmit.disabled =
+            true;
+
+        btnSubmit.innerHTML =
+            '<i class="fa-solid fa-spinner fa-spin"></i> ENVIANDO...';
+
+        mostrarMensagem(
+            "⏳ Enviando configuração para o servidor...",
+            "success"
+        );
+
+        vibrar("medium");
+
+
+        try {
+
+            /*
+            ====================================================
+            POST
+            ====================================================
+            */
+
+            const resposta =
+                await fetch(
+                    endpoint,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json",
+
+                            "Accept":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify(
+                                payload
+                            )
+                    }
+                );
+
+
+            /*
+            ====================================================
+            LER RESPOSTA
+            ====================================================
+            */
+
+            const texto =
+                await resposta.text();
+
+
+            console.log(
+                "HTTP:",
+                resposta.status
+            );
+
+            console.log(
+                "Resposta:",
+                texto
+            );
+
+
+            /*
+            ====================================================
+            TENTAR JSON
+            ====================================================
+            */
+
+            let resultado = null;
+
+            try {
+
+                resultado =
+                    texto
+                        ? JSON.parse(texto)
+                        : null;
+
+            } catch (erroJson) {
+
+                console.error(
+                    "Resposta não é JSON:",
+                    erroJson
+                );
+
+            }
+
+
+            /*
+            ====================================================
+            HTTP ERROR
+            ====================================================
+            */
+
+            if (!resposta.ok) {
+
+                let erroServidor =
+                    "Erro HTTP " +
+                    resposta.status;
+
+                if (
+                    resultado &&
+                    resultado.erro
+                ) {
+
+                    erroServidor =
+                        resultado.erro;
+
+                }
+
+                /*
+                Se o servidor devolveu HTML,
+                mostramos somente o HTTP.
+                */
+
+                if (
+                    !resultado &&
+                    texto &&
+                    texto.length < 500
+                ) {
+
+                    erroServidor +=
+                        "\n" + texto;
+
+                }
+
+                throw new Error(
+                    erroServidor
+                );
+
+            }
+
+
+            /*
+            ====================================================
+            RESPOSTA SEM JSON
+            ====================================================
+            */
+
+            if (!resultado) {
+
+                throw new Error(
+                    "O servidor respondeu, mas não enviou JSON válido."
+                );
+
+            }
+
+
+            /*
+            ====================================================
+            ERRO DA API
+            ====================================================
+            */
+
+            if (
+                resultado.ok !== true
+            ) {
+
+                throw new Error(
+                    resultado.erro ||
+                    resultado.mensagem ||
+                    "Não foi possível iniciar as postagens."
+                );
+
+            }
+
+
+            /*
+            ====================================================
+            SUCESSO
+            ====================================================
+            */
+
+            console.log(
+                "✅ Automação iniciada:",
+                resultado
+            );
+
+
+            mostrarMensagem(
+                "🚀 <b>Postagens iniciadas!</b><br><br>" +
+                "O servidor recebeu sua vitrine e iniciou o processamento.",
+                "success"
+            );
+
+
+            vibrar("success");
+
+
+            btnSubmit.innerHTML =
+                '<i class="fa-solid fa-check"></i> POSTAGENS INICIADAS';
+
+
+            /*
+            ====================================================
+            ALERTA TELEGRAM
+            ====================================================
+            */
+
+            try {
+
+                if (tg.showAlert) {
+
+                    tg.showAlert(
+                        "✅ Automação iniciada com sucesso!"
+                    );
+
+                }
+
+            } catch (e) {}
+
+
+            /*
+            ====================================================
+            FECHAR MINI APP
+            ====================================================
+            */
+
+            setTimeout(
+                function() {
+
+                    try {
+
+                        if (
+                            tg &&
+                            tg.close
+                        ) {
+
+                            tg.close();
+
+                        }
+
+                    } catch (e) {}
+
+                },
+                1800
+            );
+
+
+        } catch (erro) {
+
+            console.error(
+                "❌ ERRO FINAL:",
+                erro
+            );
+
+
+            const erroTexto =
+                erro &&
+                erro.message
+                    ? erro.message
+                    : "Erro desconhecido.";
+
+
+            mostrarMensagem(
+                "❌ <b>Erro:</b><br>" +
+                escapeHtml(
+                    erroTexto
+                ),
+                "error"
+            );
+
+
+            /*
+            ----------------------------------------------------
+            MOSTRA ENDPOINT PARA DIAGNÓSTICO
+            ----------------------------------------------------
+            */
+
+            debug.innerHTML =
+                "Endpoint utilizado:<br>" +
+                escapeHtml(endpoint);
+
+            debug.style.display =
+                "block";
+
+
+            vibrar("error");
+
+
+            try {
+
+                if (tg.showAlert) {
+
+                    tg.showAlert(
+                        "❌ " + erroTexto
+                    );
+
+                }
+
+            } catch (e) {}
+
+
+            btnSubmit.disabled =
+                false;
+
+            btnSubmit.innerHTML =
+                '<i class="fa-solid fa-rocket"></i> INICIAR POSTAGENS AUTO';
+
+        }
+
+    }
+
+
+    /*
+    ============================================================
+    ESCAPAR HTML
+    ============================================================
+    */
+
+    function escapeHtml(texto) {
+
+        const div =
+            document.createElement(
+                "div"
+            );
+
+        div.textContent =
+            texto;
+
+        return div.innerHTML;
+
+    }
+
+
+    /*
+    ============================================================
+    CLIQUE NO BOTÃO
+    ============================================================
+    */
+
+    btnSubmit.addEventListener(
+        "click",
+        enviarConfiguracao
+    );
+
+
+    /*
+    ============================================================
+    ENTER NO CAMPO DO LINK
+    ============================================================
+    */
+
+    inputLink.addEventListener(
+        "keydown",
+        function(evento) {
+
+            if (
+                evento.key === "Enter"
+            ) {
+
+                evento.preventDefault();
+
+                enviarConfiguracao();
+
+            }
+
+        }
+    );
+
+
+    /*
+    ============================================================
+    INFORMAÇÃO DE DIAGNÓSTICO NO CONSOLE
+    ============================================================
+    */
+
+    console.log(
+        "🦊 Raposa Caçadora carregada."
+    );
+
+    console.log(
+        "Página:",
+        window.location.href
+    );
+
+    console.log(
+        "Servidor:",
+        window.location.origin
+    );
+
+    console.log(
+        "API:",
+        window.location.origin +
+        "/api/configurar"
+    );
 
 </script>
 

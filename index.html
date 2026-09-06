@@ -1,14 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-  >
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Raposa Caçadora - Painel VIP</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -19,731 +13,300 @@
   >
 
   <style>
-
     :root {
-      --bg-gradient:
-        linear-gradient(
-          135deg,
-          #05070a 0%,
-          #0d111a 100%
-        );
-
-      --card-bg:
-        rgba(15, 23, 36, 0.85);
-
-      --card-border:
-        rgba(255, 255, 255, 0.08);
-
-      --primary-accent:
-        linear-gradient(
-          135deg,
-          #f97316 0%,
-          #ea580c 100%
-        );
-
-      --accent-glow:
-        rgba(249, 115, 22, 0.45);
-
-      --text-main:
-        #f8fafc;
-
-      --text-sub:
-        #94a3b8;
-
-      --input-bg:
-        rgba(6, 10, 17, 0.9);
-
-      --input-border:
-        rgba(255, 255, 255, 0.12);
-
-      --radius:
-        16px;
+      --bg-gradient: linear-gradient(135deg, #05070a 0%, #0d111a 100%);
+      --card-bg: rgba(15, 23, 36, 0.85);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary-accent: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+      --accent-glow: rgba(249, 115, 22, 0.45);
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+      --input-bg: rgba(6, 10, 17, 0.9);
+      --input-border: rgba(255, 255, 255, 0.12);
+      --radius: 16px;
     }
-
 
     * {
       box-sizing: border-box;
-
       margin: 0;
       padding: 0;
-
-      font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        Roboto,
-        Helvetica,
-        Arial,
-        sans-serif;
-
-      -webkit-tap-highlight-color:
-        transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
     }
-
 
     body {
-      background:
-        var(--bg-gradient);
-
-      color:
-        var(--text-main);
-
-      min-height:
-        100vh;
-
-      padding:
-        20px 16px 30px;
-
-      display:
-        flex;
-
-      flex-direction:
-        column;
-
-      gap:
-        20px;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 20px 16px 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
     }
-
-
-    /* ========================================================
-       HEADER
-       ======================================================== */
 
     .brand-header {
-      display:
-        flex;
-
-      align-items:
-        center;
-
-      gap:
-        14px;
-
-      padding:
-        4px 0;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 4px 0;
     }
-
 
     .brand-avatar {
-      width:
-        56px;
-
-      height:
-        56px;
-
-      flex-shrink:
-        0;
-
-      border-radius:
-        50%;
-
-      background:
-        #080b11;
-
-      border:
-        2px solid #f97316;
-
-      display:
-        flex;
-
-      align-items:
-        center;
-
-      justify-content:
-        center;
-
-      font-size:
-        28px;
-
-      box-shadow:
-        0 0 25px var(--accent-glow);
+      width: 56px;
+      height: 56px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: #080b11;
+      border: 2px solid #f97316;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 0 25px var(--accent-glow);
     }
-
 
     .brand-title h1 {
-      font-size:
-        1.25rem;
-
-      font-weight:
-        800;
-
-      letter-spacing:
-        -0.02em;
-
-      background:
-        linear-gradient(
-          90deg,
-          #ffffff,
-          #fdba74
-        );
-
-      -webkit-background-clip:
-        text;
-
-      -webkit-text-fill-color:
-        transparent;
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, #ffffff, #fdba74);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-
 
     .brand-title p {
-      font-size:
-        0.8rem;
-
-      color:
-        var(--text-sub);
-
-      display:
-        flex;
-
-      align-items:
-        center;
-
-      gap:
-        6px;
-
-      margin-top:
-        2px;
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 2px;
     }
-
 
     .status-badge {
-      display:
-        inline-block;
-
-      width:
-        8px;
-
-      height:
-        8px;
-
-      background-color:
-        #22c55e;
-
-      border-radius:
-        50%;
-
-      box-shadow:
-        0 0 8px #22c55e;
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background-color: #22c55e;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #22c55e;
     }
-
-
-    /* ========================================================
-       CARD
-       ======================================================== */
 
     .card {
-      background:
-        var(--card-bg);
-
-      backdrop-filter:
-        blur(16px);
-
-      -webkit-backdrop-filter:
-        blur(16px);
-
-      border:
-        1px solid var(--card-border);
-
-      border-radius:
-        var(--radius);
-
-      padding:
-        20px;
-
-      box-shadow:
-        0 10px 30px -10px
-        rgba(0, 0, 0, 0.8);
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8);
     }
-
 
     .card-title {
-      font-size:
-        0.9rem;
-
-      font-weight:
-        700;
-
-      color:
-        #fdba74;
-
-      text-transform:
-        uppercase;
-
-      letter-spacing:
-        0.05em;
-
-      margin-bottom:
-        16px;
-
-      display:
-        flex;
-
-      align-items:
-        center;
-
-      gap:
-        8px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #fdba74;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-
-
-    /* ========================================================
-       CAMPOS
-       ======================================================== */
 
     .field-group {
-      display:
-        flex;
-
-      flex-direction:
-        column;
-
-      gap:
-        8px;
-
-      margin-bottom:
-        18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 18px;
     }
-
 
     .field-group:last-child {
-      margin-bottom:
-        0;
+      margin-bottom: 0;
     }
-
 
     label {
-      font-size:
-        0.82rem;
-
-      font-weight:
-        600;
-
-      color:
-        var(--text-sub);
-
-      display:
-        flex;
-
-      align-items:
-        center;
-
-      gap:
-        6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
-
 
     .input-wrapper-paste {
-      display:
-        flex;
-
-      gap:
-        8px;
-
-      align-items:
-        center;
+      display: flex;
+      gap: 8px;
+      align-items: center;
     }
-
 
     .input-wrapper {
-      position:
-        relative;
-
-      flex:
-        1;
+      position: relative;
+      flex: 1;
     }
-
 
     .input-wrapper i {
-      position:
-        absolute;
-
-      left:
-        14px;
-
-      top:
-        50%;
-
-      transform:
-        translateY(-50%);
-
-      color:
-        #64748b;
-
-      font-size:
-        0.95rem;
-
-      pointer-events:
-        none;
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #64748b;
+      font-size: 0.95rem;
+      pointer-events: none;
+      z-index: 2;
     }
-
 
     input,
     select {
-      width:
-        100%;
-
-      padding:
-        14px 14px 14px 42px;
-
-      border-radius:
-        12px;
-
-      border:
-        1px solid var(--input-border);
-
-      background:
-        var(--input-bg);
-
-      color:
-        var(--text-main);
-
-      font-size:
-        0.92rem;
-
-      outline:
-        none;
-
-      transition:
-        all 0.25s ease;
+      width: 100%;
+      padding: 14px 14px 14px 42px;
+      border-radius: 12px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-main);
+      font-size: 0.92rem;
+      outline: none;
+      transition: all 0.25s ease;
     }
-
 
     input:focus,
     select:focus {
-      border-color:
-        #f97316;
-
-      box-shadow:
-        0 0 0 3px
-        rgba(249, 115, 22, 0.2);
+      border-color: #f97316;
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
     }
-
 
     select option {
-      background:
-        #0f172a;
-
-      color:
-        #fff;
+      background: #0f172a;
+      color: #fff;
     }
-
-
-    /* ========================================================
-       BOTÃO COLAR
-       ======================================================== */
 
     .btn-colar {
-      background:
-        rgba(249, 115, 22, 0.15);
-
-      border:
-        1px solid #f97316;
-
-      color:
-        #fdba74;
-
-      padding:
-        14px 16px;
-
-      border-radius:
-        12px;
-
-      font-size:
-        0.85rem;
-
-      font-weight:
-        700;
-
-      cursor:
-        pointer;
-
-      display:
-        flex;
-
-      align-items:
-        center;
-
-      gap:
-        6px;
-
-      white-space:
-        nowrap;
-
-      transition:
-        all 0.2s ease;
+      background: rgba(249, 115, 22, 0.15);
+      border: 1px solid #f97316;
+      color: #fdba74;
+      padding: 14px 16px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: all 0.2s ease;
     }
-
 
     .btn-colar:active {
-      transform:
-        scale(0.95);
-
-      background:
-        rgba(249, 115, 22, 0.3);
+      transform: scale(0.95);
+      background: rgba(249, 115, 22, 0.3);
     }
-
-
-    /* ========================================================
-       TEMPOS
-       ======================================================== */
 
     .time-grid {
-      display:
-        grid;
-
-      grid-template-columns:
-        repeat(3, 1fr);
-
-      gap:
-        8px;
-
-      margin-top:
-        6px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 6px;
     }
-
 
     .time-btn {
-      background:
-        var(--input-bg);
-
-      border:
-        1px solid var(--input-border);
-
-      color:
-        var(--text-sub);
-
-      padding:
-        10px 6px;
-
-      border-radius:
-        10px;
-
-      font-size:
-        0.8rem;
-
-      font-weight:
-        600;
-
-      cursor:
-        pointer;
-
-      text-align:
-        center;
-
-      transition:
-        all 0.2s ease;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      color: var(--text-sub);
+      padding: 10px 6px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
     }
-
 
     .time-btn.active {
-      background:
-        rgba(249, 115, 22, 0.2);
-
-      border-color:
-        #f97316;
-
-      color:
-        #f97316;
+      background: rgba(249, 115, 22, 0.2);
+      border-color: #f97316;
+      color: #f97316;
     }
-
-
-    /* ========================================================
-       BOTÃO PRINCIPAL
-       ======================================================== */
 
     .btn-submit {
-      width:
-        100%;
-
-      background:
-        var(--primary-accent);
-
-      color:
-        white;
-
-      border:
-        none;
-
-      padding:
-        16px;
-
-      border-radius:
-        var(--radius);
-
-      font-size:
-        1rem;
-
-      font-weight:
-        800;
-
-      letter-spacing:
-        0.02em;
-
-      display:
-        flex;
-
-      align-items:
-        center;
-
-      justify-content:
-        center;
-
-      gap:
-        10px;
-
-      cursor:
-        pointer;
-
-      box-shadow:
-        0 8px 25px
-        var(--accent-glow);
-
-      transition:
-        all 0.25s ease;
-
-      margin-top:
-        6px;
+      width: 100%;
+      background: var(--primary-accent);
+      color: white;
+      border: none;
+      padding: 16px;
+      border-radius: var(--radius);
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      box-shadow: 0 8px 25px var(--accent-glow);
+      transition: all 0.25s ease;
+      margin-top: 6px;
     }
-
 
     .btn-submit:active {
-      transform:
-        scale(0.98);
-
-      box-shadow:
-        0 4px 15px
-        var(--accent-glow);
+      transform: scale(0.98);
+      box-shadow: 0 4px 15px var(--accent-glow);
     }
-
 
     .btn-submit:disabled {
-      opacity:
-        0.7;
-
-      cursor:
-        not-allowed;
+      opacity: 0.7;
+      cursor: not-allowed;
     }
-
-
-    /* ========================================================
-       MENSAGEM
-       ======================================================== */
 
     .mensagem {
-      display:
-        none;
-
-      padding:
-        13px;
-
-      border-radius:
-        12px;
-
-      font-size:
-        0.85rem;
-
-      text-align:
-        center;
-
-      line-height:
-        1.4;
+      display: none;
+      padding: 13px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      text-align: center;
+      line-height: 1.4;
+      word-break: break-word;
     }
-
 
     .mensagem.sucesso {
-      display:
-        block;
-
-      color:
-        #86efac;
-
-      background:
-        rgba(34, 197, 94, 0.10);
-
-      border:
-        1px solid
-        rgba(34, 197, 94, 0.25);
+      display: block;
+      color: #86efac;
+      background: rgba(34, 197, 94, 0.10);
+      border: 1px solid rgba(34, 197, 94, 0.25);
     }
-
 
     .mensagem.erro {
-      display:
-        block;
-
-      color:
-        #fca5a5;
-
-      background:
-        rgba(239, 68, 68, 0.10);
-
-      border:
-        1px solid
-        rgba(239, 68, 68, 0.25);
+      display: block;
+      color: #fca5a5;
+      background: rgba(239, 68, 68, 0.10);
+      border: 1px solid rgba(239, 68, 68, 0.25);
     }
-
-
-    /* ========================================================
-       FOOTER
-       ======================================================== */
 
     .footer-note {
-      text-align:
-        center;
-
-      font-size:
-        0.75rem;
-
-      color:
-        var(--text-sub);
-
-      margin-top:
-        auto;
-
-      display:
-        flex;
-
-      align-items:
-        center;
-
-      justify-content:
-        center;
-
-      gap:
-        6px;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
     }
 
-
-    /* ========================================================
-       RESPONSIVO
-       ======================================================== */
-
     @media (max-width: 380px) {
-
       .input-wrapper-paste {
-        flex-direction:
-          column;
-
-        align-items:
-          stretch;
+        flex-direction: column;
+        align-items: stretch;
       }
 
       .btn-colar {
-        justify-content:
-          center;
+        justify-content: center;
       }
-
     }
-
   </style>
 </head>
 
-
 <body>
-
-
-  <!-- ======================================================
-       HEADER
-       ====================================================== -->
 
   <div class="brand-header">
 
@@ -767,35 +330,20 @@
   </div>
 
 
-  <!-- ======================================================
-       CARD PRINCIPAL
-       ====================================================== -->
-
   <div class="card">
 
     <div class="card-title">
-
       <i class="fa-solid fa-sliders"></i>
-
       Painel de Automação
-
     </div>
 
-
-    <!-- ====================================================
-         LINK
-         ==================================================== -->
 
     <div class="field-group">
 
       <label>
-
         <i class="fa-solid fa-link"></i>
-
-        Link da Vitrine Mercado Livre
-
+        Link da Vitrine ou Produto
       </label>
-
 
       <div class="input-wrapper-paste">
 
@@ -804,27 +352,24 @@
           <i class="fa-solid fa-store"></i>
 
           <input
-            type="text"
+            type="url"
             id="linkVitrine"
-            placeholder="Cole aqui o link da vitrine..."
+            placeholder="Cole o link da vitrine ou produto..."
             autocomplete="off"
             autocapitalize="off"
             spellcheck="false"
+            inputmode="url"
           >
 
         </div>
-
 
         <button
           class="btn-colar"
           type="button"
           onclick="colarLink()"
         >
-
           <i class="fa-solid fa-paste"></i>
-
           Colar
-
         </button>
 
       </div>
@@ -832,20 +377,12 @@
     </div>
 
 
-    <!-- ====================================================
-         INTERVALO
-         ==================================================== -->
-
     <div class="field-group">
 
       <label>
-
         <i class="fa-solid fa-clock"></i>
-
         Tempo Entre Postagens
-
       </label>
-
 
       <div class="input-wrapper">
 
@@ -881,7 +418,6 @@
 
       </div>
 
-
       <div class="time-grid">
 
         <button
@@ -913,20 +449,12 @@
     </div>
 
 
-    <!-- ====================================================
-         QUANTIDADE
-         ==================================================== -->
-
     <div class="field-group">
 
       <label>
-
         <i class="fa-solid fa-layer-group"></i>
-
         Quantidade de Produtos
-
       </label>
-
 
       <div class="input-wrapper">
 
@@ -948,19 +476,11 @@
   </div>
 
 
-  <!-- ======================================================
-       MENSAGEM
-       ====================================================== -->
-
   <div
     id="mensagem"
     class="mensagem"
   ></div>
 
-
-  <!-- ======================================================
-       BOTÃO PRINCIPAL
-       ====================================================== -->
 
   <button
     class="btn-submit"
@@ -976,10 +496,6 @@
   </button>
 
 
-  <!-- ======================================================
-       FOOTER
-       ====================================================== -->
-
   <div class="footer-note">
 
     <i class="fa-solid fa-shield-halved"></i>
@@ -988,10 +504,6 @@
 
   </div>
 
-
-  <!-- ======================================================
-       JAVASCRIPT
-       ====================================================== -->
 
   <script>
 
@@ -1028,24 +540,44 @@
 
 
     /* ======================================================
-       MOSTRAR MENSAGEM
+       MENSAGEM
        ====================================================== */
 
-    function mostrarMensagem(
-      texto,
-      tipo
-    ) {
+    function mostrarMensagem(texto, tipo) {
 
       const elemento =
-        document.getElementById(
-          "mensagem"
-        );
+        document.getElementById("mensagem");
 
       elemento.className =
         "mensagem " + tipo;
 
       elemento.innerHTML =
         texto;
+
+      try {
+
+        elemento.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest"
+        });
+
+      } catch (e) {}
+
+    }
+
+
+    /* ======================================================
+       ESCAPAR HTML
+       ====================================================== */
+
+    function escaparHtml(texto) {
+
+      return String(texto)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 
     }
 
@@ -1057,9 +589,7 @@
     async function colarLink() {
 
       const input =
-        document.getElementById(
-          "linkVitrine"
-        );
+        document.getElementById("linkVitrine");
 
 
       try {
@@ -1077,6 +607,12 @@
 
             input.value =
               texto.trim();
+
+            input.dispatchEvent(
+              new Event("input", {
+                bubbles: true
+              })
+            );
 
 
             if (
@@ -1128,35 +664,23 @@
        TEMPO RÁPIDO
        ====================================================== */
 
-    function setTempo(
-      segundos,
-      elemento
-    ) {
+    function setTempo(segundos, elemento) {
 
       document.getElementById(
         "intervalo"
-      ).value =
-        segundos;
+      ).value = segundos;
 
 
       document
-        .querySelectorAll(
-          ".time-btn"
-        )
-        .forEach(
-          function(btn) {
+        .querySelectorAll(".time-btn")
+        .forEach(function(btn) {
 
-            btn.classList.remove(
-              "active"
-            );
+          btn.classList.remove("active");
 
-          }
-        );
+        });
 
 
-      elemento.classList.add(
-        "active"
-      );
+      elemento.classList.add("active");
 
     }
 
@@ -1172,30 +696,20 @@
         function() {
 
           const valor =
-            parseInt(
-              this.value
-            );
+            parseInt(this.value, 10);
 
 
           document
-            .querySelectorAll(
-              ".time-btn"
-            )
-            .forEach(
-              function(btn) {
+            .querySelectorAll(".time-btn")
+            .forEach(function(btn) {
 
-                btn.classList.remove(
-                  "active"
-                );
+              btn.classList.remove("active");
 
-              }
-            );
+            });
 
 
           const botoes =
-            document.querySelectorAll(
-              ".time-btn"
-            );
+            document.querySelectorAll(".time-btn");
 
 
           if (valor === 10) {
@@ -1227,6 +741,206 @@
 
 
     /* ======================================================
+       VALIDAR LINK
+       ====================================================== */
+
+    function validarLink(link) {
+
+      try {
+
+        const url =
+          new URL(link);
+
+
+        const host =
+          url.hostname
+            .toLowerCase()
+            .replace(/^www\./, "");
+
+
+        const hostsPermitidos = [
+
+          "meli.la",
+
+          "mercadolivre.com.br",
+
+          "mercadolivre.com",
+
+          "mercadolibre.com.br",
+
+          "mercadolibre.com",
+
+          "produto.mercadolivre.com.br",
+
+          "lista.mercadolivre.com.br"
+
+        ];
+
+
+        return hostsPermitidos.some(
+          function(hostPermitido) {
+
+            return (
+              host === hostPermitido ||
+              host.endsWith(
+                "." + hostPermitido
+              )
+            );
+
+          }
+        );
+
+      } catch (e) {
+
+        return false;
+
+      }
+
+    }
+
+
+    /* ======================================================
+       DETECTAR TIPO DO LINK
+       ====================================================== */
+
+    function detectarTipoLink(link) {
+
+      try {
+
+        const url =
+          new URL(link);
+
+
+        const host =
+          url.hostname
+            .toLowerCase()
+            .replace(/^www\./, "");
+
+
+        if (host === "meli.la") {
+
+          return "vitrine_ou_redirecionamento";
+
+        }
+
+
+        if (
+          host.includes(
+            "produto.mercadolivre"
+          )
+        ) {
+
+          return "produto";
+
+        }
+
+
+        if (
+          url.pathname
+            .toUpperCase()
+            .includes("/P/MLB")
+        ) {
+
+          return "produto";
+
+        }
+
+
+        if (
+          url.pathname
+            .toUpperCase()
+            .includes("MLB-")
+        ) {
+
+          return "produto";
+
+        }
+
+
+        return "vitrine_ou_lista";
+
+      } catch (e) {
+
+        return "desconhecido";
+
+      }
+
+    }
+
+
+    /* ======================================================
+       LER RESPOSTA DO SERVIDOR
+       ====================================================== */
+
+    async function lerRespostaServidor(resposta) {
+
+      const texto =
+        await resposta.text();
+
+
+      console.log(
+        "HTTP Status:",
+        resposta.status
+      );
+
+
+      console.log(
+        "Resposta bruta:",
+        texto
+      );
+
+
+      if (!texto) {
+
+        throw new Error(
+          "O servidor não retornou nenhum conteúdo. " +
+          "HTTP " +
+          resposta.status
+        );
+
+      }
+
+
+      try {
+
+        return JSON.parse(texto);
+
+      } catch (erroJson) {
+
+        console.error(
+          "Resposta não JSON:",
+          texto
+        );
+
+
+        if (
+          texto.includes("<!DOCTYPE") ||
+          texto.includes("<html")
+        ) {
+
+          throw new Error(
+            "O servidor retornou uma página HTML " +
+            "em vez de JSON. HTTP " +
+            resposta.status +
+            ". Verifique os logs do servidor."
+          );
+
+        }
+
+
+        throw new Error(
+          "O servidor retornou uma resposta inválida. " +
+          "HTTP " +
+          resposta.status +
+          "."
+        );
+
+      }
+
+    }
+
+
+    /* ======================================================
        ENVIA CONFIGURAÇÃO
        ====================================================== */
 
@@ -1237,45 +951,46 @@
           "btnSubmit"
         );
 
+
+      const inputLink =
+        document.getElementById(
+          "linkVitrine"
+        );
+
+
       const link =
-        document
-          .getElementById(
-            "linkVitrine"
-          )
-          .value
-          .trim();
+        inputLink.value.trim();
 
 
       const intervalo =
         parseInt(
           document
-            .getElementById(
-              "intervalo"
-            )
-            .value
+            .getElementById("intervalo")
+            .value,
+          10
         );
 
 
       const quantidade =
         parseInt(
           document
-            .getElementById(
-              "quantidade"
-            )
-            .value
+            .getElementById("quantidade")
+            .value,
+          10
         );
 
 
       /* ----------------------------------------------------
-         VERIFICA LINK
+         LINK VAZIO
          ---------------------------------------------------- */
 
       if (!link) {
 
         mostrarMensagem(
-          "⚠️ Cole o link da vitrine antes de iniciar.",
+          "⚠️ Cole o link da vitrine ou do produto antes de iniciar.",
           "erro"
         );
+
 
         if (
           tg &&
@@ -1283,7 +998,7 @@
         ) {
 
           tg.showAlert(
-            "Cole o link da vitrine antes de iniciar."
+            "Cole o link da vitrine ou do produto antes de iniciar."
           );
 
         }
@@ -1294,13 +1009,64 @@
 
 
       /* ----------------------------------------------------
-         VERIFICA QUANTIDADE
+         NORMALIZAR
+         ---------------------------------------------------- */
+
+      let linkNormalizado =
+        link;
+
+
+      if (
+        !/^https?:\/\//i.test(
+          linkNormalizado
+        )
+      ) {
+
+        linkNormalizado =
+          "https://" +
+          linkNormalizado;
+
+      }
+
+
+      /* ----------------------------------------------------
+         VALIDAR
          ---------------------------------------------------- */
 
       if (
-        !Number.isInteger(
-          quantidade
-        ) ||
+        !validarLink(
+          linkNormalizado
+        )
+      ) {
+
+        mostrarMensagem(
+          "⚠️ Informe um link válido do Mercado Livre ou meli.la.",
+          "erro"
+        );
+
+
+        if (
+          tg &&
+          tg.showAlert
+        ) {
+
+          tg.showAlert(
+            "Link inválido. Use um link de vitrine/lista ou produto do Mercado Livre."
+          );
+
+        }
+
+        return;
+
+      }
+
+
+      /* ----------------------------------------------------
+         QUANTIDADE
+         ---------------------------------------------------- */
+
+      if (
+        !Number.isInteger(quantidade) ||
         quantidade < 1 ||
         quantidade > 50
       ) {
@@ -1316,7 +1082,7 @@
 
 
       /* ----------------------------------------------------
-         VERIFICA TELEGRAM
+         TELEGRAM
          ---------------------------------------------------- */
 
       if (!tg) {
@@ -1346,6 +1112,7 @@
           "erro"
         );
 
+
         if (tg.showAlert) {
 
           tg.showAlert(
@@ -1357,6 +1124,22 @@
         return;
 
       }
+
+
+      /* ----------------------------------------------------
+         TIPO DO LINK
+         ---------------------------------------------------- */
+
+      const tipoLink =
+        detectarTipoLink(
+          linkNormalizado
+        );
+
+
+      console.log(
+        "Tipo de link:",
+        tipoLink
+      );
 
 
       /* ----------------------------------------------------
@@ -1382,12 +1165,13 @@
       btn.disabled =
         true;
 
+
       btn.innerHTML =
         '<i class="fa-solid fa-spinner fa-spin"></i> ENVIANDO...';
 
 
       mostrarMensagem(
-        "⏳ Enviando configuração...",
+        "⏳ Enviando configuração para o servidor...",
         "sucesso"
       );
 
@@ -1399,7 +1183,10 @@
       const payload = {
 
         link:
-          link,
+          linkNormalizado,
+
+        tipo:
+          tipoLink,
 
         intervalo:
           intervalo,
@@ -1413,10 +1200,21 @@
       };
 
 
+      console.log(
+        "Payload enviado:",
+        {
+          link: linkNormalizado,
+          tipo: tipoLink,
+          intervalo: intervalo,
+          quantidade: quantidade
+        }
+      );
+
+
       try {
 
         /* --------------------------------------------------
-           ENVIA PARA O MESMO SERVIDOR
+           REQUEST
            -------------------------------------------------- */
 
         const resposta =
@@ -1428,9 +1226,17 @@
                 "POST",
 
               headers: {
+
                 "Content-Type":
+                  "application/json",
+
+                "Accept":
                   "application/json"
+
               },
+
+              credentials:
+                "same-origin",
 
               body:
                 JSON.stringify(
@@ -1442,40 +1248,23 @@
 
 
         /* --------------------------------------------------
-           LÊ RESPOSTA
+           RESPOSTA
            -------------------------------------------------- */
 
-        const texto =
-          await resposta.text();
+        const resultado =
+          await lerRespostaServidor(
+            resposta
+          );
 
 
         console.log(
-          "Resposta do servidor:",
-          texto
+          "Resultado do servidor:",
+          resultado
         );
 
 
-        let resultado;
-
-
-        try {
-
-          resultado =
-            JSON.parse(
-              texto
-            );
-
-        } catch (erroJson) {
-
-          throw new Error(
-            "O servidor retornou uma resposta inválida."
-          );
-
-        }
-
-
         /* --------------------------------------------------
-           VERIFICA ERRO
+           ERRO
            -------------------------------------------------- */
 
         if (
@@ -1485,7 +1274,12 @@
 
           throw new Error(
             resultado.erro ||
-            "Não foi possível iniciar as postagens."
+            resultado.mensagem ||
+            (
+              "Não foi possível iniciar as postagens. " +
+              "HTTP " +
+              resposta.status
+            )
           );
 
         }
@@ -1497,7 +1291,8 @@
 
         mostrarMensagem(
           "🚀 <b>Postagens iniciadas!</b><br><br>" +
-          "O sistema está processando sua vitrine.",
+          "O sistema recebeu sua solicitação e " +
+          "está processando os produtos.",
           "sucesso"
         );
 
@@ -1514,7 +1309,9 @@
         }
 
 
-        if (tg.showAlert) {
+        if (
+          tg.showAlert
+        ) {
 
           tg.showAlert(
             "✅ Postagens iniciadas com sucesso!"
@@ -1528,7 +1325,7 @@
 
 
         /* --------------------------------------------------
-           FECHA MINI APP
+           FECHAR MINI APP
            -------------------------------------------------- */
 
         setTimeout(
@@ -1551,16 +1348,22 @@
       } catch (erro) {
 
         console.error(
-          "❌ Erro:",
+          "❌ Erro ao enviar configuração:",
           erro
         );
 
 
+        const mensagemErro =
+          erro &&
+          erro.message
+            ? erro.message
+            : "Erro ao enviar configuração.";
+
+
         mostrarMensagem(
-          "❌ " +
-          (
-            erro.message ||
-            "Erro ao enviar configuração."
+          "❌ <b>Erro:</b><br>" +
+          escaparHtml(
+            mensagemErro
           ),
           "erro"
         );
@@ -1586,10 +1389,7 @@
 
           tg.showAlert(
             "❌ " +
-            (
-              erro.message ||
-              "Erro ao enviar configuração."
-            )
+            mensagemErro
           );
 
         }
@@ -1598,6 +1398,7 @@
         btn.disabled =
           false;
 
+
         btn.innerHTML =
           '<i class="fa-solid fa-rocket"></i> INICIAR POSTAGENS AUTO';
 
@@ -1605,8 +1406,31 @@
 
     }
 
+
+    /* ======================================================
+       ENTER PARA ENVIAR
+       ====================================================== */
+
+    document
+      .getElementById("linkVitrine")
+      .addEventListener(
+        "keydown",
+        function(event) {
+
+          if (
+            event.key === "Enter"
+          ) {
+
+            event.preventDefault();
+
+            enviarConfiguracao();
+
+          }
+
+        }
+      );
+
   </script>
 
 </body>
-
 </html>

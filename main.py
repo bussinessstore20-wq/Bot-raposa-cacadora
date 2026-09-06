@@ -6,9 +6,9 @@ import requests
 from bs4 import BeautifulSoup
 
 # ==========================================
-# CREDENCIAIS DO SEU BOT TELEGRAM
+# CONFIGURAÇÕES DO BOT VIA NUVEM
 # ==========================================
-TELEGRAM_TOKEN = "8986739105:AAHNelnHiR6iOmNp-9x6Bf3P9ciKoou7jy0"
+TELEGRAM_TOKEN = os.getenv("8986739105:AAHNelnHiR6iOmNp-9x6Bf3P9ciKoou7jy0")
 CHAT_ID = "@raposacacadora"  # ID ou username do seu canal
 ARQUIVO_HISTORICO = "produtos_postados.txt"
 
@@ -32,7 +32,6 @@ def salvar_historico(link):
 def enviar_oferta(foto_url, legenda, link_afiliado):
     url_api = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
 
-    # Botão de Compra no Mercado Livre
     teclado = {
         "inline_keyboard": [
             [{"text": "🛒 COMPRAR NO MERCADO LIVRE", "url": link_afiliado}]
@@ -65,7 +64,7 @@ def processar_e_postar_vitrine(url_vitrine, quantidade_maxima, intervalo_seg):
         return
 
     # Busca os links dos produtos na página
-     links_encontrados = []
+    links_encontrados = []
     for a in soup.find_all("a", href=True):
         href = a["href"]
         if "produto.mercadolivre.com.br" in href or "/p/MLB" in href:
@@ -86,7 +85,6 @@ def processar_e_postar_vitrine(url_vitrine, quantidade_maxima, intervalo_seg):
 
         print(f"🔍 Extraindo item: {link}")
 
-        # Tenta extrair título e foto
         try:
             prod_res = requests.get(link, headers=headers, timeout=10)
             prod_soup = BeautifulSoup(prod_res.text, "html.parser")
@@ -151,7 +149,6 @@ def escutar_mini_app():
                 for update in res["result"]:
                     offset = update["update_id"] + 1
 
-                    # Verifica se o update veio de uma resposta do WebApp (Mini App)
                     if "message" in update and "web_app_data" in update["message"]:
                         dados_raw = update["message"]["web_app_data"]["data"]
                         config = json.loads(dados_raw)
@@ -165,7 +162,6 @@ def escutar_mini_app():
                         print(f"⏱️ Intervalo: {intervalo} segundos")
                         print(f"📦 Quantidade: {quantidade} itens")
 
-                        # Inicia a sequência de postagens
                         processar_e_postar_vitrine(link, quantidade, intervalo)
 
         except Exception as e:

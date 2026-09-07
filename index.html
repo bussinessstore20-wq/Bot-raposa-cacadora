@@ -3,1493 +3,486 @@
 
 <head>
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-  >
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Raposa Caçadora - Painel VIP</title>
-
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-  >
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
-
     :root {
-      --bg:
-        #05070a;
-
-      --card:
-        rgba(15, 23, 36, 0.92);
-
-      --border:
-        rgba(255,255,255,0.08);
-
-      --orange:
-        #f97316;
-
-      --orange-light:
-        #fdba74;
-
-      --text:
-        #f8fafc;
-
-      --sub:
-        #94a3b8;
-
-      --input:
-        rgba(6,10,17,0.95);
-
-      --green:
-        #22c55e;
-
-      --red:
-        #ef4444;
-
-      --radius:
-        16px;
+      --bg: #05070a;
+      --card: rgba(15, 23, 36, 0.92);
+      --border: rgba(255,255,255,0.08);
+      --orange: #f97316;
+      --orange-light: #fdba74;
+      --text: #f8fafc;
+      --sub: #94a3b8;
+      --input: rgba(6,10,17,0.95);
+      --green: #22c55e;
+      --red: #ef4444;
+      --radius: 16px;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-
-      font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        Roboto,
-        Arial,
-        sans-serif;
-
-      -webkit-tap-highlight-color:
-        transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
       min-height: 100vh;
-
-      background:
-        linear-gradient(
-          135deg,
-          #05070a 0%,
-          #0d111a 100%
-        );
-
-      color:
-        var(--text);
-
-      padding:
-        20px 16px 30px;
-
-      display:
-        flex;
-
-      flex-direction:
-        column;
-
-      gap:
-        20px;
+      background: linear-gradient(135deg, #05070a 0%, #0d111a 100%);
+      color: var(--text);
+      padding: 20px 16px 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
     }
 
     .brand-header {
-      display:
-        flex;
-
-      align-items:
-        center;
-
-      gap:
-        14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
     }
 
     .brand-avatar {
-      width:
-        56px;
-
-      height:
-        56px;
-
-      flex-shrink:
-        0;
-
-      border-radius:
-        50%;
-
-      background:
-        #080b11;
-
-      border:
-        2px solid var(--orange);
-
-      display:
-        flex;
-
-      align-items:
-        center;
-
-      justify-content:
-        center;
-
-      font-size:
-        28px;
-
-      box-shadow:
-        0 0 25px
-        rgba(249,115,22,.45);
+      width: 56px;
+      height: 56px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: #080b11;
+      border: 2px solid var(--orange);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 0 25px rgba(249,115,22,.45);
     }
 
     .brand-title h1 {
-      font-size:
-        1.25rem;
-
-      font-weight:
-        800;
+      font-size: 1.25rem;
+      font-weight: 800;
     }
 
     .brand-title p {
-      margin-top:
-        3px;
-
-      font-size:
-        .8rem;
-
-      color:
-        var(--sub);
-
-      display:
-        flex;
-
-      align-items:
-        center;
-
-      gap:
-        6px;
+      margin-top: 3px;
+      font-size: .8rem;
+      color: var(--sub);
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .status-badge {
-      width:
-        8px;
-
-      height:
-        8px;
-
-      border-radius:
-        50%;
-
-      background:
-        var(--green);
-
-      box-shadow:
-        0 0 8px
-        var(--green);
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
     }
 
     .card {
-      background:
-        var(--card);
-
-      border:
-        1px solid var(--border);
-
-      border-radius:
-        var(--radius);
-
-      padding:
-        20px;
-
-      box-shadow:
-        0 10px 30px
-        rgba(0,0,0,.45);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.45);
     }
 
     .card-title {
-      color:
-        var(--orange-light);
-
-      font-size:
-        .9rem;
-
-      font-weight:
-        700;
-
-      text-transform:
-        uppercase;
-
-      letter-spacing:
-        .05em;
-
-      margin-bottom:
-        18px;
-
-      display:
-        flex;
-
-      align-items:
-        center;
-
-      gap:
-        8px;
+      color: var(--orange-light);
+      font-size: .9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .field-group {
-      display:
-        flex;
-
-      flex-direction:
-        column;
-
-      gap:
-        8px;
-
-      margin-bottom:
-        18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 18px;
     }
 
     .field-group:last-child {
-      margin-bottom:
-        0;
+      margin-bottom: 0;
     }
 
     label {
-      color:
-        var(--sub);
-
-      font-size:
-        .82rem;
-
-      font-weight:
-        600;
-
-      display:
-        flex;
-
-      align-items:
-        center;
-
-      gap:
-        6px;
+      color: var(--sub);
+      font-size: .82rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .input-wrapper-paste {
-      display:
-        flex;
-
-      gap:
-        8px;
-
-      align-items:
-        center;
+      display: flex;
+      gap: 8px;
+      align-items: center;
     }
 
     .input-wrapper {
-      position:
-        relative;
-
-      flex:
-        1;
+      position: relative;
+      flex: 1;
     }
 
     .input-wrapper > i {
-      position:
-        absolute;
-
-      left:
-        14px;
-
-      top:
-        50%;
-
-      transform:
-        translateY(-50%);
-
-      color:
-        #64748b;
-
-      pointer-events:
-        none;
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #64748b;
+      pointer-events: none;
     }
 
-    input,
-    select {
-      width:
-        100%;
-
-      padding:
-        14px 14px 14px 42px;
-
-      border:
-        1px solid
-        rgba(255,255,255,.12);
-
-      border-radius:
-        12px;
-
-      background:
-        var(--input);
-
-      color:
-        white;
-
-      outline:
-        none;
-
-      font-size:
-        .92rem;
+    input, select {
+      width: 100%;
+      padding: 14px 14px 14px 42px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      background: var(--input);
+      color: white;
+      outline: none;
+      font-size: .92rem;
     }
 
-    input:focus,
-    select:focus {
-      border-color:
-        var(--orange);
-
-      box-shadow:
-        0 0 0 3px
-        rgba(249,115,22,.18);
+    input:focus, select:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(249,115,22,.18);
     }
 
     select option {
-      background:
-        #0f172a;
-
-      color:
-        white;
+      background: #0f172a;
+      color: white;
     }
 
     .btn-colar {
-      padding:
-        14px 16px;
-
-      border:
-        1px solid var(--orange);
-
-      border-radius:
-        12px;
-
-      background:
-        rgba(249,115,22,.12);
-
-      color:
-        var(--orange-light);
-
-      font-weight:
-        700;
-
-      cursor:
-        pointer;
-
-      white-space:
-        nowrap;
+      padding: 14px 16px;
+      border: 1px solid var(--orange);
+      border-radius: 12px;
+      background: rgba(249,115,22,.12);
+      color: var(--orange-light);
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
     }
 
     .btn-colar:active {
-      transform:
-        scale(.97);
+      transform: scale(.97);
     }
 
     .time-grid {
-      display:
-        grid;
-
-      grid-template-columns:
-        repeat(3,1fr);
-
-      gap:
-        8px;
-
-      margin-top:
-        4px;
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 8px;
+      margin-top: 4px;
     }
 
     .time-btn {
-      padding:
-        10px 6px;
-
-      border:
-        1px solid
-        rgba(255,255,255,.12);
-
-      border-radius:
-        10px;
-
-      background:
-        var(--input);
-
-      color:
-        var(--sub);
-
-      font-weight:
-        600;
-
-      cursor:
-        pointer;
+      padding: 10px 6px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 10px;
+      background: var(--input);
+      color: var(--sub);
+      font-weight: 600;
+      cursor: pointer;
     }
 
     .time-btn.active {
-      color:
-        var(--orange);
-
-      border-color:
-        var(--orange);
-
-      background:
-        rgba(249,115,22,.15);
+      color: var(--orange);
+      border-color: var(--orange);
+      background: rgba(249,115,22,.15);
     }
 
     .btn-submit {
-      width:
-        100%;
-
-      padding:
-        16px;
-
-      border:
-        0;
-
-      border-radius:
-        var(--radius);
-
-      background:
-        linear-gradient(
-          135deg,
-          #f97316,
-          #ea580c
-        );
-
-      color:
-        white;
-
-      font-size:
-        1rem;
-
-      font-weight:
-        800;
-
-      cursor:
-        pointer;
-
-      box-shadow:
-        0 8px 25px
-        rgba(249,115,22,.35);
-
-      display:
-        flex;
-
-      align-items:
-        center;
-
-      justify-content:
-        center;
-
-      gap:
-        10px;
+      width: 100%;
+      padding: 16px;
+      border: 0;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      color: white;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(249,115,22,.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
     }
 
     .btn-submit:disabled {
-      opacity:
-        .7;
-
-      cursor:
-        not-allowed;
+      opacity: .7;
+      cursor: not-allowed;
     }
 
     .mensagem {
-      display:
-        none;
-
-      padding:
-        14px;
-
-      border-radius:
-        12px;
-
-      text-align:
-        center;
-
-      font-size:
-        .85rem;
-
-      line-height:
-        1.5;
+      display: none;
+      padding: 14px;
+      border-radius: 12px;
+      text-align: center;
+      font-size: .85rem;
+      line-height: 1.5;
     }
 
     .mensagem.sucesso {
-      display:
-        block;
-
-      color:
-        #86efac;
-
-      background:
-        rgba(34,197,94,.10);
-
-      border:
-        1px solid
-        rgba(34,197,94,.25);
+      display: block;
+      color: #86efac;
+      background: rgba(34,197,94,.10);
+      border: 1px solid rgba(34,197,94,.25);
     }
 
     .mensagem.erro {
-      display:
-        block;
-
-      color:
-        #fca5a5;
-
-      background:
-        rgba(239,68,68,.10);
-
-      border:
-        1px solid
-        rgba(239,68,68,.25);
+      display: block;
+      color: #fca5a5;
+      background: rgba(239,68,68,.10);
+      border: 1px solid rgba(239,68,68,.25);
     }
 
     .footer-note {
-      text-align:
-        center;
-
-      color:
-        var(--sub);
-
-      font-size:
-        .75rem;
+      text-align: center;
+      color: var(--sub);
+      font-size: .75rem;
     }
 
     @media (max-width:380px) {
-
       .input-wrapper-paste {
-        flex-direction:
-          column;
-
-        align-items:
-          stretch;
+        flex-direction: column;
+        align-items: stretch;
       }
-
       .btn-colar {
-        width:
-          100%;
+        width: 100%;
       }
-
     }
-
   </style>
 </head>
 
 <body>
 
   <div class="brand-header">
-
-    <div class="brand-avatar">
-      🦊
-    </div>
-
+    <div class="brand-avatar">🦊</div>
     <div class="brand-title">
-
-      <h1>
-        Raposa Caçadora VIP
-      </h1>
-
+      <h1>Raposa Caçadora VIP</h1>
       <p>
         <span class="status-badge"></span>
         Sistema de Postagens Conectado
       </p>
-
     </div>
-
   </div>
 
-
   <div class="card">
-
     <div class="card-title">
       <i class="fa-solid fa-sliders"></i>
       Painel de Automação
     </div>
 
-
     <div class="field-group">
-
       <label>
         <i class="fa-solid fa-link"></i>
-        Link da Vitrine / Produto
+        Link da Vitrine / Produto / Natura
       </label>
-
       <div class="input-wrapper-paste">
-
         <div class="input-wrapper">
-
           <i class="fa-solid fa-store"></i>
-
-          <input
-            type="text"
-            id="linkVitrine"
-            placeholder="Cole o link da vitrine ou produto..."
-            autocomplete="off"
-            autocapitalize="off"
-            spellcheck="false"
-          >
-
+          <input type="text" id="linkVitrine" placeholder="Cole o link da vitrine ou produto..." autocomplete="off" autocapitalize="off" spellcheck="false">
         </div>
-
-        <button
-          class="btn-colar"
-          type="button"
-          onclick="colarLink()"
-        >
+        <button class="btn-colar" type="button" onclick="colarLink()">
           <i class="fa-solid fa-paste"></i>
           Colar
         </button>
-
       </div>
-
     </div>
 
-
     <div class="field-group">
-
       <label>
         <i class="fa-solid fa-clock"></i>
         Tempo Entre Postagens
       </label>
-
       <div class="input-wrapper">
-
         <i class="fa-solid fa-stopwatch"></i>
-
         <select id="intervalo">
-
-          <option value="10">
-            10 Segundos (Teste)
-          </option>
-
-          <option value="30">
-            30 Segundos
-          </option>
-
-          <option value="60">
-            1 Minuto
-          </option>
-
-          <option value="300" selected>
-            5 Minutos (Recomendado)
-          </option>
-
-          <option value="1800">
-            30 Minutos
-          </option>
-
-          <option value="3600">
-            1 Hora
-          </option>
-
+          <option value="10">10 Segundos (Teste)</option>
+          <option value="30">30 Segundos</option>
+          <option value="60">1 Minuto</option>
+          <option value="300" selected>5 Minutos (Recomendado)</option>
+          <option value="1800">30 Minutos</option>
+          <option value="3600">1 Hora</option>
         </select>
-
       </div>
-
       <div class="time-grid">
-
-        <button
-          type="button"
-          class="time-btn"
-          onclick="setTempo(10,this)"
-        >
-          10 seg
-        </button>
-
-        <button
-          type="button"
-          class="time-btn"
-          onclick="setTempo(60,this)"
-        >
-          1 min
-        </button>
-
-        <button
-          type="button"
-          class="time-btn active"
-          onclick="setTempo(300,this)"
-        >
-          5 min
-        </button>
-
+        <button type="button" class="time-btn" onclick="setTempo(10,this)">10 seg</button>
+        <button type="button" class="time-btn" onclick="setTempo(60,this)">1 min</button>
+        <button type="button" class="time-btn active" onclick="setTempo(300,this)">5 min</button>
       </div>
-
     </div>
 
-
     <div class="field-group">
-
       <label>
         <i class="fa-solid fa-layer-group"></i>
         Quantidade de Produtos
       </label>
-
       <div class="input-wrapper">
-
         <i class="fa-solid fa-hashtag"></i>
-
-        <input
-          type="number"
-          id="quantidade"
-          value="5"
-          min="1"
-          max="50"
-          inputmode="numeric"
-        >
-
+        <input type="number" id="quantidade" value="5" min="1" max="50" inputmode="numeric">
       </div>
-
     </div>
-
   </div>
 
+  <div id="mensagem" class="mensagem"></div>
 
-  <div
-    id="mensagem"
-    class="mensagem"
-  ></div>
-
-
-  <button
-    class="btn-submit"
-    id="btnSubmit"
-    type="button"
-    onclick="enviarConfiguracao()"
-  >
-
+  <button class="btn-submit" id="btnSubmit" type="button" onclick="enviarConfiguracao()">
     <i class="fa-solid fa-rocket"></i>
-
     INICIAR POSTAGENS AUTO
-
   </button>
 
-
   <div class="footer-note">
-
     <i class="fa-solid fa-shield-halved"></i>
-
     Integração Oficial Telegram WebApp
-
   </div>
 
-
   <script>
-
-    /* =====================================================
-       TELEGRAM
-       ===================================================== */
-
-    const tg =
-      window.Telegram &&
-      window.Telegram.WebApp
-        ? window.Telegram.WebApp
-        : null;
-
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 
     if (tg) {
-
       tg.ready();
-
       tg.expand();
-
-      if (tg.setHeaderColor) {
-        tg.setHeaderColor("#05070a");
-      }
-
-      if (tg.setBackgroundColor) {
-        tg.setBackgroundColor("#05070a");
-      }
-
+      if (tg.setHeaderColor) tg.setHeaderColor("#05070a");
+      if (tg.setBackgroundColor) tg.setBackgroundColor("#05070a");
     }
 
+    const API_URL = "/api/configurar";
 
-    /* =====================================================
-       URL ABSOLUTA DO SERVIDOR
-       ===================================================== */
-
-    const API_URL =
-      "https://bot-raposa-cacadora.onrender.com/api/configurar";
-
-
-    /* =====================================================
-       MENSAGEM
-       ===================================================== */
-
-    function mostrarMensagem(
-      texto,
-      tipo
-    ) {
-
-      const elemento =
-        document.getElementById(
-          "mensagem"
-        );
-
-      elemento.className =
-        "mensagem " + tipo;
-
-      elemento.innerHTML =
-        texto;
-
+    function mostrarMensagem(texto, tipo) {
+      const elemento = document.getElementById("mensagem");
+      elemento.className = "mensagem " + tipo;
+      elemento.innerHTML = texto;
     }
-
-
-    /* =====================================================
-       COLAR
-       ===================================================== */
 
     async function colarLink() {
-
-      const input =
-        document.getElementById(
-          "linkVitrine"
-        );
-
+      const input = document.getElementById("linkVitrine");
       try {
-
-        if (
-          navigator.clipboard &&
-          navigator.clipboard.readText
-        ) {
-
-          const texto =
-            await navigator.clipboard.readText();
-
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          const texto = await navigator.clipboard.readText();
           if (texto) {
-
-            input.value =
-              texto.trim();
-
-            if (
-              tg &&
-              tg.HapticFeedback
-            ) {
-
-              tg.HapticFeedback
-                .notificationOccurred(
-                  "success"
-                );
-
+            input.value = texto.trim();
+            if (tg && tg.HapticFeedback) {
+              tg.HapticFeedback.notificationOccurred("success");
             }
-
             return;
           }
-
         }
-
       } catch (erro) {
-
-        console.log(
-          "Clipboard indisponível:",
-          erro
-        );
-
+        console.log("Clipboard indisponível:", erro);
       }
-
       input.focus();
-
-      if (
-        tg &&
-        tg.showAlert
-      ) {
-
-        tg.showAlert(
-          "Toque e segure no campo para colar o link."
-        );
-
+      if (tg && tg.showAlert) {
+        tg.showAlert("Toque e segure no campo para colar o link.");
       }
-
     }
 
-
-    /* =====================================================
-       TEMPO
-       ===================================================== */
-
-    function setTempo(
-      segundos,
-      elemento
-    ) {
-
-      document.getElementById(
-        "intervalo"
-      ).value =
-        segundos;
-
-      document
-        .querySelectorAll(
-          ".time-btn"
-        )
-        .forEach(
-          function(btn) {
-
-            btn.classList.remove(
-              "active"
-            );
-
-          }
-        );
-
-      elemento.classList.add(
-        "active"
-      );
-
+    function setTempo(segundos, elemento) {
+      document.getElementById("intervalo").value = segundos;
+      document.querySelectorAll(".time-btn").forEach(btn => btn.classList.remove("active"));
+      elemento.classList.add("active");
     }
 
-
-    document
-      .getElementById(
-        "intervalo"
-      )
-      .addEventListener(
-        "change",
-        function() {
-
-          const valor =
-            parseInt(
-              this.value
-            );
-
-          document
-            .querySelectorAll(
-              ".time-btn"
-            )
-            .forEach(
-              function(btn) {
-
-                btn.classList.remove(
-                  "active"
-                );
-
-              }
-            );
-
-          const botoes =
-            document.querySelectorAll(
-              ".time-btn"
-            );
-
-          if (valor === 10) {
-
-            botoes[0]
-              .classList
-              .add("active");
-
-          }
-
-          else if (valor === 60) {
-
-            botoes[1]
-              .classList
-              .add("active");
-
-          }
-
-          else if (valor === 300) {
-
-            botoes[2]
-              .classList
-              .add("active");
-
-          }
-
-        }
-      );
-
-
-    /* =====================================================
-       ENVIAR CONFIGURAÇÃO
-       ===================================================== */
+    document.getElementById("intervalo").addEventListener("change", function() {
+      const valor = parseInt(this.value);
+      const botoes = document.querySelectorAll(".time-btn");
+      botoes.forEach(btn => btn.classList.remove("active"));
+      if (valor === 10) botoes[0].classList.add("active");
+      else if (valor === 60) botoes[1].classList.add("active");
+      else if (valor === 300) botoes[2].classList.add("active");
+    });
 
     async function enviarConfiguracao() {
-
-      const btn =
-        document.getElementById(
-          "btnSubmit"
-        );
-
-      const link =
-        document
-          .getElementById(
-            "linkVitrine"
-          )
-          .value
-          .trim();
-
-      const intervalo =
-        parseInt(
-          document
-            .getElementById(
-              "intervalo"
-            )
-            .value
-        );
-
-      const quantidade =
-        parseInt(
-          document
-            .getElementById(
-              "quantidade"
-            )
-            .value
-        );
-
-
-      /* ---------------------------------------------------
-         LINK
-         --------------------------------------------------- */
+      const btn = document.getElementById("btnSubmit");
+      const link = document.getElementById("linkVitrine").value.trim();
+      const intervalo = parseInt(document.getElementById("intervalo").value);
+      const quantidade = parseInt(document.getElementById("quantidade").value);
 
       if (!link) {
-
-        mostrarMensagem(
-          "⚠️ Cole o link da vitrine ou do produto antes de iniciar.",
-          "erro"
-        );
-
-        if (
-          tg &&
-          tg.showAlert
-        ) {
-
-          tg.showAlert(
-            "Cole o link da vitrine ou do produto."
-          );
-
-        }
-
+        mostrarMensagem("⚠️ Cole o link da vitrine ou produto antes de iniciar.", "erro");
+        if (tg && tg.showAlert) tg.showAlert("Cole o link da vitrine ou do produto.");
         return;
-
       }
 
-
-      /* ---------------------------------------------------
-         QUANTIDADE
-         --------------------------------------------------- */
-
-      if (
-        !Number.isInteger(
-          quantidade
-        ) ||
-        quantidade < 1 ||
-        quantidade > 50
-      ) {
-
-        mostrarMensagem(
-          "⚠️ A quantidade deve estar entre 1 e 50.",
-          "erro"
-        );
-
+      if (!Number.isInteger(quantidade) || quantidade < 1 || quantidade > 50) {
+        mostrarMensagem("⚠️ A quantidade deve estar entre 1 e 50.", "erro");
         return;
-
       }
-
-
-      /* ---------------------------------------------------
-         TELEGRAM
-         --------------------------------------------------- */
 
       if (!tg) {
-
-        mostrarMensagem(
-          "❌ Abra este painel dentro do Telegram.",
-          "erro"
-        );
-
+        mostrarMensagem("❌ Abra este painel dentro do Telegram.", "erro");
         return;
-
       }
 
-
-      /* ---------------------------------------------------
-         INIT DATA
-         --------------------------------------------------- */
-
-      const initData =
-        tg.initData || "";
-
-
+      const initData = tg.initData || "";
       if (!initData) {
-
-        mostrarMensagem(
-          "❌ Não foi possível obter a autenticação do Telegram.",
-          "erro"
-        );
-
-        if (tg.showAlert) {
-
-          tg.showAlert(
-            "Abra o painel pelo Telegram para continuar."
-          );
-
-        }
-
+        mostrarMensagem("❌ Não foi possível obter a autenticação do Telegram.", "erro");
+        if (tg && tg.showAlert) tg.showAlert("Abra o painel pelo Telegram para continuar.");
         return;
-
       }
 
-
-      /* ---------------------------------------------------
-         LOADING
-         --------------------------------------------------- */
-
-      btn.disabled =
-        true;
-
-      btn.innerHTML =
-        '<i class="fa-solid fa-spinner fa-spin"></i> ENVIANDO...';
-
-      mostrarMensagem(
-        "⏳ Enviando configuração para o servidor...",
-        "sucesso"
-      );
-
-
-      /* ---------------------------------------------------
-         PAYLOAD
-         --------------------------------------------------- */
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ENVIANDO...';
+      mostrarMensagem("⏳ Enviando configuração para o servidor...", "sucesso");
 
       const payload = {
-
-        link:
-          link,
-
-        intervalo:
-          intervalo,
-
-        quantidade:
-          quantidade,
-
-        initData:
-          initData
-
+        link: link,
+        intervalo: intervalo,
+        quantidade: quantidade,
+        initData: initData
       };
 
-
-      console.log(
-        "===================================="
-      );
-
-      console.log(
-        "🦊 RAPOSA CAÇADORA"
-      );
-
-      console.log(
-        "API:",
-        API_URL
-      );
-
-      console.log(
-        "Payload:",
-        {
-          link: link,
-          intervalo: intervalo,
-          quantidade: quantidade,
-          initData:
-            initData
-              ? "PRESENTE"
-              : "AUSENTE"
-        }
-      );
-
-      console.log(
-        "===================================="
-      );
-
-
       try {
+        const resposta = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
 
-        /* -------------------------------------------------
-           POST DIRETO PARA O RENDER
-           ------------------------------------------------- */
-
-        const resposta =
-          await fetch(
-            API_URL,
-            {
-
-              method:
-                "POST",
-
-              mode:
-                "cors",
-
-              cache:
-                "no-cache",
-
-              headers: {
-
-                "Content-Type":
-                  "application/json",
-
-                "Accept":
-                  "application/json"
-
-              },
-
-              body:
-                JSON.stringify(
-                  payload
-                )
-
-            }
-          );
-
-
-        console.log(
-          "HTTP:",
-          resposta.status
-        );
-
-
-        const texto =
-          await resposta.text();
-
-
-        console.log(
-          "Resposta:",
-          texto
-        );
-
-
-        /* -------------------------------------------------
-           TENTA JSON
-           ------------------------------------------------- */
-
-        let resultado =
-          null;
+        const texto = await resposta.text();
+        let resultado = null;
 
         try {
-
-          resultado =
-            JSON.parse(
-              texto
-            );
-
-        } catch (erroJson) {
-
-          resultado =
-            null;
-
+          resultado = JSON.parse(texto);
+        } catch (e) {
+          resultado = null;
         }
-
-
-        /* -------------------------------------------------
-           ERRO HTTP
-           ------------------------------------------------- */
 
         if (!resposta.ok) {
-
-          let mensagemErro =
-            "Erro HTTP " +
-            resposta.status;
-
-          if (
-            resultado &&
-            resultado.erro
-          ) {
-
-            mensagemErro =
-              resultado.erro;
-
-          }
-
-          else if (
-            resultado &&
-            resultado.error
-          ) {
-
-            if (
-              typeof resultado.error ===
-              "string"
-            ) {
-
-              mensagemErro =
-                resultado.error;
-
-            }
-
-            else {
-
-              mensagemErro =
-                JSON.stringify(
-                  resultado.error
-                );
-
-            }
-
-          }
-
-          else if (texto) {
-
-            mensagemErro =
-              texto;
-
-          }
-
-          throw new Error(
-            mensagemErro
-          );
-
+          let mensagemErro = "Erro HTTP " + resposta.status;
+          if (resultado && resultado.erro) mensagemErro = resultado.erro;
+          else if (resultado && resultado.error) mensagemErro = String(resultado.error);
+          
+          mostrarMensagem("❌ " + mensagemErro, "erro");
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-rocket"></i> INICIAR POSTAGENS AUTO';
+          return;
         }
 
+        mostrarMensagem("🚀 Automação iniciada com sucesso! As postagens começarão em breve.", "sucesso");
+        if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
 
-        /* -------------------------------------------------
-           RESPOSTA NÃO JSON
-           ------------------------------------------------- */
-
-        if (!resultado) {
-
-          throw new Error(
-            "O servidor respondeu, mas não retornou JSON válido."
-          );
-
-        }
-
-
-        /* -------------------------------------------------
-           API RETORNOU ERRO
-           ------------------------------------------------- */
-
-        if (
-          resultado.ok !== true
-        ) {
-
-          throw new Error(
-            resultado.erro ||
-            resultado.mensagem ||
-            "Não foi possível iniciar as postagens."
-          );
-
-        }
-
-
-        /* -------------------------------------------------
-           SUCESSO
-           ------------------------------------------------- */
-
-        mostrarMensagem(
-          "🚀 <b>Postagens iniciadas!</b><br><br>" +
-          "O servidor recebeu sua automação e começou o processamento.",
-          "sucesso"
-        );
-
-
-        if (
-          tg &&
-          tg.HapticFeedback
-        ) {
-
-          tg.HapticFeedback
-            .notificationOccurred(
-              "success"
-            );
-
-        }
-
-
-        if (
-          tg &&
-          tg.showAlert
-        ) {
-
-          tg.showAlert(
-            "✅ Automação iniciada com sucesso!"
-          );
-
-        }
-
-
-        btn.innerHTML =
-          '<i class="fa-solid fa-check"></i> POSTAGENS INICIADAS';
-
-
-        /* -------------------------------------------------
-           NÃO FECHA IMEDIATAMENTE
-           ------------------------------------------------- */
-
-        setTimeout(
-          function() {
-
-            if (
-              tg &&
-              tg.close
-            ) {
-
-              tg.close();
-
-            }
-
-          },
-          2500
-        );
-
+      } catch (erro) {
+        console.error("Erro na requisição:", erro);
+        mostrarMensagem("❌ Falha de conexão com o servidor.", "erro");
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-rocket"></i> INICIAR POSTAGENS AUTO';
       }
-
-      catch (erro) {
-
-        console.error(
-          "❌ ERRO FINAL:",
-          erro
-        );
-
-
-        let mensagemErro =
-          erro &&
-          erro.message
-            ? erro.message
-            : "Erro desconhecido.";
-
-
-        mostrarMensagem(
-          "❌ Erro:<br>" +
-          mensagemErro,
-          "erro"
-        );
-
-
-        if (
-          tg &&
-          tg.HapticFeedback
-        ) {
-
-          tg.HapticFeedback
-            .notificationOccurred(
-              "error"
-            );
-
-        }
-
-
-        if (
-          tg &&
-          tg.showAlert
-        ) {
-
-          tg.showAlert(
-            "❌ Erro:\n" +
-            mensagemErro
-          );
-
-        }
-
-
-        btn.disabled =
-          false;
-
-        btn.innerHTML =
-          '<i class="fa-solid fa-rocket"></i> INICIAR POSTAGENS AUTO';
-
-      }
-
     }
-
   </script>
-
 </body>
-
 </html>

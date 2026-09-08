@@ -1,1463 +1,868 @@
 import os
+import re
 import time
-import hmac
-import hashlib
 import logging
-import threading
-from urllib.parse import parse_qsl, urlencode
+from decimal import Decimal, InvalidOperation
+from urllib.parse import urlparse
 
 import requests
-from flask import Flask, request, jsonify, redirect
-
-
-# ============================================================
-# LOG
-# ============================================================
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s"
-)
-
-logger = logging.getLogger("raposa-cacadora")
-
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 # ============================================================
-# FLASK
+# CONFIGURAÇÃO
 # ============================================================
 
 app = Flask(__name__)
 
+# Permite o Mini App da Vercel acessar o Render
+ALLOWED_ORIGINS = [
+    "https://bot-raposa-cacadora.vercel.app",
+]
+
+CORS(
+    app,
+    resources={
+        r"/api/*": {
+            "origins": ALLOWED_ORIGINS,
+            "methods": ["GET", "POST", "OPTIONS"],
+            "allow_headers": [
+                "Content-Type",
+                "X-Telegram-Init-Data",
+                "Authorization",
+            ],
+        }
+    },
+)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s",
+)
+
+logger = logging.getLogger(__name__)
 
 # ============================================================
-# ENVIRONMENT VARIABLES
+# VARIÁVEIS DE AMBIENTE
 # ============================================================
 
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "").strip()
+# Shopee
+SHOPEE_APP_ID = os.getenv("SHOPEE_APP_ID", "").strip()
+SHOPEE_APP_SECRET = os.getenv("SHOPEE_APP_SECRET", "").strip()
 
-CHAT_ID = os.getenv(
-    "CHAT_ID",
-    "@raposacacadora"
-).strip()
-
-WEBAPP_URL = os.getenv(
-    "WEBAPP_URL",
-    "https://bot-raposa-cacadora.vercel.app"
-).strip().rstrip("/")
-
-
-# Mercado Livre
-
-ML_CLIENT_ID = os.getenv(
-    "ML_CLIENT_ID",
+# URL da API da Shopee.
+# CONFIRA no painel/documentação da sua integração qual endpoint
+# sua conta utiliza.
+SHOPEE_API_URL = os.getenv(
+    "SHOPEE_API_URL",
     ""
 ).strip()
 
-ML_CLIENT_SECRET = os.getenv(
-    "ML_CLIENT_SECRET",
-    ""
-).strip()
+# Telegram
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
 
-ML_REDIRECT_URI = os.getenv(
-    "ML_REDIRECT_URI",
-    "https://bot-raposa-cacadora.onrender.com/oauth/callback"
-).strip()
+# Segurança opcional do Mini App
+TELEGRAM_INIT_DATA_REQUIRED = (
+    os.getenv("TELEGRAM_INIT_DATA_REQUIRED", "false").lower()
+    == "true"
+)
+
+# ============================================================
+# CONSTANTES
+# ============================================================
+
+REQUEST_TIMEOUT = 30
+
+SHOPEE_DOMAINS = {
+    "shopee.com.br",
+    "www.shopee.com.br",
+    "s.shopee.com.br",
+}
+
+# ============================================================
+# FUNÇÕES AUXILIARES
+# ============================================================
 
 
-# Tokens.
-#
-# Eles NÃO são obrigatórios para iniciar o OAuth.
-#
-# Depois que o OAuth funcionar, poderão ser configurados
-# como Environment Variables no Render.
+def money(value):
+    """
+    Converte valores para formato brasileiro.
+    Exemplo:
+        69.99 -> R$ 69,99
+    """
+    try:
+        number = Decimal(str(value))
+        return f"R$ {number:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    except (InvalidOperation, ValueError, TypeError):
+        return "Preço indisponível"
 
-ML_ACCESS_TOKEN = os.getenv(
-    "ML_ACCESS_TOKEN",
-    ""
-).strip()
 
-ML_REFRESH_TOKEN = os.getenv(
-    "ML_REFRESH_TOKEN",
-    ""
-).strip()
+def percentual(value):
+    """
+    0.38 -> 38%
+    38 -> 38%
+    """
+    try:
+        number = Decimal(str(value))
+
+        if number <= 1:
+            number *= 100
+
+        return f"{number:.0f}%"
+    except Exception:
+        return "N/A"
+
+
+def validar_url_shopee(url):
+    """
+    Valida se a URL pertence à Shopee.
+    """
+    if not url:
+        return False
+
+    try:
+        parsed = urlparse(url.strip())
+
+        if parsed.scheme not in ("http", "https"):
+            return False
+
+        hostname = (parsed.hostname or "").lower()
+
+        return hostname in SHOPEE_DOMAINS
+
+    except Exception:
+        return False
+
+
+def extrair_ids_produto(url):
+    """
+    Tenta extrair shop_id e item_id de uma URL normal da Shopee.
+
+    Exemplo:
+    https://shopee.com.br/product/864885365/58266424970
+
+    Retorna:
+        {
+            "shop_id": "864885365",
+            "item_id": "58266424970"
+        }
+
+    Links curtos não possuem necessariamente os IDs no próprio texto.
+    Nesse caso retornamos None.
+    """
+
+    if not url:
+        return None
+
+    match = re.search(
+        r"/product/(\d+)/(\d+)",
+        url,
+        re.IGNORECASE,
+    )
+
+    if not match:
+        return None
+
+    return {
+        "shop_id": match.group(1),
+        "item_id": match.group(2),
+    }
+
+
+# ============================================================
+# SHOPEE
+# ============================================================
+
+def consultar_shopee(shop_id=None, item_id=None, url=None):
+    """
+    Consulta a integração Shopee.
+
+    ATENÇÃO:
+    O formato exato da requisição depende da API/parceiro Shopee
+    que sua conta está utilizando.
+
+    O código abaixo foi preparado para receber uma resposta no
+    formato que você mostrou na conversa:
+
+    {
+        "data": {
+            "productOfferV2": {
+                "nodes": [...]
+            }
+        }
+    }
+
+    Ajuste apenas a parte da requisição caso seu endpoint exija
+    autenticação/assinatura diferente.
+    """
+
+    if not SHOPEE_API_URL:
+        raise RuntimeError(
+            "SHOPEE_API_URL não está configurada no Render."
+        )
+
+    if not SHOPEE_APP_ID:
+        raise RuntimeError(
+            "SHOPEE_APP_ID não está configurado no Render."
+        )
+
+    if not SHOPEE_APP_SECRET:
+        raise RuntimeError(
+            "SHOPEE_APP_SECRET não está configurado no Render."
+        )
+
+    logger.info("🛒 Consultando Shopee")
+
+    payload = {
+        "app_id": SHOPEE_APP_ID,
+        "app_secret": SHOPEE_APP_SECRET,
+    }
+
+    if shop_id:
+        payload["shop_id"] = shop_id
+
+    if item_id:
+        payload["item_id"] = item_id
+
+    if url:
+        payload["url"] = url
+
+    response = requests.post(
+        SHOPEE_API_URL,
+        json=payload,
+        timeout=REQUEST_TIMEOUT,
+    )
+
+    logger.info(
+        "📡 Shopee respondeu HTTP %s",
+        response.status_code,
+    )
+
+    if response.status_code >= 400:
+        logger.error(
+            "Resposta Shopee: %s",
+            response.text[:2000],
+        )
+
+        raise RuntimeError(
+            f"Shopee respondeu HTTP {response.status_code}"
+        )
+
+    try:
+        data = response.json()
+    except Exception:
+        raise RuntimeError(
+            "Shopee não retornou JSON válido."
+        )
+
+    return data
+
+
+def encontrar_produto(data, shop_id=None, item_id=None):
+    """
+    Procura o produto dentro da resposta productOfferV2.
+    """
+
+    try:
+        nodes = (
+            data
+            .get("data", {})
+            .get("productOfferV2", {})
+            .get("nodes", [])
+        )
+    except Exception:
+        nodes = []
+
+    if not nodes:
+        raise RuntimeError(
+            "Nenhum produto foi encontrado na resposta da Shopee."
+        )
+
+    # Se temos item_id, procuramos exatamente ele.
+    if item_id:
+        for produto in nodes:
+            if str(produto.get("itemId")) == str(item_id):
+                return produto
+
+    # Se não encontrou exatamente, devolve o primeiro.
+    return nodes[0]
+
+
+# ============================================================
+# NORMALIZAÇÃO DO PRODUTO
+# ============================================================
+
+def normalizar_produto(produto):
+    """
+    Transforma a resposta da Shopee em um formato simples
+    para o Mini App e para o Telegram.
+    """
+
+    nome = produto.get(
+        "productName",
+        "Produto Shopee",
+    )
+
+    preco = produto.get("price")
+
+    preco_min = produto.get("priceMin", preco)
+    preco_max = produto.get("priceMax", preco)
+
+    desconto = produto.get(
+        "priceDiscountRate",
+        0,
+    )
+
+    comissao = produto.get(
+        "commission",
+        0,
+    )
+
+    rating = produto.get(
+        "ratingStar",
+        0,
+    )
+
+    vendas = produto.get(
+        "sales",
+        0,
+    )
+
+    imagem = produto.get(
+        "imageUrl",
+        "",
+    )
+
+    loja = produto.get(
+        "shopName",
+        "Loja Shopee",
+    )
+
+    product_link = produto.get(
+        "productLink",
+        "",
+    )
+
+    offer_link = produto.get(
+        "offerLink",
+        product_link,
+    )
+
+    return {
+        "nome": nome,
+        "item_id": produto.get("itemId"),
+        "shop_id": produto.get("shopId"),
+        "preco": preco,
+        "preco_min": preco_min,
+        "preco_max": preco_max,
+        "preco_formatado": money(preco),
+        "preco_min_formatado": money(preco_min),
+        "preco_max_formatado": money(preco_max),
+        "desconto": desconto,
+        "desconto_formatado": percentual(desconto),
+        "comissao": comissao,
+        "comissao_formatada": money(comissao),
+        "comissao_percentual": percentual(
+            produto.get("commissionRate")
+        ),
+        "avaliacao": rating,
+        "vendas": vendas,
+        "imagem": imagem,
+        "loja": loja,
+        "link_produto": product_link,
+        "link_oferta": offer_link,
+        "categoria": produto.get(
+            "productCatIds",
+            [],
+        ),
+    }
+
+
+# ============================================================
+# MENSAGEM TELEGRAM
+# ============================================================
+
+def montar_mensagem(produto):
+    """
+    Cria a publicação que será enviada ao canal.
+    """
+
+    nome = produto["nome"]
+
+    # Limita títulos muito grandes.
+    if len(nome) > 180:
+        nome = nome[:177] + "..."
+
+    mensagem = (
+        f"🔥 <b>OFERTA SHOPEE</b>\n\n"
+        f"🛍️ <b>{nome}</b>\n\n"
+        f"💰 <b>Preço:</b> {produto['preco_formatado']}\n"
+    )
+
+    if produto["desconto"] not in (None, "", 0, "0"):
+        mensagem += (
+            f"🏷️ <b>Desconto:</b> "
+            f"{produto['desconto_formatado']}\n"
+        )
+
+    if produto["avaliacao"]:
+        mensagem += (
+            f"⭐ <b>Avaliação:</b> "
+            f"{produto['avaliacao']}\n"
+        )
+
+    if produto["vendas"]:
+        mensagem += (
+            f"📦 <b>Vendas:</b> "
+            f"{produto['vendas']}\n"
+        )
+
+    mensagem += (
+        f"🏪 <b>Loja:</b> "
+        f"{produto['loja']}\n\n"
+        f"💸 <b>Comissão:</b> "
+        f"{produto['comissao_formatada']}\n\n"
+        f"🛒 <a href=\"{produto['link_oferta']}\">"
+        f"COMPRAR AGORA</a>"
+    )
+
+    return mensagem
 
 
 # ============================================================
 # TELEGRAM
 # ============================================================
 
-TELEGRAM_API = (
-    f"https://api.telegram.org/bot{TELEGRAM_TOKEN}"
-)
-
-
-# ============================================================
-# CONSTANTES
-# ============================================================
-
-INIT_DATA_MAX_AGE = 86400
-
-
-# ============================================================
-# CORS
-# ============================================================
-
-@app.after_request
-def adicionar_cors(response):
-
-    origin = request.headers.get("Origin")
-
-    if origin == WEBAPP_URL:
-
-        response.headers[
-            "Access-Control-Allow-Origin"
-        ] = WEBAPP_URL
-
-        response.headers[
-            "Access-Control-Allow-Headers"
-        ] = (
-            "Content-Type, "
-            "X-Telegram-Init-Data"
-        )
-
-        response.headers[
-            "Access-Control-Allow-Methods"
-        ] = "GET, POST, OPTIONS"
-
-        response.headers[
-            "Access-Control-Max-Age"
-        ] = "600"
-
-        response.headers[
-            "Vary"
-        ] = "Origin"
-
-    return response
-
-
-# ============================================================
-# TELEGRAM INIT DATA
-# ============================================================
-
-def validar_init_data(init_data):
-
-    if not init_data:
-        return False, "initData ausente"
-
-    if not TELEGRAM_TOKEN:
-
-        logger.error(
-            "❌ TELEGRAM_TOKEN não configurado."
-        )
-
-        return False, "TELEGRAM_TOKEN não configurado"
-
-    try:
-
-        dados = dict(
-            parse_qsl(
-                init_data,
-                keep_blank_values=True
-            )
-        )
-
-        recebido_hash = dados.pop(
-            "hash",
-            None
-        )
-
-        if not recebido_hash:
-
-            return False, "hash ausente"
-
-        data_check_string = "\n".join(
-            f"{chave}={valor}"
-            for chave, valor
-            in sorted(dados.items())
-        )
-
-        secret_key = hmac.new(
-            b"WebAppData",
-            TELEGRAM_TOKEN.encode(),
-            hashlib.sha256
-        ).digest()
-
-        calculado_hash = hmac.new(
-            secret_key,
-            data_check_string.encode(),
-            hashlib.sha256
-        ).hexdigest()
-
-        if not hmac.compare_digest(
-            calculado_hash,
-            recebido_hash
-        ):
-
-            return False, "hash inválido"
-
-        auth_date = dados.get("auth_date")
-
-        if auth_date:
-
-            try:
-
-                idade = (
-                    int(time.time())
-                    - int(auth_date)
-                )
-
-                if idade < 0:
-
-                    return False, "auth_date inválido"
-
-                if idade > INIT_DATA_MAX_AGE:
-
-                    return False, "initData expirado"
-
-            except ValueError:
-
-                return False, "auth_date inválido"
-
-        return True, dados
-
-    except Exception as e:
-
-        logger.exception(
-            "❌ Erro validando initData."
-        )
-
-        return False, str(e)
-
-
-# ============================================================
-# CONFIGURAÇÃO MERCADO LIVRE
-# ============================================================
-
-def mercado_livre_configurado():
-
-    return bool(
-        ML_CLIENT_ID
-        and ML_CLIENT_SECRET
-        and ML_REDIRECT_URI
-    )
-
-
-# ============================================================
-# URL OAUTH
-# ============================================================
-
-def gerar_url_oauth():
-
-    parametros = {
-        "response_type": "code",
-        "client_id": ML_CLIENT_ID,
-        "redirect_uri": ML_REDIRECT_URI
-    }
-
-    return (
-        "https://auth.mercadolivre.com.br/"
-        "authorization?"
-        + urlencode(parametros)
-    )
-
-
-# ============================================================
-# INICIAR OAUTH
-# ============================================================
-
-@app.route(
-    "/oauth/mercadolivre",
-    methods=["GET"]
-)
-def oauth_mercadolivre():
-
-    logger.info(
-        "=========================================="
-    )
-
-    logger.info(
-        "🔐 INICIANDO OAUTH MERCADO LIVRE"
-    )
-
-    logger.info(
-        "=========================================="
-    )
-
-    if not mercado_livre_configurado():
-
-        logger.error(
-            "❌ Mercado Livre não está configurado."
-        )
-
-        return jsonify({
-            "ok": False,
-            "error": (
-                "Configure ML_CLIENT_ID, "
-                "ML_CLIENT_SECRET e "
-                "ML_REDIRECT_URI no Render."
-            )
-        }), 500
-
-    logger.info(
-        "🆔 Client ID configurado: %s",
-        bool(ML_CLIENT_ID)
-    )
-
-    logger.info(
-        "🔐 Client Secret configurado: %s",
-        bool(ML_CLIENT_SECRET)
-    )
-
-    logger.info(
-        "↩️ Redirect URI: %s",
-        ML_REDIRECT_URI
-    )
-
-    url = gerar_url_oauth()
-
-    logger.info(
-        "➡️ Redirecionando para:"
-    )
-
-    logger.info(
-        "https://auth.mercadolivre.com.br/authorization"
-    )
-
-    return redirect(url)
-
-
-# ============================================================
-# TROCAR CODE POR TOKEN
-# ============================================================
-
-def trocar_code_por_token(code):
-
-    if not ML_CLIENT_ID:
-
+def enviar_telegram(produto):
+    """
+    Envia o produto para o canal Telegram.
+
+    Se houver imagem, tenta enviar foto.
+    Caso contrário, envia somente texto.
+    """
+
+    if not TELEGRAM_BOT_TOKEN:
         raise RuntimeError(
-            "ML_CLIENT_ID não configurado."
+            "TELEGRAM_BOT_TOKEN não configurado."
         )
 
-    if not ML_CLIENT_SECRET:
-
+    if not TELEGRAM_CHAT_ID:
         raise RuntimeError(
-            "ML_CLIENT_SECRET não configurado."
+            "TELEGRAM_CHAT_ID não configurado."
         )
 
-    if not ML_REDIRECT_URI:
+    mensagem = montar_mensagem(produto)
 
-        raise RuntimeError(
-            "ML_REDIRECT_URI não configurado."
-        )
-
-    if not code:
-
-        raise RuntimeError(
-            "Authorization code não recebido."
-        )
-
-    logger.info(
-        "=========================================="
+    base_url = (
+        f"https://api.telegram.org/"
+        f"bot{TELEGRAM_BOT_TOKEN}"
     )
 
-    logger.info(
-        "🔑 TROCANDO AUTHORIZATION CODE POR TOKEN"
-    )
+    imagem = produto.get("imagem")
 
-    logger.info(
-        "=========================================="
-    )
+    # --------------------------------------------------------
+    # TENTA ENVIAR FOTO
+    # --------------------------------------------------------
 
-    # ========================================================
-    # ATENÇÃO
-    #
-    # A aplicação informada anteriormente está SEM PKCE.
-    #
-    # Portanto não enviamos code_verifier.
-    #
-    # ========================================================
-
-    payload = {
-        "grant_type": "authorization_code",
-        "client_id": ML_CLIENT_ID,
-        "client_secret": ML_CLIENT_SECRET,
-        "code": code,
-        "redirect_uri": ML_REDIRECT_URI
-    }
-
-    headers = {
-        "Accept": "application/json",
-        "Content-Type":
-            "application/x-www-form-urlencoded"
-    }
-
-    logger.info(
-        "🌐 POST https://api.mercadolibre.com/oauth/token"
-    )
-
-    logger.info(
-        "grant_type: authorization_code"
-    )
-
-    logger.info(
-        "client_id presente: %s",
-        bool(ML_CLIENT_ID)
-    )
-
-    logger.info(
-        "client_secret presente: %s",
-        bool(ML_CLIENT_SECRET)
-    )
-
-    logger.info(
-        "code presente: %s",
-        bool(code)
-    )
-
-    logger.info(
-        "redirect_uri: %s",
-        ML_REDIRECT_URI
-    )
-
-    try:
-
-        response = requests.post(
-            "https://api.mercadolibre.com/oauth/token",
-            data=payload,
-            headers=headers,
-            timeout=30
-        )
-
-    except requests.RequestException as e:
-
-        logger.error(
-            "❌ Falha de conexão com Mercado Livre."
-        )
-
-        logger.error(
-            "%s",
-            e
-        )
-
-        raise RuntimeError(
-            f"Falha de conexão com Mercado Livre: {e}"
-        )
-
-    logger.info(
-        "📡 HTTP Mercado Livre: %s",
-        response.status_code
-    )
-
-    # ========================================================
-    # SUCESSO
-    # ========================================================
-
-    if response.ok:
-
+    if imagem:
         try:
-
-            dados = response.json()
-
-        except ValueError:
-
-            logger.error(
-                "❌ Mercado Livre retornou JSON inválido."
+            response = requests.post(
+                f"{base_url}/sendPhoto",
+                data={
+                    "chat_id": TELEGRAM_CHAT_ID,
+                    "photo": imagem,
+                    "caption": mensagem,
+                    "parse_mode": "HTML",
+                },
+                timeout=REQUEST_TIMEOUT,
             )
 
-            raise RuntimeError(
-                "Resposta inválida do Mercado Livre."
-            )
-
-        logger.info(
-            "=========================================="
-        )
-
-        logger.info(
-            "✅ ACCESS TOKEN OBTIDO"
-        )
-
-        logger.info(
-            "=========================================="
-        )
-
-        logger.info(
-            "user_id: %s",
-            dados.get("user_id")
-        )
-
-        logger.info(
-            "expires_in: %s",
-            dados.get("expires_in")
-        )
-
-        logger.info(
-            "scope: %s",
-            dados.get("scope")
-        )
-
-        logger.info(
-            "access_token recebido: %s",
-            bool(dados.get("access_token"))
-        )
-
-        logger.info(
-            "refresh_token recebido: %s",
-            bool(dados.get("refresh_token"))
-        )
-
-        # NUNCA imprimir os tokens.
-
-        return dados
-
-    # ========================================================
-    # ERRO
-    # ========================================================
-
-    logger.error(
-        "=========================================="
-    )
-
-    logger.error(
-        "❌ ERRO ORIGINAL DO MERCADO LIVRE"
-    )
-
-    logger.error(
-        "=========================================="
-    )
-
-    logger.error(
-        "HTTP: %s",
-        response.status_code
-    )
-
-    logger.error(
-        "Content-Type: %s",
-        response.headers.get("Content-Type")
-    )
-
-    # IMPORTANTE:
-    #
-    # Aqui mostramos somente a resposta enviada pelo
-    # Mercado Livre.
-    #
-    # Não mostramos nosso client_secret.
-    # Não mostramos access_token.
-    # Não mostramos refresh_token.
-
-    texto = response.text[:4000]
-
-    logger.error(
-        "Resposta Mercado Livre:"
-    )
-
-    logger.error(
-        "%s",
-        texto
-    )
-
-    logger.error(
-        "=========================================="
-    )
-
-    # Não usamos raise_for_status() imediatamente,
-    # porque precisamos devolver o corpo original.
-
-    return {
-        "oauth_error": True,
-        "status_code": response.status_code,
-        "response_text": texto
-    }
-
-
-# ============================================================
-# CALLBACK
-# ============================================================
-
-@app.route(
-    "/oauth/callback",
-    methods=["GET"]
-)
-def oauth_callback():
-
-    logger.info(
-        "=========================================="
-    )
-
-    logger.info(
-        "↩️ CALLBACK MERCADO LIVRE"
-    )
-
-    logger.info(
-        "=========================================="
-    )
-
-    # --------------------------------------------------------
-    # ERRO DEVOLVIDO PELO MERCADO LIVRE
-    # --------------------------------------------------------
-
-    erro = request.args.get(
-        "error"
-    )
-
-    if erro:
-
-        descricao = request.args.get(
-            "error_description",
-            ""
-        )
-
-        logger.error(
-            "❌ Mercado Livre recusou autorização."
-        )
-
-        logger.error(
-            "error=%s",
-            erro
-        )
-
-        logger.error(
-            "error_description=%s",
-            descricao
-        )
-
-        return jsonify({
-            "ok": False,
-            "error": erro,
-            "description": descricao
-        }), 400
-
-    # --------------------------------------------------------
-    # CODE
-    # --------------------------------------------------------
-
-    code = request.args.get(
-        "code"
-    )
-
-    logger.info(
-        "🎫 Authorization code recebido: %s",
-        bool(code)
-    )
-
-    if not code:
-
-        logger.error(
-            "❌ Nenhum authorization code recebido."
-        )
-
-        return jsonify({
-            "ok": False,
-            "error": (
-                "Authorization code não recebido."
-            )
-        }), 400
-
-    # --------------------------------------------------------
-    # TROCA
-    # --------------------------------------------------------
-
-    try:
-
-        token_data = trocar_code_por_token(
-            code
-        )
-
-        # ----------------------------------------------------
-        # ERRO ORIGINAL
-        # ----------------------------------------------------
-
-        if token_data.get(
-            "oauth_error"
-        ):
-
-            status = token_data.get(
-                "status_code",
-                502
-            )
-
-            resposta = token_data.get(
-                "response_text",
-                ""
-            )
-
-            logger.error(
-                "❌ Falha na troca do authorization code."
-            )
-
-            return jsonify({
-                "ok": False,
-                "error": (
-                    "Mercado Livre recusou "
-                    "a troca do authorization code."
-                ),
-                "status": status,
-                "mercado_livre": resposta
-            }), 502
-
-        # ----------------------------------------------------
-        # SUCESSO
-        # ----------------------------------------------------
-
-        access_token = token_data.get(
-            "access_token"
-        )
-
-        refresh_token = token_data.get(
-            "refresh_token"
-        )
-
-        if not access_token:
-
-            logger.error(
-                "❌ Mercado Livre não retornou access_token."
-            )
-
-            return jsonify({
-                "ok": False,
-                "error": (
-                    "access_token não recebido."
+            if response.ok:
+                logger.info(
+                    "✅ Produto enviado com imagem."
                 )
-            }), 502
 
-        logger.info(
-            "=========================================="
-        )
+                return response.json()
 
-        logger.info(
-            "🎉 OAUTH CONCLUÍDO"
-        )
+            logger.warning(
+                "⚠️ Falha no envio da imagem: %s",
+                response.text[:500],
+            )
 
-        logger.info(
-            "=========================================="
-        )
+        except Exception as exc:
+            logger.warning(
+                "⚠️ Erro ao enviar imagem: %s",
+                exc,
+            )
 
-        logger.info(
-            "user_id: %s",
-            token_data.get("user_id")
-        )
+    # --------------------------------------------------------
+    # FALLBACK: TEXTO
+    # --------------------------------------------------------
 
-        logger.info(
-            "expires_in: %s",
-            token_data.get("expires_in")
-        )
-
-        logger.info(
-            "scope: %s",
-            token_data.get("scope")
-        )
-
-        logger.info(
-            "access_token: recebido"
-        )
-
-        logger.info(
-            "refresh_token: %s",
-            bool(refresh_token)
-        )
-
-        # ----------------------------------------------------
-        # NÃO MOSTRAR OS TOKENS NA TELA.
-        #
-        # Para o primeiro teste, vamos apenas informar que
-        # foram recebidos.
-        # ----------------------------------------------------
-
-        return """
-<!DOCTYPE html>
-<html lang="pt-BR">
-
-<head>
-
-<meta charset="UTF-8">
-
-<meta name="viewport"
-      content="width=device-width, initial-scale=1">
-
-<title>Mercado Livre autorizado</title>
-
-<style>
-
-body {
-    font-family: Arial, sans-serif;
-    background: #f5f5f5;
-    padding: 30px;
-}
-
-.box {
-    max-width: 600px;
-    margin: 50px auto;
-    background: white;
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 5px 25px rgba(0,0,0,.1);
-}
-
-.ok {
-    color: #16803c;
-}
-
-.warning {
-    color: #9a6700;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="box">
-
-<h1 class="ok">
-✅ Mercado Livre autorizado
-</h1>
-
-<p>
-O Mercado Livre autorizou a aplicação
-e o backend recebeu o access token.
-</p>
-
-<p>
-O próximo passo será configurar o armazenamento
-seguro dos tokens e testar a API oficial.
-</p>
-
-<p class="warning">
-⚠️ Não envie seus tokens para ninguém.
-</p>
-
-</div>
-
-</body>
-
-</html>
-"""
-
-    except Exception as e:
-
-        logger.exception(
-            "💥 Erro inesperado no callback."
-        )
-
-        return jsonify({
-            "ok": False,
-            "error": "Erro interno no OAuth.",
-            "details": str(e)
-        }), 500
-
-
-# ============================================================
-# RENOVAÇÃO DO ACCESS TOKEN
-# ============================================================
-
-def renovar_access_token():
-
-    if not ML_REFRESH_TOKEN:
-
-        raise RuntimeError(
-            "ML_REFRESH_TOKEN não configurado."
-        )
-
-    if not ML_CLIENT_ID:
-
-        raise RuntimeError(
-            "ML_CLIENT_ID não configurado."
-        )
-
-    if not ML_CLIENT_SECRET:
-
-        raise RuntimeError(
-            "ML_CLIENT_SECRET não configurado."
-        )
-
-    payload = {
-        "grant_type": "refresh_token",
-        "client_id": ML_CLIENT_ID,
-        "client_secret": ML_CLIENT_SECRET,
-        "refresh_token": ML_REFRESH_TOKEN
-    }
-
-    logger.info(
-        "♻️ Renovando access token Mercado Livre..."
-    )
-
-    try:
-
-        response = requests.post(
-            "https://api.mercadolibre.com/oauth/token",
-            data=payload,
-            headers={
-                "Accept": "application/json",
-                "Content-Type":
-                    "application/x-www-form-urlencoded"
-            },
-            timeout=30
-        )
-
-    except requests.RequestException as e:
-
-        logger.error(
-            "❌ Erro de conexão durante refresh."
-        )
-
-        raise RuntimeError(
-            str(e)
-        )
-
-    logger.info(
-        "📡 Refresh HTTP: %s",
-        response.status_code
+    response = requests.post(
+        f"{base_url}/sendMessage",
+        data={
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": mensagem,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": False,
+        },
+        timeout=REQUEST_TIMEOUT,
     )
 
     if not response.ok:
-
         logger.error(
-            "❌ Erro no refresh."
-        )
-
-        logger.error(
-            "Resposta: %s",
-            response.text[:4000]
+            "❌ Telegram recusou envio: %s",
+            response.text[:1000],
         )
 
         raise RuntimeError(
-            "Falha ao renovar access token."
-        )
-
-    dados = response.json()
-
-    logger.info(
-        "✅ Access token renovado."
-    )
-
-    return dados
-
-
-# ============================================================
-# API MERCADO LIVRE
-# ============================================================
-
-def mercado_livre_get(
-    endpoint,
-    access_token=None
-):
-
-    token = (
-        access_token
-        or ML_ACCESS_TOKEN
-    )
-
-    if not token:
-
-        raise RuntimeError(
-            "ML_ACCESS_TOKEN não configurado."
-        )
-
-    url = (
-        "https://api.mercadolibre.com"
-        + endpoint
-    )
-
-    try:
-
-        response = requests.get(
-            url,
-            headers={
-                "Authorization":
-                    f"Bearer {token}",
-                "Accept":
-                    "application/json"
-            },
-            timeout=30
-        )
-
-    except requests.RequestException as e:
-
-        logger.error(
-            "❌ Erro de conexão com API Mercado Livre."
-        )
-
-        raise RuntimeError(
-            str(e)
+            "Telegram recusou o envio."
         )
 
     logger.info(
-        "📡 GET %s → HTTP %s",
-        endpoint,
-        response.status_code
+        "✅ Produto enviado ao canal."
     )
-
-    if response.status_code == 401:
-
-        raise PermissionError(
-            "Access token inválido ou expirado."
-        )
-
-    if response.status_code == 429:
-
-        retry_after = response.headers.get(
-            "Retry-After",
-            "10"
-        )
-
-        try:
-            segundos = int(retry_after)
-        except ValueError:
-            segundos = 10
-
-        segundos = min(
-            segundos,
-            60
-        )
-
-        logger.warning(
-            "⚠️ Rate limit. Aguardando %s segundos.",
-            segundos
-        )
-
-        time.sleep(segundos)
-
-        response = requests.get(
-            url,
-            headers={
-                "Authorization":
-                    f"Bearer {token}",
-                "Accept":
-                    "application/json"
-            },
-            timeout=30
-        )
-
-    if not response.ok:
-
-        logger.error(
-            "❌ API Mercado Livre respondeu HTTP %s",
-            response.status_code
-        )
-
-        logger.error(
-            "Resposta: %s",
-            response.text[:4000]
-        )
-
-        raise RuntimeError(
-            f"Mercado Livre HTTP {response.status_code}"
-        )
 
     return response.json()
 
 
 # ============================================================
-# TESTE DA CONTA MERCADO LIVRE
+# AUTENTICAÇÃO BÁSICA DO MINI APP
 # ============================================================
 
-@app.route(
-    "/mercadolivre/teste",
-    methods=["GET"]
-)
-def teste_mercado_livre():
+def validar_miniapp():
+    """
+    Por enquanto mantém o fluxo simples.
 
-    logger.info(
-        "🧪 TESTE /users/me"
-    )
+    Se TELEGRAM_INIT_DATA_REQUIRED=false,
+    o endpoint funciona normalmente para testes.
 
-    if not ML_ACCESS_TOKEN:
+    Quando o sistema estiver funcionando, podemos ativar
+    a validação criptográfica do initData do Telegram.
+    """
 
-        return jsonify({
-            "ok": False,
-            "error": (
-                "ML_ACCESS_TOKEN não configurado."
-            )
-        }), 400
+    if not TELEGRAM_INIT_DATA_REQUIRED:
+        return True
 
-    try:
+    init_data = request.headers.get(
+        "X-Telegram-Init-Data",
+        "",
+    ).strip()
 
-        dados = mercado_livre_get(
-            "/users/me"
+    if not init_data:
+        logger.warning(
+            "❌ X-Telegram-Init-Data ausente."
         )
 
-        return jsonify({
-            "ok": True,
-            "usuario": {
-                "id": dados.get("id"),
-                "nickname": dados.get("nickname"),
-                "site_id": dados.get("site_id"),
-                "country_id": dados.get("country_id")
-            }
-        })
+        return False
 
-    except PermissionError as e:
+    # Aqui entra a validação oficial do initData.
+    # Não devemos simplesmente confiar no header em produção.
 
-        return jsonify({
-            "ok": False,
-            "error": str(e)
-        }), 401
-
-    except Exception as e:
-
-        logger.exception(
-            "❌ Falha no teste Mercado Livre."
-        )
-
-        return jsonify({
-            "ok": False,
-            "error": str(e)
-        }), 502
+    return True
 
 
 # ============================================================
-# HEALTH
+# ROTAS
 # ============================================================
 
-@app.route(
-    "/health",
-    methods=["GET"]
-)
+@app.route("/", methods=["GET", "HEAD"])
+def index():
+    return jsonify({
+        "ok": True,
+        "service": "Raposa Caçadora",
+        "integracao": "Shopee",
+        "status": "online",
+    })
+
+
+@app.route("/health", methods=["GET"])
 def health():
-
     return jsonify({
-
         "ok": True,
-
-        "service":
-            "Bot Raposa Caçadora",
-
-        "status":
-            "online",
-
-        "telegram_configurado":
-            bool(TELEGRAM_TOKEN),
-
-        "mercado_livre_configurado":
-            mercado_livre_configurado(),
-
-        "ml_access_token_configurado":
-            bool(ML_ACCESS_TOKEN),
-
-        "ml_refresh_token_configurado":
-            bool(ML_REFRESH_TOKEN),
-
-        "webapp_url":
-            WEBAPP_URL,
-
-        "redirect_uri":
-            ML_REDIRECT_URI
-
+        "status": "online",
+        "shopee_configurada": bool(
+            SHOPEE_APP_ID
+            and SHOPEE_APP_SECRET
+            and SHOPEE_API_URL
+        ),
+        "telegram_configurado": bool(
+            TELEGRAM_BOT_TOKEN
+            and TELEGRAM_CHAT_ID
+        ),
     })
 
-
-# ============================================================
-# HOME
-# ============================================================
-
-@app.route(
-    "/",
-    methods=["GET"]
-)
-def home():
-
-    return jsonify({
-
-        "ok": True,
-
-        "service":
-            "Bot Raposa Caçadora",
-
-        "status":
-            "online",
-
-        "endpoints": {
-
-            "health":
-                "/health",
-
-            "oauth":
-                "/oauth/mercadolivre",
-
-            "callback":
-                "/oauth/callback",
-
-            "teste_ml":
-                "/mercadolivre/teste",
-
-            "configurar":
-                "/api/configurar"
-
-        }
-
-    })
-
-
-# ============================================================
-# OPTIONS /api/configurar
-# ============================================================
 
 @app.route(
     "/api/configurar",
-    methods=["OPTIONS"]
+    methods=["OPTIONS"],
 )
 def configurar_options():
-
-    logger.info(
-        "🌐 OPTIONS /api/configurar"
-    )
+    """
+    Responde ao preflight CORS.
+    """
 
     return "", 204
 
 
-# ============================================================
-# POST /api/configurar
-# ============================================================
-
 @app.route(
     "/api/configurar",
-    methods=["POST"]
+    methods=["POST"],
 )
 def configurar():
+    """
+    Endpoint principal do Mini App.
 
-    logger.info(
-        "=========================================="
-    )
+    JSON esperado:
+
+    {
+        "link": "https://shopee.com.br/product/864885365/58266424970",
+        "quantidade": 1,
+        "intervalo": 1,
+        "enviar": true
+    }
+    """
 
     logger.info(
         "📥 POST /api/configurar"
     )
 
-    logger.info(
-        "Origin: %s",
-        request.headers.get("Origin")
-    )
-
-    # --------------------------------------------------------
-    # INIT DATA
-    # --------------------------------------------------------
-
-    init_data = request.headers.get(
-        "X-Telegram-Init-Data",
-        ""
-    )
-
-    if not init_data:
-
-        init_data = request.headers.get(
-            "Telegram-Init-Data",
-            ""
-        )
-
-    valido, resultado = validar_init_data(
-        init_data
-    )
-
-    if not valido:
-
-        logger.warning(
-            "❌ initData inválido: %s",
-            resultado
-        )
-
+    if not validar_miniapp():
         return jsonify({
             "ok": False,
-            "error": "Telegram initData inválido",
-            "details": resultado
+            "error": "Mini App não autorizado.",
         }), 401
 
-    logger.info(
-        "✅ Telegram initData válido."
-    )
-
-    # --------------------------------------------------------
-    # JSON
-    # --------------------------------------------------------
-
-    dados = request.get_json(
+    data = request.get_json(
         silent=True
+    ) or {}
+
+    logger.info(
+        "JSON recebido: %s",
+        data,
     )
-
-    if not dados:
-
-        logger.warning(
-            "❌ JSON não recebido."
-        )
-
-        return jsonify({
-            "ok": False,
-            "error": "JSON não recebido."
-        }), 400
-
-    # --------------------------------------------------------
-    # LINK
-    # --------------------------------------------------------
 
     link = str(
-        dados.get(
-            "link",
-            ""
-        )
+        data.get("link", "")
     ).strip()
 
     if not link:
-
         return jsonify({
             "ok": False,
-            "error":
-                "Link não informado."
+            "error": "Informe o link da Shopee.",
         }), 400
 
-    # --------------------------------------------------------
-    # QUANTIDADE
-    # --------------------------------------------------------
+    if not validar_url_shopee(link):
+        return jsonify({
+            "ok": False,
+            "error": "O link informado não parece ser da Shopee.",
+        }), 400
 
+    # Quantidade
     try:
-
         quantidade = int(
-            dados.get(
-                "quantidade",
-                1
-            )
+            data.get("quantidade", 1)
         )
-
-    except (
-        TypeError,
-        ValueError
-    ):
-
-        return jsonify({
-            "ok": False,
-            "error":
-                "Quantidade inválida."
-        }), 400
-
-    # --------------------------------------------------------
-    # INTERVALO
-    # --------------------------------------------------------
-
-    try:
-
-        intervalo = float(
-            dados.get(
-                "intervalo",
-                1
-            )
-        )
-
-    except (
-        TypeError,
-        ValueError
-    ):
-
-        return jsonify({
-            "ok": False,
-            "error":
-                "Intervalo inválido."
-        }), 400
+    except Exception:
+        quantidade = 1
 
     quantidade = max(
         1,
-        min(
-            quantidade,
-            100
-        )
+        min(quantidade, 20),
     )
+
+    # Intervalo em segundos
+    try:
+        intervalo = float(
+            data.get("intervalo", 1)
+        )
+    except Exception:
+        intervalo = 1
 
     intervalo = max(
         0,
-        min(
-            intervalo,
-            1440
+        min(intervalo, 3600),
+    )
+
+    # Por padrão NÃO enviamos automaticamente durante testes.
+    enviar = bool(
+        data.get("enviar", False)
+    )
+
+    try:
+        ids = extrair_ids_produto(link)
+
+        shop_id = (
+            ids.get("shop_id")
+            if ids
+            else None
         )
-    )
 
-    logger.info(
-        "🔗 Link: %s",
-        link
-    )
+        item_id = (
+            ids.get("item_id")
+            if ids
+            else None
+        )
 
-    logger.info(
-        "📦 Quantidade: %s",
-        quantidade
-    )
+        logger.info(
+            "🔎 shop_id=%s item_id=%s",
+            shop_id,
+            item_id,
+        )
 
-    logger.info(
-        "⏱️ Intervalo: %s minuto(s)",
-        intervalo
-    )
+        # ----------------------------------------------------
+        # CONSULTA SHOPEE
+        # ----------------------------------------------------
 
-    # --------------------------------------------------------
-    # POR ENQUANTO:
-    #
-    # NÃO FAZEMOS SCRAPING DO MELI.LA.
-    #
-    # Primeiro resolvemos a autorização oficial.
-    # --------------------------------------------------------
+        resposta = consultar_shopee(
+            shop_id=shop_id,
+            item_id=item_id,
+            url=link,
+        )
 
-    logger.info(
-        "✅ Configuração recebida."
-    )
+        produto_bruto = encontrar_produto(
+            resposta,
+            shop_id=shop_id,
+            item_id=item_id,
+        )
 
-    return jsonify({
+        produto = normalizar_produto(
+            produto_bruto
+        )
 
-        "ok": True,
+        logger.info(
+            "✅ Produto encontrado: %s",
+            produto["nome"],
+        )
 
-        "message":
-            "POST chegou ao Render!",
+        resultados_envio = []
 
-        "dados": {
-            "link":
-                link,
+        # ----------------------------------------------------
+        # ENVIO TELEGRAM
+        # ----------------------------------------------------
 
-            "quantidade":
-                quantidade,
+        if enviar:
 
-            "intervalo":
-                intervalo
-        }
+            for i in range(quantidade):
 
-    }), 200
+                resultado = enviar_telegram(
+                    produto
+                )
+
+                resultados_envio.append({
+                    "numero": i + 1,
+                    "ok": True,
+                })
+
+                # Não espera depois do último.
+                if i < quantidade - 1:
+                    time.sleep(intervalo)
+
+        return jsonify({
+            "ok": True,
+            "message": (
+                "Produto encontrado com sucesso."
+                if not enviar
+                else "Produto processado e enviado."
+            ),
+            "produto": produto,
+            "quantidade": quantidade,
+            "intervalo": intervalo,
+            "enviado": enviar,
+            "envios": resultados_envio,
+        })
+
+    except Exception as exc:
+
+        logger.exception(
+            "❌ Erro em /api/configurar"
+        )
+
+        return jsonify({
+            "ok": False,
+            "error": str(exc),
+        }), 500
 
 
 # ============================================================
-# ERRO 404
+# ENDPOINT PARA TESTAR O TELEGRAM
+# ============================================================
+
+@app.route(
+    "/api/testar-telegram",
+    methods=["POST", "OPTIONS"],
+)
+def testar_telegram():
+
+    if request.method == "OPTIONS":
+        return "", 204
+
+    produto_teste = {
+        "nome": "Produto de teste Shopee",
+        "preco": "39.90",
+        "preco_formatado": "R$ 39,90",
+        "desconto": 20,
+        "desconto_formatado": "20%",
+        "avaliacao": "4.9",
+        "vendas": 100,
+        "loja": "Loja Teste",
+        "comissao": "10",
+        "comissao_formatada": "R$ 10,00",
+        "link_oferta": "https://shopee.com.br/",
+        "imagem": "",
+    }
+
+    try:
+
+        resultado = enviar_telegram(
+            produto_teste
+        )
+
+        return jsonify({
+            "ok": True,
+            "message": "Teste enviado ao Telegram.",
+            "telegram": resultado,
+        })
+
+    except Exception as exc:
+
+        logger.exception(
+            "Erro no teste Telegram."
+        )
+
+        return jsonify({
+            "ok": False,
+            "error": str(exc),
+        }), 500
+
+
+# ============================================================
+# TRATAMENTO DE ERROS
 # ============================================================
 
 @app.errorhandler(404)
-def erro_404(error):
-
+def not_found(error):
     return jsonify({
         "ok": False,
-        "error":
-            "Rota não encontrada."
+        "error": "Rota não encontrada.",
     }), 404
 
 
-# ============================================================
-# ERRO 405
-# ============================================================
-
 @app.errorhandler(405)
-def erro_405(error):
-
+def method_not_allowed(error):
     return jsonify({
         "ok": False,
-        "error":
-            "Método HTTP não permitido."
+        "error": "Método HTTP não permitido para esta rota.",
     }), 405
 
 
-# ============================================================
-# ERRO 500
-# ============================================================
-
 @app.errorhandler(500)
-def erro_500(error):
-
-    logger.exception(
-        "💥 Erro interno."
-    )
-
+def internal_error(error):
     return jsonify({
         "ok": False,
-        "error":
-            "Erro interno do servidor."
+        "error": "Erro interno do servidor.",
     }), 500
 
 
@@ -1470,42 +875,17 @@ if __name__ == "__main__":
     port = int(
         os.getenv(
             "PORT",
-            "10000"
+            "10000",
         )
     )
 
     logger.info(
-        "=========================================="
-    )
-
-    logger.info(
-        "🦊 BOT RAPOSA CAÇADORA"
-    )
-
-    logger.info(
-        "=========================================="
-    )
-
-    logger.info(
-        "Porta: %s",
-        port
-    )
-
-    logger.info(
-        "Telegram configurado: %s",
-        bool(TELEGRAM_TOKEN)
-    )
-
-    logger.info(
-        "Mercado Livre configurado: %s",
-        mercado_livre_configurado()
-    )
-
-    logger.info(
-        "=========================================="
+        "🚀 Servidor iniciando na porta %s",
+        port,
     )
 
     app.run(
         host="0.0.0.0",
-        port=port
+        port=port,
+        debug=False,
     )

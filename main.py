@@ -11,13 +11,29 @@ from flask import Flask, request, jsonify, redirect
 
 
 # ============================================================
-# CONFIGURAÇÕES
+# LOG
 # ============================================================
 
-TELEGRAM_TOKEN = os.getenv(
-    "TELEGRAM_TOKEN",
-    ""
-).strip()
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s"
+)
+
+logger = logging.getLogger("raposa-cacadora")
+
+
+# ============================================================
+# FLASK
+# ============================================================
+
+app = Flask(__name__)
+
+
+# ============================================================
+# ENVIRONMENT VARIABLES
+# ============================================================
+
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "").strip()
 
 CHAT_ID = os.getenv(
     "CHAT_ID",
@@ -30,9 +46,7 @@ WEBAPP_URL = os.getenv(
 ).strip().rstrip("/")
 
 
-# ============================================================
-# MERCADO LIVRE
-# ============================================================
+# Mercado Livre
 
 ML_CLIENT_ID = os.getenv(
     "ML_CLIENT_ID",
@@ -50,11 +64,13 @@ ML_REDIRECT_URI = os.getenv(
 ).strip()
 
 
-# Estes dois NÃO precisam existir antes do primeiro OAuth.
+# Tokens.
 #
-# Depois que o OAuth funcionar, você poderá colocar os tokens
-# nas Environment Variables do Render.
+# Eles NÃO são obrigatórios para iniciar o OAuth.
 #
+# Depois que o OAuth funcionar, poderão ser configurados
+# como Environment Variables no Render.
+
 ML_ACCESS_TOKEN = os.getenv(
     "ML_ACCESS_TOKEN",
     ""
@@ -67,10 +83,8 @@ ML_REFRESH_TOKEN = os.getenv(
 
 
 # ============================================================
-# CONFIGURAÇÕES GERAIS
+# TELEGRAM
 # ============================================================
-
-INIT_DATA_MAX_AGE = 86400
 
 TELEGRAM_API = (
     f"https://api.telegram.org/bot{TELEGRAM_TOKEN}"
@@ -78,24 +92,10 @@ TELEGRAM_API = (
 
 
 # ============================================================
-# LOG
+# CONSTANTES
 # ============================================================
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s"
-)
-
-logger = logging.getLogger(
-    "raposa-cacadora"
-)
-
-
-# ============================================================
-# FLASK
-# ============================================================
-
-app = Flask(__name__)
+INIT_DATA_MAX_AGE = 86400
 
 
 # ============================================================
@@ -103,25 +103,9 @@ app = Flask(__name__)
 # ============================================================
 
 @app.after_request
-def add_cors_headers(response):
-    """
-    CORS do Mini App.
+def adicionar_cors(response):
 
-    IMPORTANTE:
-    O teste anterior comprovou que:
-    
-    Vercel
-       ↓
-    Render
-    
-    está funcionando quando o POST é aceito.
-
-    Aqui mantemos explicitamente o domínio do Mini App.
-    """
-
-    origin = request.headers.get(
-        "Origin"
-    )
+    origin = request.headers.get("Origin")
 
     if origin == WEBAPP_URL:
 
@@ -138,9 +122,7 @@ def add_cors_headers(response):
 
         response.headers[
             "Access-Control-Allow-Methods"
-        ] = (
-            "GET, POST, OPTIONS"
-        )
+        ] = "GET, POST, OPTIONS"
 
         response.headers[
             "Access-Control-Max-Age"
@@ -158,20 +140,8 @@ def add_cors_headers(response):
 # ============================================================
 
 def validar_init_data(init_data):
-    """
-    Valida Telegram WebApp initData.
-
-    Retorna:
-
-        True, dados
-
-    ou:
-
-        False, motivo
-    """
 
     if not init_data:
-
         return False, "initData ausente"
 
     if not TELEGRAM_TOKEN:
@@ -180,9 +150,7 @@ def validar_init_data(init_data):
             "❌ TELEGRAM_TOKEN não configurado."
         )
 
-        return False, (
-            "TELEGRAM_TOKEN não configurado"
-        )
+        return False, "TELEGRAM_TOKEN não configurado"
 
     try:
 
@@ -200,9 +168,7 @@ def validar_init_data(init_data):
 
         if not recebido_hash:
 
-            return False, (
-                "hash ausente no initData"
-            )
+            return False, "hash ausente"
 
         data_check_string = "\n".join(
             f"{chave}={valor}"
@@ -229,9 +195,7 @@ def validar_init_data(init_data):
 
             return False, "hash inválido"
 
-        auth_date = dados.get(
-            "auth_date"
-        )
+        auth_date = dados.get("auth_date")
 
         if auth_date:
 
@@ -244,21 +208,15 @@ def validar_init_data(init_data):
 
                 if idade < 0:
 
-                    return False, (
-                        "auth_date inválido"
-                    )
+                    return False, "auth_date inválido"
 
                 if idade > INIT_DATA_MAX_AGE:
 
-                    return False, (
-                        "initData expirado"
-                    )
+                    return False, "initData expirado"
 
             except ValueError:
 
-                return False, (
-                    "auth_date inválido"
-                )
+                return False, "auth_date inválido"
 
         return True, dados
 
@@ -272,7 +230,7 @@ def validar_init_data(init_data):
 
 
 # ============================================================
-# VERIFICAÇÃO DA CONFIGURAÇÃO MERCADO LIVRE
+# CONFIGURAÇÃO MERCADO LIVRE
 # ============================================================
 
 def mercado_livre_configurado():
@@ -285,7 +243,7 @@ def mercado_livre_configurado():
 
 
 # ============================================================
-# URL DE AUTORIZAÇÃO MERCADO LIVRE
+# URL OAUTH
 # ============================================================
 
 def gerar_url_oauth():
@@ -328,29 +286,15 @@ def oauth_mercadolivre():
     if not mercado_livre_configurado():
 
         logger.error(
-            "❌ Configuração Mercado Livre incompleta."
-        )
-
-        logger.error(
-            "ML_CLIENT_ID configurado: %s",
-            bool(ML_CLIENT_ID)
-        )
-
-        logger.error(
-            "ML_CLIENT_SECRET configurado: %s",
-            bool(ML_CLIENT_SECRET)
-        )
-
-        logger.error(
-            "ML_REDIRECT_URI configurado: %s",
-            bool(ML_REDIRECT_URI)
+            "❌ Mercado Livre não está configurado."
         )
 
         return jsonify({
             "ok": False,
             "error": (
-                "Configuração do Mercado Livre "
-                "incompleta."
+                "Configure ML_CLIENT_ID, "
+                "ML_CLIENT_SECRET e "
+                "ML_REDIRECT_URI no Render."
             )
         }), 500
 
@@ -372,7 +316,11 @@ def oauth_mercadolivre():
     url = gerar_url_oauth()
 
     logger.info(
-        "➡️ Redirecionando para autorização Mercado Livre."
+        "➡️ Redirecionando para:"
+    )
+
+    logger.info(
+        "https://auth.mercadolivre.com.br/authorization"
     )
 
     return redirect(url)
@@ -383,10 +331,6 @@ def oauth_mercadolivre():
 # ============================================================
 
 def trocar_code_por_token(code):
-
-    logger.info(
-        "🔑 Iniciando troca authorization code → token."
-    )
 
     if not ML_CLIENT_ID:
 
@@ -409,19 +353,29 @@ def trocar_code_por_token(code):
     if not code:
 
         raise RuntimeError(
-            "Authorization code vazio."
+            "Authorization code não recebido."
         )
 
-    # --------------------------------------------------------
-    # IMPORTANTE:
+    logger.info(
+        "=========================================="
+    )
+
+    logger.info(
+        "🔑 TROCANDO AUTHORIZATION CODE POR TOKEN"
+    )
+
+    logger.info(
+        "=========================================="
+    )
+
+    # ========================================================
+    # ATENÇÃO
     #
-    # Sua aplicação está configurada sem PKCE.
+    # A aplicação informada anteriormente está SEM PKCE.
     #
-    # Portanto NÃO enviamos code_verifier.
+    # Portanto não enviamos code_verifier.
     #
-    # A documentação do Mercado Livre indica que
-    # code_verifier é usado quando PKCE está habilitado.
-    # --------------------------------------------------------
+    # ========================================================
 
     payload = {
         "grant_type": "authorization_code",
@@ -431,31 +385,37 @@ def trocar_code_por_token(code):
         "redirect_uri": ML_REDIRECT_URI
     }
 
+    headers = {
+        "Accept": "application/json",
+        "Content-Type":
+            "application/x-www-form-urlencoded"
+    }
+
     logger.info(
-        "🌐 Endpoint OAuth:"
+        "🌐 POST https://api.mercadolibre.com/oauth/token"
     )
 
     logger.info(
-        "https://api.mercadolibre.com/oauth/token"
+        "grant_type: authorization_code"
     )
 
     logger.info(
-        "🆔 Client ID presente: %s",
+        "client_id presente: %s",
         bool(ML_CLIENT_ID)
     )
 
     logger.info(
-        "🔐 Client Secret presente: %s",
+        "client_secret presente: %s",
         bool(ML_CLIENT_SECRET)
     )
 
     logger.info(
-        "🎫 Authorization code presente: %s",
+        "code presente: %s",
         bool(code)
     )
 
     logger.info(
-        "↩️ Redirect URI: %s",
+        "redirect_uri: %s",
         ML_REDIRECT_URI
     )
 
@@ -464,18 +424,14 @@ def trocar_code_por_token(code):
         response = requests.post(
             "https://api.mercadolibre.com/oauth/token",
             data=payload,
-            headers={
-                "Accept": "application/json",
-                "Content-Type":
-                    "application/x-www-form-urlencoded"
-            },
+            headers=headers,
             timeout=30
         )
 
     except requests.RequestException as e:
 
         logger.error(
-            "❌ Falha de conexão com Mercado Livre:"
+            "❌ Falha de conexão com Mercado Livre."
         )
 
         logger.error(
@@ -483,16 +439,18 @@ def trocar_code_por_token(code):
             e
         )
 
-        raise
+        raise RuntimeError(
+            f"Falha de conexão com Mercado Livre: {e}"
+        )
 
     logger.info(
-        "📡 Mercado Livre OAuth HTTP: %s",
+        "📡 HTTP Mercado Livre: %s",
         response.status_code
     )
 
-    # --------------------------------------------------------
+    # ========================================================
     # SUCESSO
-    # --------------------------------------------------------
+    # ========================================================
 
     if response.ok:
 
@@ -503,51 +461,68 @@ def trocar_code_por_token(code):
         except ValueError:
 
             logger.error(
-                "❌ Mercado Livre retornou resposta "
-                "que não é JSON."
+                "❌ Mercado Livre retornou JSON inválido."
             )
 
             raise RuntimeError(
-                "Resposta OAuth inválida."
+                "Resposta inválida do Mercado Livre."
             )
 
         logger.info(
-            "✅ TOKEN OBTIDO COM SUCESSO."
+            "=========================================="
         )
 
         logger.info(
-            "👤 user_id recebido: %s",
+            "✅ ACCESS TOKEN OBTIDO"
+        )
+
+        logger.info(
+            "=========================================="
+        )
+
+        logger.info(
+            "user_id: %s",
             dados.get("user_id")
         )
 
         logger.info(
-            "⏱️ expires_in: %s",
+            "expires_in: %s",
             dados.get("expires_in")
         )
 
         logger.info(
-            "🔐 scope recebido: %s",
+            "scope: %s",
             dados.get("scope")
         )
 
-        # NÃO mostrar tokens no log.
         logger.info(
-            "🔑 access_token recebido: SIM"
+            "access_token recebido: %s",
+            bool(dados.get("access_token"))
         )
 
         logger.info(
-            "♻️ refresh_token recebido: %s",
+            "refresh_token recebido: %s",
             bool(dados.get("refresh_token"))
         )
 
+        # NUNCA imprimir os tokens.
+
         return dados
 
-    # --------------------------------------------------------
+    # ========================================================
     # ERRO
-    # --------------------------------------------------------
+    # ========================================================
 
     logger.error(
-        "❌ MERCADO LIVRE RECUSOU O OAUTH."
+        "=========================================="
+    )
+
+    logger.error(
+        "❌ ERRO ORIGINAL DO MERCADO LIVRE"
+    )
+
+    logger.error(
+        "=========================================="
     )
 
     logger.error(
@@ -555,68 +530,43 @@ def trocar_code_por_token(code):
         response.status_code
     )
 
-    # O corpo é justamente o que precisamos para descobrir
-    # a causa do 403.
-    #
-    # NÃO exibimos client_secret, access_token ou
-    # refresh_token.
     logger.error(
-        "📄 Corpo da resposta:"
+        "Content-Type: %s",
+        response.headers.get("Content-Type")
+    )
+
+    # IMPORTANTE:
+    #
+    # Aqui mostramos somente a resposta enviada pelo
+    # Mercado Livre.
+    #
+    # Não mostramos nosso client_secret.
+    # Não mostramos access_token.
+    # Não mostramos refresh_token.
+
+    texto = response.text[:4000]
+
+    logger.error(
+        "Resposta Mercado Livre:"
     )
 
     logger.error(
         "%s",
-        response.text[:4000]
+        texto
     )
 
-    if response.status_code == 403:
-
-        logger.error(
-            "⚠️ HTTP 403: acesso proibido."
-        )
-
-        logger.error(
-            "Possíveis causas documentadas pelo Mercado Livre:"
-        )
-
-        logger.error(
-            "- aplicação sem grant com o usuário"
-        )
-
-        logger.error(
-            "- scopes/permissões insuficientes"
-        )
-
-        logger.error(
-            "- IP bloqueado"
-        )
-
-        logger.error(
-            "- conta/usuário sem permissão"
-        )
-
-        logger.error(
-            "- problema com domínio/país"
-        )
-
-    if response.status_code == 401:
-
-        logger.error(
-            "⚠️ HTTP 401: credenciais inválidas "
-            "ou não autorizadas."
-        )
-
-    if response.status_code == 429:
-
-        logger.error(
-            "⚠️ HTTP 429: rate limit."
-        )
-
-    response.raise_for_status()
-
-    raise RuntimeError(
-        "Falha desconhecida no OAuth."
+    logger.error(
+        "=========================================="
     )
+
+    # Não usamos raise_for_status() imediatamente,
+    # porque precisamos devolver o corpo original.
+
+    return {
+        "oauth_error": True,
+        "status_code": response.status_code,
+        "response_text": texto
+    }
 
 
 # ============================================================
@@ -640,6 +590,10 @@ def oauth_callback():
     logger.info(
         "=========================================="
     )
+
+    # --------------------------------------------------------
+    # ERRO DEVOLVIDO PELO MERCADO LIVRE
+    # --------------------------------------------------------
 
     erro = request.args.get(
         "error"
@@ -672,11 +626,14 @@ def oauth_callback():
             "description": descricao
         }), 400
 
+    # --------------------------------------------------------
+    # CODE
+    # --------------------------------------------------------
+
     code = request.args.get(
         "code"
     )
 
-    # Não registramos o code no log.
     logger.info(
         "🎫 Authorization code recebido: %s",
         bool(code)
@@ -685,7 +642,7 @@ def oauth_callback():
     if not code:
 
         logger.error(
-            "❌ Authorization code não recebido."
+            "❌ Nenhum authorization code recebido."
         )
 
         return jsonify({
@@ -695,11 +652,51 @@ def oauth_callback():
             )
         }), 400
 
+    # --------------------------------------------------------
+    # TROCA
+    # --------------------------------------------------------
+
     try:
 
         token_data = trocar_code_por_token(
             code
         )
+
+        # ----------------------------------------------------
+        # ERRO ORIGINAL
+        # ----------------------------------------------------
+
+        if token_data.get(
+            "oauth_error"
+        ):
+
+            status = token_data.get(
+                "status_code",
+                502
+            )
+
+            resposta = token_data.get(
+                "response_text",
+                ""
+            )
+
+            logger.error(
+                "❌ Falha na troca do authorization code."
+            )
+
+            return jsonify({
+                "ok": False,
+                "error": (
+                    "Mercado Livre recusou "
+                    "a troca do authorization code."
+                ),
+                "status": status,
+                "mercado_livre": resposta
+            }), 502
+
+        # ----------------------------------------------------
+        # SUCESSO
+        # ----------------------------------------------------
 
         access_token = token_data.get(
             "access_token"
@@ -712,14 +709,13 @@ def oauth_callback():
         if not access_token:
 
             logger.error(
-                "❌ access_token não veio na resposta."
+                "❌ Mercado Livre não retornou access_token."
             )
 
             return jsonify({
                 "ok": False,
                 "error": (
-                    "Mercado Livre não retornou "
-                    "access_token."
+                    "access_token não recebido."
                 )
             }), 502
 
@@ -728,7 +724,7 @@ def oauth_callback():
         )
 
         logger.info(
-            "✅ OAUTH CONCLUÍDO COM SUCESSO"
+            "🎉 OAUTH CONCLUÍDO"
         )
 
         logger.info(
@@ -736,65 +732,64 @@ def oauth_callback():
         )
 
         logger.info(
-            "👤 user_id: %s",
+            "user_id: %s",
             token_data.get("user_id")
         )
 
         logger.info(
-            "⏱️ expires_in: %s",
+            "expires_in: %s",
             token_data.get("expires_in")
         )
 
         logger.info(
-            "🔐 scope: %s",
+            "scope: %s",
             token_data.get("scope")
         )
 
         logger.info(
-            "🔑 access_token: recebido"
+            "access_token: recebido"
         )
 
         logger.info(
-            "♻️ refresh_token: %s",
+            "refresh_token: %s",
             bool(refresh_token)
         )
 
         # ----------------------------------------------------
-        # IMPORTANTE
-        # ----------------------------------------------------
+        # NÃO MOSTRAR OS TOKENS NA TELA.
         #
-        # NÃO mostramos os valores dos tokens.
-        #
-        # O Render não deve receber esses valores através
-        # do código-fonte.
-        #
-        # Neste primeiro teste, você deverá copiá-los da
-        # resposta apenas para configurar as Environment
-        # Variables do Render.
-        #
-        # NUNCA envie os tokens para mim.
+        # Para o primeiro teste, vamos apenas informar que
+        # foram recebidos.
         # ----------------------------------------------------
 
         return """
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
+
 <meta charset="UTF-8">
-<title>Mercado Livre</title>
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1">
+
+<title>Mercado Livre autorizado</title>
+
 <style>
+
 body {
     font-family: Arial, sans-serif;
     background: #f5f5f5;
-    padding: 40px;
+    padding: 30px;
 }
 
 .box {
     max-width: 600px;
-    margin: auto;
+    margin: 50px auto;
     background: white;
     padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0,0,0,.1);
+    border-radius: 15px;
+    box-shadow: 0 5px 25px rgba(0,0,0,.1);
 }
 
 .ok {
@@ -802,15 +797,11 @@ body {
 }
 
 .warning {
-    color: #8a5a00;
+    color: #9a6700;
 }
 
-code {
-    background: #eee;
-    padding: 4px 8px;
-    border-radius: 5px;
-}
 </style>
+
 </head>
 
 <body>
@@ -822,53 +813,30 @@ code {
 </h1>
 
 <p>
-A autorização foi concluída e o Mercado Livre
-retornou os tokens.
+O Mercado Livre autorizou a aplicação
+e o backend recebeu o access token.
 </p>
 
 <p>
-Agora configure no Render:
+O próximo passo será configurar o armazenamento
+seguro dos tokens e testar a API oficial.
 </p>
-
-<ul>
-<li><code>ML_ACCESS_TOKEN</code></li>
-<li><code>ML_REFRESH_TOKEN</code></li>
-</ul>
 
 <p class="warning">
-⚠️ Nunca coloque esses tokens no GitHub
-e nunca envie os valores para outra pessoa.
-</p>
-
-<p>
-Depois disso, será possível testar a conexão
-com a API oficial.
+⚠️ Não envie seus tokens para ninguém.
 </p>
 
 </div>
 
 </body>
+
 </html>
 """
-
-    except requests.HTTPError as e:
-
-        logger.exception(
-            "❌ HTTP ERROR durante OAuth."
-        )
-
-        return jsonify({
-            "ok": False,
-            "error": (
-                "Falha ao trocar authorization code."
-            ),
-            "details": str(e)
-        }), 502
 
     except Exception as e:
 
         logger.exception(
-            "💥 ERRO durante callback OAuth."
+            "💥 Erro inesperado no callback."
         )
 
         return jsonify({
@@ -879,7 +847,7 @@ com a API oficial.
 
 
 # ============================================================
-# REFRESH TOKEN
+# RENOVAÇÃO DO ACCESS TOKEN
 # ============================================================
 
 def renovar_access_token():
@@ -929,10 +897,12 @@ def renovar_access_token():
     except requests.RequestException as e:
 
         logger.error(
-            "❌ Falha de conexão durante refresh."
+            "❌ Erro de conexão durante refresh."
         )
 
-        raise
+        raise RuntimeError(
+            str(e)
+        )
 
     logger.info(
         "📡 Refresh HTTP: %s",
@@ -942,32 +912,29 @@ def renovar_access_token():
     if not response.ok:
 
         logger.error(
-            "❌ Erro renovando token:"
+            "❌ Erro no refresh."
         )
 
         logger.error(
-            "%s",
+            "Resposta: %s",
             response.text[:4000]
         )
 
-        response.raise_for_status()
+        raise RuntimeError(
+            "Falha ao renovar access token."
+        )
 
     dados = response.json()
 
     logger.info(
-        "✅ Novo access token recebido."
-    )
-
-    logger.info(
-        "♻️ Novo refresh token recebido: %s",
-        bool(dados.get("refresh_token"))
+        "✅ Access token renovado."
     )
 
     return dados
 
 
 # ============================================================
-# GET API MERCADO LIVRE
+# API MERCADO LIVRE
 # ============================================================
 
 def mercado_livre_get(
@@ -991,11 +958,6 @@ def mercado_livre_get(
         + endpoint
     )
 
-    logger.info(
-        "🌐 GET Mercado Livre: %s",
-        endpoint
-    )
-
     try:
 
         response = requests.get(
@@ -1012,31 +974,26 @@ def mercado_livre_get(
     except requests.RequestException as e:
 
         logger.error(
-            "❌ Erro de conexão Mercado Livre."
+            "❌ Erro de conexão com API Mercado Livre."
         )
 
-        raise
+        raise RuntimeError(
+            str(e)
+        )
 
     logger.info(
-        "📡 Mercado Livre HTTP: %s",
+        "📡 GET %s → HTTP %s",
+        endpoint,
         response.status_code
     )
 
     if response.status_code == 401:
 
-        logger.warning(
-            "⚠️ Access token expirado ou inválido."
-        )
-
         raise PermissionError(
-            "Access token Mercado Livre inválido."
+            "Access token inválido ou expirado."
         )
 
     if response.status_code == 429:
-
-        logger.warning(
-            "⚠️ Mercado Livre rate limit 429."
-        )
 
         retry_after = response.headers.get(
             "Retry-After",
@@ -1044,13 +1001,8 @@ def mercado_livre_get(
         )
 
         try:
-
-            segundos = int(
-                retry_after
-            )
-
+            segundos = int(retry_after)
         except ValueError:
-
             segundos = 10
 
         segundos = min(
@@ -1058,14 +1010,12 @@ def mercado_livre_get(
             60
         )
 
-        logger.info(
-            "⏳ Aguardando %s segundos.",
+        logger.warning(
+            "⚠️ Rate limit. Aguardando %s segundos.",
             segundos
         )
 
-        time.sleep(
-            segundos
-        )
+        time.sleep(segundos)
 
         response = requests.get(
             url,
@@ -1081,31 +1031,34 @@ def mercado_livre_get(
     if not response.ok:
 
         logger.error(
-            "❌ Erro API Mercado Livre:"
+            "❌ API Mercado Livre respondeu HTTP %s",
+            response.status_code
         )
 
         logger.error(
-            "%s",
+            "Resposta: %s",
             response.text[:4000]
         )
 
-        response.raise_for_status()
+        raise RuntimeError(
+            f"Mercado Livre HTTP {response.status_code}"
+        )
 
     return response.json()
 
 
 # ============================================================
-# TESTE /users/me
+# TESTE DA CONTA MERCADO LIVRE
 # ============================================================
 
 @app.route(
     "/mercadolivre/teste",
     methods=["GET"]
 )
-def mercado_livre_teste():
+def teste_mercado_livre():
 
     logger.info(
-        "🧪 TESTANDO /users/me"
+        "🧪 TESTE /users/me"
     )
 
     if not ML_ACCESS_TOKEN:
@@ -1113,8 +1066,7 @@ def mercado_livre_teste():
         return jsonify({
             "ok": False,
             "error": (
-                "ML_ACCESS_TOKEN não configurado "
-                "no Render."
+                "ML_ACCESS_TOKEN não configurado."
             )
         }), 400
 
@@ -1126,17 +1078,11 @@ def mercado_livre_teste():
 
         return jsonify({
             "ok": True,
-            "mercado_livre": {
+            "usuario": {
                 "id": dados.get("id"),
-                "nickname": dados.get(
-                    "nickname"
-                ),
-                "country_id": dados.get(
-                    "country_id"
-                ),
-                "site_id": dados.get(
-                    "site_id"
-                )
+                "nickname": dados.get("nickname"),
+                "site_id": dados.get("site_id"),
+                "country_id": dados.get("country_id")
             }
         })
 
@@ -1150,7 +1096,7 @@ def mercado_livre_teste():
     except Exception as e:
 
         logger.exception(
-            "❌ Falha no teste /users/me."
+            "❌ Falha no teste Mercado Livre."
         )
 
         return jsonify({
@@ -1170,27 +1116,33 @@ def mercado_livre_teste():
 def health():
 
     return jsonify({
+
         "ok": True,
-        "status": "online",
-        "service": "bot-raposa-cacadora",
 
-        "telegram_configurado": bool(
-            TELEGRAM_TOKEN
-        ),
+        "service":
+            "Bot Raposa Caçadora",
 
-        "mercado_livre_configurado": (
-            mercado_livre_configurado()
-        ),
+        "status":
+            "online",
 
-        "ml_access_token_configurado": bool(
-            ML_ACCESS_TOKEN
-        ),
+        "telegram_configurado":
+            bool(TELEGRAM_TOKEN),
 
-        "ml_refresh_token_configurado": bool(
-            ML_REFRESH_TOKEN
-        ),
+        "mercado_livre_configurado":
+            mercado_livre_configurado(),
 
-        "webapp_url": WEBAPP_URL
+        "ml_access_token_configurado":
+            bool(ML_ACCESS_TOKEN),
+
+        "ml_refresh_token_configurado":
+            bool(ML_REFRESH_TOKEN),
+
+        "webapp_url":
+            WEBAPP_URL,
+
+        "redirect_uri":
+            ML_REDIRECT_URI
+
     })
 
 
@@ -1205,22 +1157,39 @@ def health():
 def home():
 
     return jsonify({
+
         "ok": True,
-        "service": "Bot Raposa Caçadora",
-        "status": "online",
+
+        "service":
+            "Bot Raposa Caçadora",
+
+        "status":
+            "online",
 
         "endpoints": {
-            "health": "/health",
-            "oauth": "/oauth/mercadolivre",
-            "oauth_callback": "/oauth/callback",
-            "mercadolivre_teste":
-                "/mercadolivre/teste"
+
+            "health":
+                "/health",
+
+            "oauth":
+                "/oauth/mercadolivre",
+
+            "callback":
+                "/oauth/callback",
+
+            "teste_ml":
+                "/mercadolivre/teste",
+
+            "configurar":
+                "/api/configurar"
+
         }
+
     })
 
 
 # ============================================================
-# OPTIONS
+# OPTIONS /api/configurar
 # ============================================================
 
 @app.route(
@@ -1237,7 +1206,7 @@ def configurar_options():
 
 
 # ============================================================
-# API CONFIGURAR
+# POST /api/configurar
 # ============================================================
 
 @app.route(
@@ -1260,7 +1229,7 @@ def configurar():
     )
 
     # --------------------------------------------------------
-    # TELEGRAM INIT DATA
+    # INIT DATA
     # --------------------------------------------------------
 
     init_data = request.headers.get(
@@ -1275,15 +1244,6 @@ def configurar():
             ""
         )
 
-    logger.info(
-        "🔐 Telegram initData recebido: %s",
-        bool(init_data)
-    )
-
-    # --------------------------------------------------------
-    # VALIDAÇÃO TELEGRAM
-    # --------------------------------------------------------
-
     valido, resultado = validar_init_data(
         init_data
     )
@@ -1291,15 +1251,13 @@ def configurar():
     if not valido:
 
         logger.warning(
-            "❌ Telegram initData inválido: %s",
+            "❌ initData inválido: %s",
             resultado
         )
 
         return jsonify({
             "ok": False,
-            "error": (
-                "Telegram initData inválido"
-            ),
+            "error": "Telegram initData inválido",
             "details": resultado
         }), 401
 
@@ -1326,13 +1284,6 @@ def configurar():
             "error": "JSON não recebido."
         }), 400
 
-    logger.info(
-        "📦 JSON recebido."
-    )
-
-    # Não precisamos registrar initData,
-    # token ou informações sensíveis.
-
     # --------------------------------------------------------
     # LINK
     # --------------------------------------------------------
@@ -1348,9 +1299,8 @@ def configurar():
 
         return jsonify({
             "ok": False,
-            "error": (
-                "Link da vitrine não informado."
-            )
+            "error":
+                "Link não informado."
         }), 400
 
     # --------------------------------------------------------
@@ -1373,7 +1323,8 @@ def configurar():
 
         return jsonify({
             "ok": False,
-            "error": "Quantidade inválida."
+            "error":
+                "Quantidade inválida."
         }), 400
 
     # --------------------------------------------------------
@@ -1396,7 +1347,8 @@ def configurar():
 
         return jsonify({
             "ok": False,
-            "error": "Intervalo inválido."
+            "error":
+                "Intervalo inválido."
         }), 400
 
     quantidade = max(
@@ -1416,7 +1368,7 @@ def configurar():
     )
 
     logger.info(
-        "🔗 Link recebido: %s",
+        "🔗 Link: %s",
         link
     )
 
@@ -1431,33 +1383,40 @@ def configurar():
     )
 
     # --------------------------------------------------------
-    # IMPORTANTE
-    # --------------------------------------------------------
+    # POR ENQUANTO:
     #
-    # Por enquanto NÃO iniciamos scraping do meli.la.
+    # NÃO FAZEMOS SCRAPING DO MELI.LA.
     #
-    # Primeiro precisamos concluir a autorização oficial
-    # do Mercado Livre.
+    # Primeiro resolvemos a autorização oficial.
     # --------------------------------------------------------
 
     logger.info(
-        "✅ Configuração recebida corretamente."
+        "✅ Configuração recebida."
     )
 
     return jsonify({
+
         "ok": True,
-        "message": (
-            "Configuração recebida "
-            "corretamente pelo Render."
-        ),
-        "link": link,
-        "quantidade": quantidade,
-        "intervalo": intervalo
+
+        "message":
+            "POST chegou ao Render!",
+
+        "dados": {
+            "link":
+                link,
+
+            "quantidade":
+                quantidade,
+
+            "intervalo":
+                intervalo
+        }
+
     }), 200
 
 
 # ============================================================
-# 404
+# ERRO 404
 # ============================================================
 
 @app.errorhandler(404)
@@ -1465,12 +1424,13 @@ def erro_404(error):
 
     return jsonify({
         "ok": False,
-        "error": "Rota não encontrada."
+        "error":
+            "Rota não encontrada."
     }), 404
 
 
 # ============================================================
-# 405
+# ERRO 405
 # ============================================================
 
 @app.errorhandler(405)
@@ -1478,31 +1438,31 @@ def erro_405(error):
 
     return jsonify({
         "ok": False,
-        "error": (
+        "error":
             "Método HTTP não permitido."
-        )
     }), 405
 
 
 # ============================================================
-# 500
+# ERRO 500
 # ============================================================
 
 @app.errorhandler(500)
 def erro_500(error):
 
     logger.exception(
-        "💥 Erro interno do servidor."
+        "💥 Erro interno."
     )
 
     return jsonify({
         "ok": False,
-        "error": "Erro interno do servidor."
+        "error":
+            "Erro interno do servidor."
     }), 500
 
 
 # ============================================================
-# START
+# EXECUÇÃO LOCAL
 # ============================================================
 
 if __name__ == "__main__":
@@ -1527,33 +1487,18 @@ if __name__ == "__main__":
     )
 
     logger.info(
-        "🌐 WEBAPP_URL: %s",
-        WEBAPP_URL
+        "Porta: %s",
+        port
     )
 
     logger.info(
-        "📢 CHAT_ID: %s",
-        CHAT_ID
-    )
-
-    logger.info(
-        "🤖 Telegram configurado: %s",
+        "Telegram configurado: %s",
         bool(TELEGRAM_TOKEN)
     )
 
     logger.info(
-        "🛒 Mercado Livre configurado: %s",
+        "Mercado Livre configurado: %s",
         mercado_livre_configurado()
-    )
-
-    logger.info(
-        "🔑 ML access token configurado: %s",
-        bool(ML_ACCESS_TOKEN)
-    )
-
-    logger.info(
-        "♻️ ML refresh token configurado: %s",
-        bool(ML_REFRESH_TOKEN)
     )
 
     logger.info(

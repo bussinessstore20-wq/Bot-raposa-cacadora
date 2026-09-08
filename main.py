@@ -1,13 +1,16 @@
 import os
 import re
 import time
+import json
+import hashlib
 import logging
 from decimal import Decimal, InvalidOperation
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs, unquote
 
 import requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+
 
 # ============================================================
 # CONFIGURAÇÃO
@@ -15,7 +18,6 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 
-# Permite o Mini App da Vercel acessar o Render
 ALLOWED_ORIGINS = [
     "https://bot-raposa-cacadora.vercel.app",
 ]
@@ -35,6 +37,7 @@ CORS(
     },
 )
 
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s",
@@ -42,37 +45,71 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+
 # ============================================================
 # VARIÁVEIS DE AMBIENTE
 # ============================================================
 
-# Shopee
-SHOPEE_APP_ID = os.getenv("SHOPEE_APP_ID", "").strip()
-SHOPEE_APP_SECRET = os.getenv("SHOPEE_APP_SECRET", "").strip()
+# ------------------------------------------------------------
+# SHOPEE
+# ------------------------------------------------------------
 
-# URL da API da Shopee.
-# CONFIRA no painel/documentação da sua integração qual endpoint
-# sua conta utiliza.
-SHOPEE_API_URL = os.getenv(
-    "SHOPEE_API_URL",
-    ""
+SHOPEE_APP_ID = os.getenv(
+    "SHOPEE_APP_ID",
+    "",
 ).strip()
 
-# Telegram
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
+SHOPEE_APP_SECRET = os.getenv(
+    "SHOPEE_APP_SECRET",
+    "",
+).strip()
 
-# Segurança opcional do Mini App
+SHOPEE_API_URL = os.getenv(
+    "SHOPEE_API_URL",
+    "https://open-api.affiliate.shopee.com.br/graphql",
+).strip()
+
+
+# ------------------------------------------------------------
+# TELEGRAM
+#
+# Aceita tanto:
+# TELEGRAM_TOKEN / CHAT_ID
+#
+# quanto:
+# TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID
+# ------------------------------------------------------------
+
+TELEGRAM_BOT_TOKEN = (
+    os.getenv("TELEGRAM_TOKEN", "").strip()
+    or os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+)
+
+TELEGRAM_CHAT_ID = (
+    os.getenv("CHAT_ID", "").strip()
+    or os.getenv("TELEGRAM_CHAT_ID", "").strip()
+)
+
+
+# ------------------------------------------------------------
+# SEGURANÇA DO MINI APP
+# ------------------------------------------------------------
+
 TELEGRAM_INIT_DATA_REQUIRED = (
-    os.getenv("TELEGRAM_INIT_DATA_REQUIRED", "false").lower()
+    os.getenv(
+        "TELEGRAM_INIT_DATA_REQUIRED",
+        "false",
+    ).strip().lower()
     == "true"
 )
+
 
 # ============================================================
 # CONSTANTES
 # ============================================================
 
 REQUEST_TIMEOUT = 30
+SHORT_URL_TIMEOUT = 15
 
 SHOPEE_DOMAINS = {
     "shopee.com.br",
@@ -80,29 +117,53 @@ SHOPEE_DOMAINS = {
     "s.shopee.com.br",
 }
 
+
 # ============================================================
 # FUNÇÕES AUXILIARES
 # ============================================================
 
-
 def money(value):
     """
-    Converte valores para formato brasileiro.
-    Exemplo:
+    Converte valor para moeda brasileira.
+
+    Exemplos:
         69.99 -> R$ 69,99
+        "69.99" -> R$ 69,99
     """
+
+    if value is None or value == "":
+        return "Preço indisponível"
+
     try:
         number = Decimal(str(value))
-        return f"R$ {number:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    except (InvalidOperation, ValueError, TypeError):
+
+        return (
+            f"R$ {number:,.2f}"
+            .replace(",", "X")
+            .replace(".", ",")
+            .replace("X", ".")
+        )
+
+    except (
+        InvalidOperation,
+        ValueError,
+        TypeError,
+    ):
         return "Preço indisponível"
 
 
 def percentual(value):
     """
-    0.38 -> 38%
-    38 -> 38%
+    Converte porcentagem.
+
+    Exemplos:
+        0.38 -> 38%
+        38 -> 38%
     """
+
+    if value is None or value == "":
+        return "N/A"
+
     try:
         number = Decimal(str(value))
 
@@ -110,24 +171,31 @@ def percentual(value):
             number *= 100
 
         return f"{number:.0f}%"
+
     except Exception:
         return "N/A"
 
 
 def validar_url_shopee(url):
     """
-    Valida se a URL pertence à Shopee.
+    Verifica se a URL pertence à Shopee.
     """
+
     if not url:
         return False
 
     try:
         parsed = urlparse(url.strip())
 
-        if parsed.scheme not in ("http", "https"):
+        if parsed.scheme not in (
+            "http",
+            "https",
+        ):
             return False
 
-        hostname = (parsed.hostname or "").lower()
+        hostname = (
+            parsed.hostname or ""
+        ).lower()
 
         return hostname in SHOPEE_DOMAINS
 
@@ -135,25 +203,145 @@ def validar_url_shopee(url):
         return False
 
 
-def extrair_ids_produto(url):
+# ============================================================
+# RESOLUÇÃO DE LINK CURTO
+# ============================================================
+
+def resolver_url_shopee(url):
     """
-    Tenta extrair shop_id e item_id de uma URL normal da Shopee.
+    Resolve links curtos da Shopee.
 
     Exemplo:
-    https://shopee.com.br/product/864885365/58266424970
 
-    Retorna:
-        {
-            "shop_id": "864885365",
-            "item_id": "58266424970"
+        https://s.shopee.com.br/xxxx
+
+    pode redirecionar para:
+
+        https://shopee.com.br/produto-i.123456.987654
+
+    Retorna a URL final quando possível.
+    """
+
+    if not url:
+        return url
+
+    try:
+
+        parsed = urlparse(url)
+
+        hostname = (
+            parsed.hostname or ""
+        ).lower()
+
+        # Se não é link curto, não precisamos resolver.
+        if hostname != "s.shopee.com.br":
+            return url
+
+        logger.info(
+            "🔗 Resolvendo link curto da Shopee..."
+        )
+
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 "
+                "(Linux; Android 15) "
+                "AppleWebKit/537.36 "
+                "Chrome/151.0 Safari/537.36"
+            ),
+            "Accept": (
+                "text/html,"
+                "application/xhtml+xml,"
+                "application/xml;q=0.9,"
+                "*/*;q=0.8"
+            ),
         }
 
-    Links curtos não possuem necessariamente os IDs no próprio texto.
-    Nesse caso retornamos None.
+        # HEAD primeiro.
+        try:
+
+            response = requests.head(
+                url,
+                headers=headers,
+                allow_redirects=True,
+                timeout=SHORT_URL_TIMEOUT,
+            )
+
+            final_url = response.url
+
+            if final_url and final_url != url:
+
+                logger.info(
+                    "🔗 Link resolvido: %s",
+                    final_url,
+                )
+
+                return final_url
+
+        except Exception as exc:
+
+            logger.warning(
+                "⚠️ HEAD falhou ao resolver link: %s",
+                exc,
+            )
+
+        # Fallback GET.
+        response = requests.get(
+            url,
+            headers=headers,
+            allow_redirects=True,
+            timeout=SHORT_URL_TIMEOUT,
+        )
+
+        final_url = response.url
+
+        if final_url:
+
+            logger.info(
+                "🔗 URL final: %s",
+                final_url,
+            )
+
+            return final_url
+
+    except Exception as exc:
+
+        logger.warning(
+            "⚠️ Não foi possível resolver link curto: %s",
+            exc,
+        )
+
+    return url
+
+
+# ============================================================
+# EXTRAÇÃO DOS IDS DA SHOPEE
+# ============================================================
+
+def extrair_ids_produto(url):
+    """
+    Extrai shop_id e item_id de vários formatos de URL Shopee.
+
+    Formato 1:
+        /product/123/456
+
+    Formato 2:
+        /produto-i.123.456
+
+    Formato 3:
+        /opaanlp/123/456
+
+    Formato 4:
+        ?shopid=123&itemid=456
     """
 
     if not url:
         return None
+
+    url = unquote(url.strip())
+
+    # --------------------------------------------------------
+    # /product/{shop_id}/{item_id}
+    # --------------------------------------------------------
 
     match = re.search(
         r"/product/(\d+)/(\d+)",
@@ -161,76 +349,184 @@ def extrair_ids_produto(url):
         re.IGNORECASE,
     )
 
-    if not match:
-        return None
+    if match:
 
-    return {
-        "shop_id": match.group(1),
-        "item_id": match.group(2),
-    }
-
-
-# ============================================================
-# SHOPEE
-# ============================================================
-
-def consultar_shopee(shop_id=None, item_id=None, url=None):
-    """
-    Consulta a integração Shopee.
-
-    ATENÇÃO:
-    O formato exato da requisição depende da API/parceiro Shopee
-    que sua conta está utilizando.
-
-    O código abaixo foi preparado para receber uma resposta no
-    formato que você mostrou na conversa:
-
-    {
-        "data": {
-            "productOfferV2": {
-                "nodes": [...]
-            }
+        return {
+            "shop_id": match.group(1),
+            "item_id": match.group(2),
         }
-    }
 
-    Ajuste apenas a parte da requisição caso seu endpoint exija
-    autenticação/assinatura diferente.
+    # --------------------------------------------------------
+    # /opaanlp/{shop_id}/{item_id}
+    # --------------------------------------------------------
+
+    match = re.search(
+        r"/opaanlp/(\d+)/(\d+)",
+        url,
+        re.IGNORECASE,
+    )
+
+    if match:
+
+        return {
+            "shop_id": match.group(1),
+            "item_id": match.group(2),
+        }
+
+    # --------------------------------------------------------
+    # slug-i.{shop_id}.{item_id}
+    # --------------------------------------------------------
+
+    match = re.search(
+        r"-i\.(\d+)\.(\d+)",
+        url,
+        re.IGNORECASE,
+    )
+
+    if match:
+
+        return {
+            "shop_id": match.group(1),
+            "item_id": match.group(2),
+        }
+
+    # --------------------------------------------------------
+    # shopid / itemid na query string
+    # --------------------------------------------------------
+
+    try:
+
+        parsed = urlparse(url)
+
+        params = parse_qs(
+            parsed.query
+        )
+
+        shop_id = (
+            params.get("shopid", [None])[0]
+            or params.get("shop_id", [None])[0]
+        )
+
+        item_id = (
+            params.get("itemid", [None])[0]
+            or params.get("item_id", [None])[0]
+        )
+
+        if shop_id and item_id:
+
+            return {
+                "shop_id": shop_id,
+                "item_id": item_id,
+            }
+
+    except Exception:
+        pass
+
+    return None
+
+
+# ============================================================
+# GRAPHQL SHOPEE
+# ============================================================
+
+def assinar_requisicao_shopee(payload_string):
+    """
+    Gera a assinatura SHA256 da Shopee.
+
+    Signature =
+        SHA256(
+            AppId +
+            Timestamp +
+            Payload +
+            Secret
+        )
+
+    O Payload precisa ser exatamente o JSON enviado.
+    """
+
+    timestamp = str(
+        int(time.time())
+    )
+
+    factor = (
+        SHOPEE_APP_ID
+        + timestamp
+        + payload_string
+        + SHOPEE_APP_SECRET
+    )
+
+    signature = hashlib.sha256(
+        factor.encode("utf-8")
+    ).hexdigest()
+
+    authorization = (
+        "SHA256 "
+        f"Credential={SHOPEE_APP_ID},"
+        f"Timestamp={timestamp},"
+        f"Signature={signature}"
+    )
+
+    return timestamp, authorization
+
+
+def executar_graphql(query, variables=None):
+    """
+    Executa uma requisição GraphQL autenticada na Shopee.
     """
 
     if not SHOPEE_API_URL:
+
         raise RuntimeError(
             "SHOPEE_API_URL não está configurada no Render."
         )
 
     if not SHOPEE_APP_ID:
+
         raise RuntimeError(
             "SHOPEE_APP_ID não está configurado no Render."
         )
 
     if not SHOPEE_APP_SECRET:
+
         raise RuntimeError(
             "SHOPEE_APP_SECRET não está configurado no Render."
         )
 
-    logger.info("🛒 Consultando Shopee")
+    if variables is None:
+        variables = {}
 
     payload = {
-        "app_id": SHOPEE_APP_ID,
-        "app_secret": SHOPEE_APP_SECRET,
+        "query": query,
+        "variables": variables,
     }
 
-    if shop_id:
-        payload["shop_id"] = shop_id
+    # IMPORTANTE:
+    # O mesmo JSON usado na assinatura deve ser enviado.
+    payload_string = json.dumps(
+        payload,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
 
-    if item_id:
-        payload["item_id"] = item_id
+    timestamp, authorization = (
+        assinar_requisicao_shopee(
+            payload_string
+        )
+    )
 
-    if url:
-        payload["url"] = url
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": authorization,
+    }
+
+    logger.info(
+        "🛒 Consultando API GraphQL da Shopee"
+    )
 
     response = requests.post(
         SHOPEE_API_URL,
-        json=payload,
+        data=payload_string.encode("utf-8"),
+        headers=headers,
         timeout=REQUEST_TIMEOUT,
     )
 
@@ -240,53 +536,423 @@ def consultar_shopee(shop_id=None, item_id=None, url=None):
     )
 
     if response.status_code >= 400:
+
         logger.error(
-            "Resposta Shopee: %s",
+            "Resposta HTTP da Shopee: %s",
             response.text[:2000],
         )
 
         raise RuntimeError(
-            f"Shopee respondeu HTTP {response.status_code}"
+            f"Shopee respondeu HTTP "
+            f"{response.status_code}."
         )
 
     try:
+
         data = response.json()
+
     except Exception:
+
+        logger.error(
+            "Resposta Shopee não é JSON: %s",
+            response.text[:2000],
+        )
+
         raise RuntimeError(
             "Shopee não retornou JSON válido."
+        )
+
+    # GraphQL pode retornar HTTP 200 com errors.
+    if data.get("errors"):
+
+        logger.error(
+            "❌ Erro GraphQL Shopee: %s",
+            data["errors"],
+        )
+
+        errors = data.get(
+            "errors",
+            [],
+        )
+
+        mensagens = []
+
+        for error in errors:
+
+            if isinstance(error, dict):
+
+                mensagem = error.get(
+                    "message"
+                )
+
+                if mensagem:
+                    mensagens.append(
+                        str(mensagem)
+                    )
+
+        if mensagens:
+
+            raise RuntimeError(
+                "Shopee GraphQL: "
+                + " | ".join(mensagens)
+            )
+
+        raise RuntimeError(
+            "Shopee retornou erro GraphQL."
         )
 
     return data
 
 
-def encontrar_produto(data, shop_id=None, item_id=None):
+# ============================================================
+# CONSULTA DE PRODUTO
+# ============================================================
+
+def consultar_produto_shopee(
+    shop_id,
+    item_id,
+):
     """
-    Procura o produto dentro da resposta productOfferV2.
+    Busca um produto específico através do
+    productOfferV2.
+    """
+
+    query = """
+query ProductOffer(
+    $shopId: Int64,
+    $itemId: Int64,
+    $page: Int,
+    $limit: Int
+) {
+    productOfferV2(
+        shopId: $shopId,
+        itemId: $itemId,
+        page: $page,
+        limit: $limit
+    ) {
+        nodes {
+            itemId
+            commissionRate
+            sellerCommissionRate
+            shopeeCommissionRate
+            commission
+            sales
+            priceMax
+            priceMin
+            productCatIds
+            ratingStar
+            priceDiscountRate
+            imageUrl
+            productName
+            shopId
+            shopName
+            shopType
+            productLink
+            offerLink
+            periodStartTime
+            periodEndTime
+        }
+
+        pageInfo {
+            page
+            limit
+            hasNextPage
+        }
+    }
+}
+"""
+
+    variables = {
+        "shopId": int(shop_id),
+        "itemId": int(item_id),
+        "page": 1,
+        "limit": 10,
+    }
+
+    return executar_graphql(
+        query=query,
+        variables=variables,
+    )
+
+
+# ============================================================
+# BUSCA ALTERNATIVA POR ITEM ID
+# ============================================================
+
+def consultar_produto_por_item(
+    item_id,
+):
+    """
+    Fallback.
+
+    Caso a combinação shopId/itemId não retorne,
+    tenta localizar pelo itemId.
+    """
+
+    query = """
+query ProductOffer(
+    $itemId: Int64,
+    $page: Int,
+    $limit: Int
+) {
+    productOfferV2(
+        itemId: $itemId,
+        page: $page,
+        limit: $limit
+    ) {
+        nodes {
+            itemId
+            commissionRate
+            sellerCommissionRate
+            shopeeCommissionRate
+            commission
+            sales
+            priceMax
+            priceMin
+            productCatIds
+            ratingStar
+            priceDiscountRate
+            imageUrl
+            productName
+            shopId
+            shopName
+            shopType
+            productLink
+            offerLink
+            periodStartTime
+            periodEndTime
+        }
+
+        pageInfo {
+            page
+            limit
+            hasNextPage
+        }
+    }
+}
+"""
+
+    variables = {
+        "itemId": int(item_id),
+        "page": 1,
+        "limit": 10,
+    }
+
+    return executar_graphql(
+        query=query,
+        variables=variables,
+    )
+
+
+# ============================================================
+# EXTRAÇÃO DO PRODUTO DA RESPOSTA
+# ============================================================
+
+def extrair_nodes_produto(data):
+    """
+    Extrai nodes de productOfferV2.
     """
 
     try:
-        nodes = (
+
+        return (
             data
             .get("data", {})
             .get("productOfferV2", {})
             .get("nodes", [])
         )
+
     except Exception:
-        nodes = []
+
+        return []
+
+
+def encontrar_produto(
+    data,
+    shop_id=None,
+    item_id=None,
+):
+    """
+    Encontra exatamente o produto solicitado.
+    """
+
+    nodes = extrair_nodes_produto(
+        data
+    )
 
     if not nodes:
+
         raise RuntimeError(
-            "Nenhum produto foi encontrado na resposta da Shopee."
+            "Nenhum produto foi encontrado "
+            "na resposta da Shopee."
         )
 
-    # Se temos item_id, procuramos exatamente ele.
+    # --------------------------------------------------------
+    # Primeiro: item + shop
+    # --------------------------------------------------------
+
     if item_id:
+
         for produto in nodes:
-            if str(produto.get("itemId")) == str(item_id):
+
+            produto_item = str(
+                produto.get("itemId", "")
+            )
+
+            if produto_item != str(item_id):
+                continue
+
+            if shop_id:
+
+                produto_shop = str(
+                    produto.get("shopId", "")
+                )
+
+                if produto_shop == str(shop_id):
+
+                    return produto
+
+            else:
+
                 return produto
 
-    # Se não encontrou exatamente, devolve o primeiro.
+    # --------------------------------------------------------
+    # Segundo: somente item
+    # --------------------------------------------------------
+
+    if item_id:
+
+        for produto in nodes:
+
+            if str(
+                produto.get("itemId", "")
+            ) == str(item_id):
+
+                return produto
+
+    # --------------------------------------------------------
+    # Fallback
+    # --------------------------------------------------------
+
     return nodes[0]
+
+
+# ============================================================
+# CONSULTA PRINCIPAL DA SHOPEE
+# ============================================================
+
+def consultar_shopee(
+    shop_id=None,
+    item_id=None,
+    url=None,
+):
+    """
+    Fluxo completo:
+
+    1. Resolve link curto.
+    2. Extrai shop_id/item_id.
+    3. Consulta productOfferV2.
+    4. Retorna produto.
+    """
+
+    # --------------------------------------------------------
+    # Resolve o link antes da consulta.
+    # --------------------------------------------------------
+
+    url_original = url
+
+    if url:
+
+        url = resolver_url_shopee(
+            url
+        )
+
+    # --------------------------------------------------------
+    # Se os IDs não vieram, tenta extrair
+    # novamente da URL resolvida.
+    # --------------------------------------------------------
+
+    if not shop_id or not item_id:
+
+        ids = extrair_ids_produto(
+            url
+        )
+
+        if ids:
+
+            shop_id = ids.get(
+                "shop_id"
+            )
+
+            item_id = ids.get(
+                "item_id"
+            )
+
+    logger.info(
+        "🔎 shop_id=%s item_id=%s",
+        shop_id,
+        item_id,
+    )
+
+    if not item_id:
+
+        raise RuntimeError(
+            "Não foi possível identificar o "
+            "item_id do produto Shopee. "
+            "O link curto pode não ter sido resolvido."
+        )
+
+    # --------------------------------------------------------
+    # Consulta pelo produto.
+    # --------------------------------------------------------
+
+    try:
+
+        resposta = consultar_produto_shopee(
+            shop_id=shop_id,
+            item_id=item_id,
+        )
+
+        nodes = extrair_nodes_produto(
+            resposta
+        )
+
+        if nodes:
+
+            produto = encontrar_produto(
+                resposta,
+                shop_id=shop_id,
+                item_id=item_id,
+            )
+
+            return produto, url
+
+    except RuntimeError as exc:
+
+        logger.warning(
+            "⚠️ Consulta shopId/itemId falhou: %s",
+            exc,
+        )
+
+    # --------------------------------------------------------
+    # Fallback: somente itemId.
+    # --------------------------------------------------------
+
+    logger.info(
+        "🔄 Tentando busca alternativa por itemId=%s",
+        item_id,
+    )
+
+    resposta = consultar_produto_por_item(
+        item_id=item_id
+    )
+
+    produto = encontrar_produto(
+        resposta,
+        item_id=item_id,
+    )
+
+    return produto, url
 
 
 # ============================================================
@@ -295,8 +961,8 @@ def encontrar_produto(data, shop_id=None, item_id=None):
 
 def normalizar_produto(produto):
     """
-    Transforma a resposta da Shopee em um formato simples
-    para o Mini App e para o Telegram.
+    Converte a resposta Shopee para o formato
+    usado pelo Mini App/Telegram.
     """
 
     nome = produto.get(
@@ -304,10 +970,19 @@ def normalizar_produto(produto):
         "Produto Shopee",
     )
 
-    preco = produto.get("price")
+    preco = produto.get(
+        "price"
+    )
 
-    preco_min = produto.get("priceMin", preco)
-    preco_max = produto.get("priceMax", preco)
+    preco_min = produto.get(
+        "priceMin",
+        preco,
+    )
+
+    preco_max = produto.get(
+        "priceMax",
+        preco,
+    )
 
     desconto = produto.get(
         "priceDiscountRate",
@@ -351,20 +1026,36 @@ def normalizar_produto(produto):
 
     return {
         "nome": nome,
-        "item_id": produto.get("itemId"),
-        "shop_id": produto.get("shopId"),
+        "item_id": produto.get(
+            "itemId"
+        ),
+        "shop_id": produto.get(
+            "shopId"
+        ),
         "preco": preco,
         "preco_min": preco_min,
         "preco_max": preco_max,
-        "preco_formatado": money(preco),
-        "preco_min_formatado": money(preco_min),
-        "preco_max_formatado": money(preco_max),
+        "preco_formatado": money(
+            preco
+        ),
+        "preco_min_formatado": money(
+            preco_min
+        ),
+        "preco_max_formatado": money(
+            preco_max
+        ),
         "desconto": desconto,
-        "desconto_formatado": percentual(desconto),
+        "desconto_formatado": percentual(
+            desconto
+        ),
         "comissao": comissao,
-        "comissao_formatada": money(comissao),
+        "comissao_formatada": money(
+            comissao
+        ),
         "comissao_percentual": percentual(
-            produto.get("commissionRate")
+            produto.get(
+                "commissionRate"
+            )
         ),
         "avaliacao": rating,
         "vendas": vendas,
@@ -383,49 +1074,122 @@ def normalizar_produto(produto):
 # MENSAGEM TELEGRAM
 # ============================================================
 
+def escapar_html(texto):
+    """
+    Escapa caracteres HTML básicos.
+    """
+
+    if texto is None:
+        return ""
+
+    texto = str(texto)
+
+    return (
+        texto
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+    )
+
+
 def montar_mensagem(produto):
     """
-    Cria a publicação que será enviada ao canal.
+    Cria mensagem para Telegram.
     """
 
-    nome = produto["nome"]
+    nome = escapar_html(
+        produto.get(
+            "nome",
+            "Produto Shopee",
+        )
+    )
 
-    # Limita títulos muito grandes.
     if len(nome) > 180:
-        nome = nome[:177] + "..."
+
+        nome = (
+            nome[:177]
+            + "..."
+        )
 
     mensagem = (
-        f"🔥 <b>OFERTA SHOPEE</b>\n\n"
+        "🔥 <b>OFERTA SHOPEE</b>\n\n"
         f"🛍️ <b>{nome}</b>\n\n"
-        f"💰 <b>Preço:</b> {produto['preco_formatado']}\n"
+        f"💰 <b>Preço:</b> "
+        f"{produto.get('preco_formatado', 'Indisponível')}\n"
     )
 
-    if produto["desconto"] not in (None, "", 0, "0"):
+    desconto = produto.get(
+        "desconto"
+    )
+
+    if desconto not in (
+        None,
+        "",
+        0,
+        "0",
+    ):
+
         mensagem += (
-            f"🏷️ <b>Desconto:</b> "
-            f"{produto['desconto_formatado']}\n"
+            "🏷️ <b>Desconto:</b> "
+            f"{produto.get('desconto_formatado', 'N/A')}\n"
         )
 
-    if produto["avaliacao"]:
+    avaliacao = produto.get(
+        "avaliacao"
+    )
+
+    if avaliacao not in (
+        None,
+        "",
+        0,
+        "0",
+    ):
+
         mensagem += (
-            f"⭐ <b>Avaliação:</b> "
-            f"{produto['avaliacao']}\n"
+            "⭐ <b>Avaliação:</b> "
+            f"{escapar_html(avaliacao)}\n"
         )
 
-    if produto["vendas"]:
+    vendas = produto.get(
+        "vendas"
+    )
+
+    if vendas not in (
+        None,
+        "",
+        0,
+        "0",
+    ):
+
         mensagem += (
-            f"📦 <b>Vendas:</b> "
-            f"{produto['vendas']}\n"
+            "📦 <b>Vendas:</b> "
+            f"{escapar_html(vendas)}\n"
         )
+
+    loja = escapar_html(
+        produto.get(
+            "loja",
+            "Loja Shopee",
+        )
+    )
 
     mensagem += (
-        f"🏪 <b>Loja:</b> "
-        f"{produto['loja']}\n\n"
-        f"💸 <b>Comissão:</b> "
-        f"{produto['comissao_formatada']}\n\n"
-        f"🛒 <a href=\"{produto['link_oferta']}\">"
-        f"COMPRAR AGORA</a>"
+        f"🏪 <b>Loja:</b> {loja}\n\n"
+        "💸 <b>Comissão:</b> "
+        f"{produto.get('comissao_formatada', 'N/A')}\n\n"
     )
+
+    link = produto.get(
+        "link_oferta"
+    )
+
+    if link:
+
+        mensagem += (
+            f'🛒 <a href="{link}">'
+            "COMPRAR AGORA</a>"
+        )
 
     return mensagem
 
@@ -436,37 +1200,42 @@ def montar_mensagem(produto):
 
 def enviar_telegram(produto):
     """
-    Envia o produto para o canal Telegram.
-
-    Se houver imagem, tenta enviar foto.
-    Caso contrário, envia somente texto.
+    Envia produto ao Telegram.
     """
 
     if not TELEGRAM_BOT_TOKEN:
+
         raise RuntimeError(
-            "TELEGRAM_BOT_TOKEN não configurado."
+            "TELEGRAM_TOKEN não configurado."
         )
 
     if not TELEGRAM_CHAT_ID:
+
         raise RuntimeError(
-            "TELEGRAM_CHAT_ID não configurado."
+            "CHAT_ID não configurado."
         )
 
-    mensagem = montar_mensagem(produto)
+    mensagem = montar_mensagem(
+        produto
+    )
 
     base_url = (
-        f"https://api.telegram.org/"
+        "https://api.telegram.org/"
         f"bot{TELEGRAM_BOT_TOKEN}"
     )
 
-    imagem = produto.get("imagem")
+    imagem = produto.get(
+        "imagem"
+    )
 
     # --------------------------------------------------------
-    # TENTA ENVIAR FOTO
+    # FOTO
     # --------------------------------------------------------
 
     if imagem:
+
         try:
+
             response = requests.post(
                 f"{base_url}/sendPhoto",
                 data={
@@ -479,6 +1248,7 @@ def enviar_telegram(produto):
             )
 
             if response.ok:
+
                 logger.info(
                     "✅ Produto enviado com imagem."
                 )
@@ -486,18 +1256,19 @@ def enviar_telegram(produto):
                 return response.json()
 
             logger.warning(
-                "⚠️ Falha no envio da imagem: %s",
+                "⚠️ Telegram recusou foto: %s",
                 response.text[:500],
             )
 
         except Exception as exc:
+
             logger.warning(
-                "⚠️ Erro ao enviar imagem: %s",
+                "⚠️ Erro ao enviar foto: %s",
                 exc,
             )
 
     # --------------------------------------------------------
-    # FALLBACK: TEXTO
+    # TEXTO
     # --------------------------------------------------------
 
     response = requests.post(
@@ -512,6 +1283,7 @@ def enviar_telegram(produto):
     )
 
     if not response.ok:
+
         logger.error(
             "❌ Telegram recusou envio: %s",
             response.text[:1000],
@@ -522,28 +1294,30 @@ def enviar_telegram(produto):
         )
 
     logger.info(
-        "✅ Produto enviado ao canal."
+        "✅ Produto enviado ao Telegram."
     )
 
     return response.json()
 
 
 # ============================================================
-# AUTENTICAÇÃO BÁSICA DO MINI APP
+# TELEGRAM MINI APP
 # ============================================================
 
 def validar_miniapp():
     """
-    Por enquanto mantém o fluxo simples.
+    Validação simples.
 
-    Se TELEGRAM_INIT_DATA_REQUIRED=false,
-    o endpoint funciona normalmente para testes.
+    Por padrão:
+        TELEGRAM_INIT_DATA_REQUIRED=false
 
-    Quando o sistema estiver funcionando, podemos ativar
-    a validação criptográfica do initData do Telegram.
+    Nesse modo o endpoint funciona sem exigir
+    o header X-Telegram-Init-Data.
+
     """
 
     if not TELEGRAM_INIT_DATA_REQUIRED:
+
         return True
 
     init_data = request.headers.get(
@@ -552,15 +1326,14 @@ def validar_miniapp():
     ).strip()
 
     if not init_data:
+
         logger.warning(
             "❌ X-Telegram-Init-Data ausente."
         )
 
         return False
 
-    # Aqui entra a validação oficial do initData.
-    # Não devemos simplesmente confiar no header em produção.
-
+    # Não registramos initData nos logs.
     return True
 
 
@@ -568,18 +1341,26 @@ def validar_miniapp():
 # ROTAS
 # ============================================================
 
-@app.route("/", methods=["GET", "HEAD"])
+@app.route(
+    "/",
+    methods=["GET", "HEAD"],
+)
 def index():
+
     return jsonify({
         "ok": True,
         "service": "Raposa Caçadora",
-        "integracao": "Shopee",
+        "integracao": "Shopee Affiliate Open API",
         "status": "online",
     })
 
 
-@app.route("/health", methods=["GET"])
+@app.route(
+    "/health",
+    methods=["GET"],
+)
 def health():
+
     return jsonify({
         "ok": True,
         "status": "online",
@@ -600,9 +1381,6 @@ def health():
     methods=["OPTIONS"],
 )
 def configurar_options():
-    """
-    Responde ao preflight CORS.
-    """
 
     return "", 204
 
@@ -612,24 +1390,13 @@ def configurar_options():
     methods=["POST"],
 )
 def configurar():
-    """
-    Endpoint principal do Mini App.
-
-    JSON esperado:
-
-    {
-        "link": "https://shopee.com.br/product/864885365/58266424970",
-        "quantidade": 1,
-        "intervalo": 1,
-        "enviar": true
-    }
-    """
 
     logger.info(
         "📥 POST /api/configurar"
     )
 
     if not validar_miniapp():
+
         return jsonify({
             "ok": False,
             "error": "Mini App não autorizado.",
@@ -639,60 +1406,122 @@ def configurar():
         silent=True
     ) or {}
 
+    # NÃO registra initData.
+    safe_data = dict(data)
+
+    if "initData" in safe_data:
+
+        safe_data["initData"] = (
+            "[OCULTO]"
+        )
+
     logger.info(
         "JSON recebido: %s",
-        data,
+        safe_data,
     )
 
     link = str(
-        data.get("link", "")
+        data.get(
+            "link",
+            "",
+        )
     ).strip()
 
     if not link:
+
         return jsonify({
             "ok": False,
             "error": "Informe o link da Shopee.",
         }), 400
 
-    if not validar_url_shopee(link):
+    if not validar_url_shopee(
+        link
+    ):
+
         return jsonify({
             "ok": False,
-            "error": "O link informado não parece ser da Shopee.",
+            "error": (
+                "O link informado não "
+                "parece ser da Shopee."
+            ),
         }), 400
 
-    # Quantidade
+    # --------------------------------------------------------
+    # QUANTIDADE
+    # --------------------------------------------------------
+
     try:
+
         quantidade = int(
-            data.get("quantidade", 1)
+            data.get(
+                "quantidade",
+                1,
+            )
         )
+
     except Exception:
+
         quantidade = 1
 
     quantidade = max(
         1,
-        min(quantidade, 20),
+        min(
+            quantidade,
+            20,
+        ),
     )
 
-    # Intervalo em segundos
+    # --------------------------------------------------------
+    # INTERVALO
+    # --------------------------------------------------------
+
     try:
+
         intervalo = float(
-            data.get("intervalo", 1)
+            data.get(
+                "intervalo",
+                1,
+            )
         )
+
     except Exception:
+
         intervalo = 1
 
     intervalo = max(
         0,
-        min(intervalo, 3600),
+        min(
+            intervalo,
+            3600,
+        ),
     )
 
-    # Por padrão NÃO enviamos automaticamente durante testes.
+    # --------------------------------------------------------
+    # ENVIO
+    # --------------------------------------------------------
+
     enviar = bool(
-        data.get("enviar", False)
+        data.get(
+            "enviar",
+            False,
+        )
     )
 
     try:
-        ids = extrair_ids_produto(link)
+
+        # ----------------------------------------------------
+        # RESOLVE E EXTRAI IDS
+        # ----------------------------------------------------
+
+        url_resolvida = (
+            resolver_url_shopee(
+                link
+            )
+        )
+
+        ids = extrair_ids_produto(
+            url_resolvida
+        )
 
         shop_id = (
             ids.get("shop_id")
@@ -716,39 +1545,57 @@ def configurar():
         # CONSULTA SHOPEE
         # ----------------------------------------------------
 
-        resposta = consultar_shopee(
-            shop_id=shop_id,
-            item_id=item_id,
-            url=link,
-        )
-
-        produto_bruto = encontrar_produto(
-            resposta,
-            shop_id=shop_id,
-            item_id=item_id,
+        produto_bruto, url_final = (
+            consultar_shopee(
+                shop_id=shop_id,
+                item_id=item_id,
+                url=url_resolvida,
+            )
         )
 
         produto = normalizar_produto(
             produto_bruto
         )
 
+        # Se a API retornou link de produto,
+        # usamos esse link quando disponível.
+        if not produto.get(
+            "link_produto"
+        ):
+
+            produto[
+                "link_produto"
+            ] = url_final
+
+        if not produto.get(
+            "link_oferta"
+        ):
+
+            produto[
+                "link_oferta"
+            ] = url_final
+
         logger.info(
             "✅ Produto encontrado: %s",
-            produto["nome"],
+            produto.get("nome"),
         )
-
-        resultados_envio = []
 
         # ----------------------------------------------------
         # ENVIO TELEGRAM
         # ----------------------------------------------------
 
+        resultados_envio = []
+
         if enviar:
 
-            for i in range(quantidade):
+            for i in range(
+                quantidade
+            ):
 
-                resultado = enviar_telegram(
-                    produto
+                resultado = (
+                    enviar_telegram(
+                        produto
+                    )
                 )
 
                 resultados_envio.append({
@@ -756,9 +1603,11 @@ def configurar():
                     "ok": True,
                 })
 
-                # Não espera depois do último.
                 if i < quantidade - 1:
-                    time.sleep(intervalo)
+
+                    time.sleep(
+                        intervalo
+                    )
 
         return jsonify({
             "ok": True,
@@ -768,6 +1617,10 @@ def configurar():
                 else "Produto processado e enviado."
             ),
             "produto": produto,
+            "url_original": link,
+            "url_resolvida": url_final,
+            "shop_id": shop_id,
+            "item_id": item_id,
             "quantidade": quantidade,
             "intervalo": intervalo,
             "enviado": enviar,
@@ -787,7 +1640,7 @@ def configurar():
 
 
 # ============================================================
-# ENDPOINT PARA TESTAR O TELEGRAM
+# TESTE TELEGRAM
 # ============================================================
 
 @app.route(
@@ -797,6 +1650,7 @@ def configurar():
 def testar_telegram():
 
     if request.method == "OPTIONS":
+
         return "", 204
 
     produto_teste = {
@@ -822,7 +1676,9 @@ def testar_telegram():
 
         return jsonify({
             "ok": True,
-            "message": "Teste enviado ao Telegram.",
+            "message": (
+                "Teste enviado ao Telegram."
+            ),
             "telegram": resultado,
         })
 
@@ -839,11 +1695,12 @@ def testar_telegram():
 
 
 # ============================================================
-# TRATAMENTO DE ERROS
+# ERROS
 # ============================================================
 
 @app.errorhandler(404)
 def not_found(error):
+
     return jsonify({
         "ok": False,
         "error": "Rota não encontrada.",
@@ -852,14 +1709,19 @@ def not_found(error):
 
 @app.errorhandler(405)
 def method_not_allowed(error):
+
     return jsonify({
         "ok": False,
-        "error": "Método HTTP não permitido para esta rota.",
+        "error": (
+            "Método HTTP não permitido "
+            "para esta rota."
+        ),
     }), 405
 
 
 @app.errorhandler(500)
 def internal_error(error):
+
     return jsonify({
         "ok": False,
         "error": "Erro interno do servidor.",

@@ -2,2398 +2,1241 @@ import os
 import re
 import json
 import time
-import html
-import threading
-import hashlib
 import hmac
-import random
+import hashlib
+import logging
+import threading
+from datetime import datetime, timezone
 
 import requests
-
-from bs4 import BeautifulSoup
-
-from urllib.parse import (
-    parse_qsl,
-    urljoin,
-    urlparse,
-    unquote
-)
-
-from flask import (
-    Flask,
-    request,
-    jsonify,
-    send_from_directory
-)
-
-from flask_cors import CORS
-
+from flask import Flask, request, jsonify, redirect
 
 # ============================================================
-# RAPOSA CAÇADORA
-# Mercado Livre / meli.la
+# CONFIGURAÇÃO
 # ============================================================
 
+app = Flask(__name__)
 
-BASE_DIR = os.path.dirname(
-    os.path.abspath(__file__)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s"
 )
 
-INDEX_FILE = os.path.join(
-    BASE_DIR,
-    "index.html"
-)
+logger = logging.getLogger("raposa")
 
-ARQUIVO_HISTORICO = os.path.join(
-    BASE_DIR,
-    "produtos_postados.txt"
-)
-
-
-# ============================================================
-# VARIÁVEIS DE AMBIENTE
-# ============================================================
-
-TELEGRAM_TOKEN = os.getenv(
-    "TELEGRAM_TOKEN",
-    ""
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "").strip()
+CHAT_ID = os.getenv("CHAT_ID", "@raposacacadora").strip()
+WEBAPP_URL = os.getenv(
+    "WEBAPP_URL",
+    "https://bot-raposa-cacadora.vercel.app"
 ).strip()
 
-CHAT_ID = os.getenv(
-    "CHAT_ID",
-    "@raposacacadora"
-).strip()
+ML_CLIENT_ID = os.getenv("ML_CLIENT_ID", "").strip()
+ML_CLIENT_SECRET = os.getenv("ML_CLIENT_SECRET", "").strip()
 
-PORT = int(
-    os.getenv(
-        "PORT",
-        "10000"
-    )
+# Podem ficar vazios antes da primeira autorização.
+ML_ACCESS_TOKEN = os.getenv("ML_ACCESS_TOKEN", "").strip()
+ML_REFRESH_TOKEN = os.getenv("ML_REFRESH_TOKEN", "").strip()
+ML_TOKEN_EXPIRES_AT = os.getenv("ML_TOKEN_EXPIRES_AT", "0").strip()
+ML_USER_ID = os.getenv("ML_USER_ID", "").strip()
+
+TELEGRAM_INIT_DATA_MAX_AGE = 86400
+
+PRODUCT_HISTORY_FILE = "produtos_postados.txt"
+
+ML_AUTH_URL = "https://auth.mercadolivre.com.br/authorization"
+ML_TOKEN_URL = "https://api.mercadolibre.com/oauth/token"
+ML_API_URL = "https://api.mercadolibre.com"
+
+# IMPORTANTE:
+# Este valor precisa ser exatamente o mesmo configurado
+# no painel do Mercado Livre.
+ML_REDIRECT_URI = (
+    "https://bot-raposa-cacadora.onrender.com/oauth/callback"
 )
 
+HTTP_TIMEOUT = 30
 
 # ============================================================
-# CONFIGURAÇÕES
+# ESTADO EM MEMÓRIA
 # ============================================================
 
-MAX_QUANTIDADE = 50
-
-MIN_INTERVALO_MINUTOS = 1
-
-HTTP_TIMEOUT = 15
-
-
-# ============================================================
-# FLASK
-# ============================================================
-
-app = Flask(
-    __name__,
-    static_folder=BASE_DIR
-)
-
-
-# ============================================================
-# CORS
-# ============================================================
-
-CORS(
-    app,
-    resources={
-        r"/api/*": {
-            "origins": [
-                "https://bot-raposa-cacadora.vercel.app"
-            ]
-        }
-    },
-    methods=[
-        "GET",
-        "POST",
-        "OPTIONS"
-    ],
-    allow_headers=[
-        "Content-Type"
-    ]
-)
-
-
-# ============================================================
-# LOCKS / CONTROLE
-# ============================================================
-
-automacoes_lock = threading.Lock()
-
-historico_lock = threading.Lock()
-
-automacoes_ativas = 0
-
-
-# ============================================================
-# SESSÃO HTTP
-# ============================================================
-
-session = requests.Session()
-
-
-# ============================================================
-# USER AGENTS
-# ============================================================
-
-USER_AGENTS = [
-
-    (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/131.0.0.0 Safari/537.36"
-    ),
-
-    (
-        "Mozilla/5.0 (X11; Linux x86_64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/131.0.0.0 Safari/537.36"
-    ),
-
-    (
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/131.0.0.0 Safari/537.36"
-    )
-
-]
-
-
-# ============================================================
-# HEADERS
-# ============================================================
-
-def obter_headers():
-
-    user_agent = random.choice(
-        USER_AGENTS
-    )
-
-    return {
-
-        "User-Agent":
-            user_agent,
-
-        "Accept":
-            (
-                "text/html,"
-                "application/xhtml+xml,"
-                "application/xml;q=0.9,"
-                "image/avif,image/webp,"
-                "*/*;q=0.8"
-            ),
-
-        "Accept-Language":
-            "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-
-        "Accept-Encoding":
-            "gzip, deflate, br",
-
-        "Cache-Control":
-            "no-cache",
-
-        "Pragma":
-            "no-cache",
-
-        "Upgrade-Insecure-Requests":
-            "1",
-
-        "Sec-Fetch-Dest":
-            "document",
-
-        "Sec-Fetch-Mode":
-            "navigate",
-
-        "Sec-Fetch-Site":
-            "none",
-
-        "Sec-Fetch-User":
-            "?1",
-
-        "Connection":
-            "keep-alive"
-
-    }
-
-
-# ============================================================
-# HOME
-# ============================================================
-
-@app.route(
-    "/",
-    methods=["GET"]
-)
-def home():
-
-    return """
-    <!DOCTYPE html>
-    <html lang="pt-BR">
-
-    <head>
-
-        <meta charset="UTF-8">
-
-        <meta
-            name="viewport"
-            content="width=device-width,
-            initial-scale=1.0"
-        >
-
-        <title>Raposa Caçadora</title>
-
-        <style>
-
-            body {
-                background:#05070a;
-                color:#fff;
-                font-family:Arial,sans-serif;
-                text-align:center;
-                padding-top:50px;
-            }
-
-            h1 {
-                color:#f97316;
-            }
-
-            .online {
-                color:#22c55e;
-                font-weight:bold;
-            }
-
-            a {
-                color:#fb923c;
-                text-decoration:none;
-                font-weight:bold;
-            }
-
-        </style>
-
-    </head>
-
-    <body>
-
-        <h1>🦊 Raposa Caçadora</h1>
-
-        <p class="online">
-            ● SERVIDOR ONLINE
-        </p>
-
-        <p>
-            <a href="/app">
-                Abrir Mini App
-            </a>
-        </p>
-
-        <p>
-            <a href="/health">
-                Health Check
-            </a>
-        </p>
-
-    </body>
-
-    </html>
-    """
-
-
-# ============================================================
-# MINI APP
-# ============================================================
-
-@app.route(
-    "/app",
-    methods=["GET"]
-)
-def mini_app():
-
-    if not os.path.isfile(
-        INDEX_FILE
-    ):
-
-        return (
-            "❌ index.html não encontrado.",
-            404
-        )
-
-    return send_from_directory(
-        BASE_DIR,
-        "index.html"
-    )
-
-
-# ============================================================
-# HEALTH
-# ============================================================
-
-@app.route(
-    "/health",
-    methods=["GET"]
-)
-def health():
-
-    with automacoes_lock:
-
-        ativas = automacoes_ativas
-
-    return jsonify({
-
-        "ok":
-            True,
-
-        "servico":
-            "Raposa Caçadora",
-
-        "status":
-            "online",
-
-        "telegram_configurado":
-            bool(TELEGRAM_TOKEN),
-
-        "chat_configurado":
-            bool(CHAT_ID),
-
-        "automacoes_ativas":
-            ativas
-
-    })
-
-
-# ============================================================
-# VALIDAR TELEGRAM WEB APP
-# ============================================================
-
-def validar_init_data(
-    init_data
-):
-
-    if not init_data:
-
-        print(
-            "❌ initData vazio."
-        )
-
-        return False
-
-    if not TELEGRAM_TOKEN:
-
-        print(
-            "❌ TELEGRAM_TOKEN não configurado."
-        )
-
-        return False
-
-    try:
-
-        dados = dict(
-            parse_qsl(
-                init_data,
-                keep_blank_values=True
-            )
-        )
-
-        hash_recebido = dados.pop(
-            "hash",
-            None
-        )
-
-        if not hash_recebido:
-
-            print(
-                "❌ Hash do Telegram não encontrado."
-            )
-
-            return False
-
-        data_check_string = "\n".join(
-            f"{k}={v}"
-            for k, v in sorted(
-                dados.items()
-            )
-        )
-
-        secret_key = hmac.new(
-            b"WebAppData",
-            TELEGRAM_TOKEN.encode(
-                "utf-8"
-            ),
-            hashlib.sha256
-        ).digest()
-
-        calculado = hmac.new(
-            secret_key,
-            data_check_string.encode(
-                "utf-8"
-            ),
-            hashlib.sha256
-        ).hexdigest()
-
-        valido = hmac.compare_digest(
-            calculado,
-            hash_recebido
-        )
-
-        if valido:
-
-            print(
-                "✅ Telegram initData válido."
-            )
-
-        else:
-
-            print(
-                "❌ Telegram initData inválido."
-            )
-
-        return valido
-
-    except Exception as e:
-
-        print(
-            f"❌ Erro na validação Telegram: {e}"
-        )
-
-        return False
-
+token_lock = threading.Lock()
+
+runtime_token = {
+    "access_token": ML_ACCESS_TOKEN,
+    "refresh_token": ML_REFRESH_TOKEN,
+    "expires_at": float(ML_TOKEN_EXPIRES_AT or 0),
+    "user_id": ML_USER_ID,
+}
 
 # ============================================================
 # HISTÓRICO
 # ============================================================
 
-def carregar_historico():
 
-    if not os.path.exists(
-        ARQUIVO_HISTORICO
-    ):
-
+def load_history():
+    if not os.path.exists(PRODUCT_HISTORY_FILE):
         return set()
 
     try:
-
-        with historico_lock:
-
-            with open(
-                ARQUIVO_HISTORICO,
-                "r",
-                encoding="utf-8"
-            ) as arquivo:
-
-                return {
-                    linha.strip()
-                    for linha in arquivo
-                    if linha.strip()
-                }
-
-    except Exception as e:
-
-        print(
-            f"⚠️ Erro lendo histórico: {e}"
-        )
-
+        with open(
+            PRODUCT_HISTORY_FILE,
+            "r",
+            encoding="utf-8"
+        ) as f:
+            return {
+                line.strip()
+                for line in f
+                if line.strip()
+            }
+    except Exception:
+        logger.exception("Erro lendo histórico.")
         return set()
 
 
-def salvar_historico(
-    link
-):
+def save_history(product_id):
+    try:
+        with open(
+            PRODUCT_HISTORY_FILE,
+            "a",
+            encoding="utf-8"
+        ) as f:
+            f.write(f"{product_id}\n")
+    except Exception:
+        logger.exception(
+            "Erro salvando produto %s no histórico.",
+            product_id
+        )
 
-    if not link:
 
+# ============================================================
+# TELEGRAM INIT DATA
+# ============================================================
+
+
+def validate_telegram_init_data(init_data):
+    """
+    Validação oficial do initData do Telegram WebApp.
+
+    O Mini App deve enviar:
+        initData
+    no header:
+        X-Telegram-Init-Data
+    """
+
+    if not init_data:
+        return False
+
+    if not TELEGRAM_TOKEN:
+        logger.error("TELEGRAM_TOKEN não configurado.")
         return False
 
     try:
+        pairs = init_data.split("&")
+        data = {}
 
-        with historico_lock:
+        for pair in pairs:
+            if "=" not in pair:
+                continue
 
-            with open(
-                ARQUIVO_HISTORICO,
-                "a",
-                encoding="utf-8"
-            ) as arquivo:
+            key, value = pair.split("=", 1)
 
-                arquivo.write(
-                    link.strip()
-                    + "\n"
-                )
+            if key != "hash":
+                data[key] = value
+
+        received_hash = None
+
+        for pair in pairs:
+            if pair.startswith("hash="):
+                received_hash = pair.split("=", 1)[1]
+                break
+
+        if not received_hash:
+            return False
+
+        data_check_string = "\n".join(
+            f"{key}={data[key]}"
+            for key in sorted(data.keys())
+        )
+
+        secret_key = hmac.new(
+            b"WebAppData",
+            TELEGRAM_TOKEN.encode(),
+            hashlib.sha256
+        ).digest()
+
+        calculated_hash = hmac.new(
+            secret_key,
+            data_check_string.encode(),
+            hashlib.sha256
+        ).hexdigest()
+
+        if not hmac.compare_digest(
+            calculated_hash,
+            received_hash
+        ):
+            logger.warning(
+                "Telegram initData inválido."
+            )
+            return False
 
         return True
 
-    except Exception as e:
-
-        print(
-            f"⚠️ Erro salvando histórico: {e}"
+    except Exception:
+        logger.exception(
+            "Erro validando Telegram initData."
         )
-
         return False
 
 
-def limpar_historico():
-
-    try:
-
-        with historico_lock:
-
-            if os.path.exists(
-                ARQUIVO_HISTORICO
-            ):
-
-                os.remove(
-                    ARQUIVO_HISTORICO
-                )
-
-        print(
-            "🔄 Histórico resetado."
-        )
-
-    except Exception as e:
-
-        print(
-            f"⚠️ Erro resetando histórico: {e}"
-        )
-
-
 # ============================================================
-# CONVERTER PREÇO
+# MERCADO LIVRE - OAUTH
 # ============================================================
 
-def converter_preco_float(
-    preco_str
-):
 
-    if not preco_str:
-
-        return 0.0
-
-    try:
-
-        limpo = (
-            preco_str
-            .replace(
-                "R$",
-                ""
-            )
-            .replace(
-                " ",
-                ""
-            )
-            .replace(
-                ".",
-                ""
-            )
-            .replace(
-                ",",
-                "."
-            )
-        )
-
-        return float(
-            limpo
-        )
-
-    except Exception:
-
-        return 0.0
-
-
-# ============================================================
-# NORMALIZAR URL
-# ============================================================
-
-def normalizar_url(
-    url,
-    base_url=""
-):
-
-    if not url:
-
-        return ""
-
-    try:
-
-        url = html.unescape(
-            str(url).strip()
-        )
-
-        url = url.replace(
-            "\\/",
-            "/"
-        )
-
-        url = unquote(
-            url
-        )
-
-        if url.startswith(
-            "//"
-        ):
-
-            url = (
-                "https:"
-                + url
-            )
-
-        elif url.startswith(
-            "/"
-        ):
-
-            url = urljoin(
-                base_url,
-                url
-            )
-
-        elif not url.startswith(
-            (
-                "http://",
-                "https://"
-            )
-        ):
-
-            return ""
-
-        return url.split(
-            "#"
-        )[0]
-
-    except Exception:
-
-        return ""
-
-
-# ============================================================
-# IDENTIFICAR PRODUTO MERCADO LIVRE
-# ============================================================
-
-def parece_produto_mercado_livre(
-    url
-):
-
-    if not url:
-
-        return False
-
-    texto = unquote(
-        url
-    ).lower()
-
-    padroes = [
-
-        "produto.mercadolivre.com.br",
-
-        "produto.mercadolibre.com",
-
-        "/p/mlb",
-
-        "/p/mlb-",
-
-        "mlb-",
-
-        "mlb_",
-
-        "/up/mlb",
-
-        "/up/mlb-",
-
-        "mercadolivre.com.br/p/",
-
-        "mercadolibre.com/p/"
-
-    ]
-
-    return any(
-        padrao in texto
-        for padrao in padroes
+def mercado_livre_configurado():
+    return bool(
+        ML_CLIENT_ID and
+        ML_CLIENT_SECRET
     )
 
 
-# ============================================================
-# EXTRAIR ID MLB
-# ============================================================
+def oauth_authorization_url():
+    from urllib.parse import urlencode
 
-def extrair_id_mlb(
-    url
-):
+    params = {
+        "response_type": "code",
+        "client_id": ML_CLIENT_ID,
+        "redirect_uri": ML_REDIRECT_URI,
+    }
 
-    if not url:
+    return f"{ML_AUTH_URL}?{urlencode(params)}"
 
-        return None
 
-    texto = unquote(
-        url
-    ).upper()
-
-    padroes = [
-
-        r"\bMLB[-_]?(\d{6,15})\b",
-
-        r"/P/(MLB[-_]?\d{6,15})",
-
-        r"/UP/(MLB[-_]?\d{6,15})"
-
-    ]
-
-    for padrao in padroes:
-
-        resultado = re.search(
-            padrao,
-            texto
+@app.route("/oauth/mercadolivre", methods=["GET"])
+def oauth_mercadolivre():
+    if not mercado_livre_configurado():
+        return (
+            "ML_CLIENT_ID ou ML_CLIENT_SECRET não configurado.",
+            500
         )
 
-        if resultado:
+    return redirect(oauth_authorization_url())
 
-            numero = resultado.group(
-                1
+
+def exchange_authorization_code(code):
+    payload = {
+        "grant_type": "authorization_code",
+        "client_id": ML_CLIENT_ID,
+        "client_secret": ML_CLIENT_SECRET,
+        "code": code,
+        "redirect_uri": ML_REDIRECT_URI,
+    }
+
+    logger.info(
+        "Trocando authorization code por token."
+    )
+
+    response = requests.post(
+        ML_TOKEN_URL,
+        data=payload,
+        timeout=HTTP_TIMEOUT
+    )
+
+    if response.status_code != 200:
+        logger.error(
+            "Erro OAuth HTTP %s: %s",
+            response.status_code,
+            response.text[:1000]
+        )
+
+        raise RuntimeError(
+            f"Mercado Livre OAuth HTTP "
+            f"{response.status_code}"
+        )
+
+    return response.json()
+
+
+def save_runtime_token(token_data):
+    global runtime_token
+
+    with token_lock:
+        runtime_token["access_token"] = (
+            token_data.get("access_token", "")
+        )
+
+        runtime_token["refresh_token"] = (
+            token_data.get("refresh_token", "")
+        )
+
+        expires_in = int(
+            token_data.get("expires_in", 0)
+        )
+
+        # Margem de segurança de 2 minutos.
+        runtime_token["expires_at"] = (
+            time.time() +
+            max(0, expires_in - 120)
+        )
+
+        if token_data.get("user_id"):
+            runtime_token["user_id"] = str(
+                token_data["user_id"]
             )
 
-            numero = re.sub(
-                r"[^0-9]",
-                "",
-                numero
+    logger.info(
+        "Token Mercado Livre atualizado. "
+        "user_id=%s expires_in=%ss",
+        runtime_token["user_id"],
+        token_data.get("expires_in")
+    )
+
+
+@app.route("/oauth/callback", methods=["GET"])
+def oauth_callback():
+    error = request.args.get("error")
+    code = request.args.get("code")
+
+    if error:
+        description = request.args.get(
+            "error_description",
+            ""
+        )
+
+        logger.error(
+            "OAuth Mercado Livre recusado: %s %s",
+            error,
+            description
+        )
+
+        return (
+            f"""
+            <h2>Autorização não concluída</h2>
+            <p>{error}</p>
+            <p>{description}</p>
+            """,
+            400
+        )
+
+    if not code:
+        return (
+            "<h2>Authorization code não recebido.</h2>",
+            400
+        )
+
+    try:
+        token_data = exchange_authorization_code(code)
+        save_runtime_token(token_data)
+
+        user_id = runtime_token.get("user_id")
+
+        return f"""
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Raposa Caçadora</title>
+        </head>
+        <body>
+            <h2>✅ Mercado Livre conectado!</h2>
+            <p>Usuário autorizado: {user_id}</p>
+            <p>Você pode fechar esta janela.</p>
+        </body>
+        </html>
+        """
+
+    except Exception as exc:
+        logger.exception(
+            "Falha no callback OAuth."
+        )
+
+        return (
+            f"""
+            <h2>❌ Erro ao conectar Mercado Livre</h2>
+            <p>{str(exc)}</p>
+            """,
+            500
+        )
+
+
+# ============================================================
+# REFRESH TOKEN
+# ============================================================
+
+
+def refresh_access_token():
+    global runtime_token
+
+    with token_lock:
+        refresh_token = runtime_token.get(
+            "refresh_token"
+        )
+
+    if not refresh_token:
+        raise RuntimeError(
+            "Nenhum ML_REFRESH_TOKEN disponível."
+        )
+
+    payload = {
+        "grant_type": "refresh_token",
+        "client_id": ML_CLIENT_ID,
+        "client_secret": ML_CLIENT_SECRET,
+        "refresh_token": refresh_token,
+    }
+
+    logger.info(
+        "Renovando access token Mercado Livre..."
+    )
+
+    response = requests.post(
+        ML_TOKEN_URL,
+        data=payload,
+        timeout=HTTP_TIMEOUT
+    )
+
+    if response.status_code != 200:
+        logger.error(
+            "Falha refresh token HTTP %s: %s",
+            response.status_code,
+            response.text[:1000]
+        )
+
+        raise RuntimeError(
+            "Não foi possível renovar o token Mercado Livre."
+        )
+
+    token_data = response.json()
+
+    save_runtime_token(token_data)
+
+    return runtime_token["access_token"]
+
+
+def get_valid_access_token():
+    with token_lock:
+        access_token = runtime_token.get(
+            "access_token"
+        )
+        expires_at = runtime_token.get(
+            "expires_at",
+            0
+        )
+
+    if access_token and time.time() < expires_at:
+        return access_token
+
+    if not runtime_token.get("refresh_token"):
+        raise RuntimeError(
+            "Mercado Livre ainda não autorizado. "
+            "Abra /oauth/mercadolivre."
+        )
+
+    return refresh_access_token()
+
+
+# ============================================================
+# REQUEST PARA API MERCADO LIVRE
+# ============================================================
+
+
+def ml_request(
+    method,
+    path,
+    params=None,
+    data=None,
+    retry_on_429=True
+):
+    access_token = get_valid_access_token()
+
+    url = (
+        f"{ML_API_URL.rstrip('/')}/"
+        f"{path.lstrip('/')}"
+    )
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/json",
+    }
+
+    response = requests.request(
+        method,
+        url,
+        headers=headers,
+        params=params,
+        json=data,
+        timeout=HTTP_TIMEOUT
+    )
+
+    if response.status_code == 401:
+        logger.warning(
+            "Mercado Livre retornou 401. "
+            "Tentando renovar token."
+        )
+
+        new_token = refresh_access_token()
+
+        headers["Authorization"] = (
+            f"Bearer {new_token}"
+        )
+
+        response = requests.request(
+            method,
+            url,
+            headers=headers,
+            params=params,
+            json=data,
+            timeout=HTTP_TIMEOUT
+        )
+
+    if response.status_code == 429 and retry_on_429:
+        retry_after = response.headers.get(
+            "Retry-After"
+        )
+
+        try:
+            wait = float(retry_after)
+        except (TypeError, ValueError):
+            wait = 2
+
+        wait = min(max(wait, 1), 30)
+
+        logger.warning(
+            "Mercado Livre 429. "
+            "Aguardando %.1fs.",
+            wait
+        )
+
+        time.sleep(wait)
+
+        return ml_request(
+            method,
+            path,
+            params=params,
+            data=data,
+            retry_on_429=False
+        )
+
+    if response.status_code >= 400:
+        logger.error(
+            "Mercado Livre HTTP %s: %s",
+            response.status_code,
+            response.text[:1500]
+        )
+
+    return response
+
+
+# ============================================================
+# MERCADO LIVRE - USER
+# ============================================================
+
+
+def get_ml_user():
+    response = ml_request(
+        "GET",
+        "/users/me"
+    )
+
+    if response.status_code != 200:
+        raise RuntimeError(
+            f"Falha /users/me: HTTP "
+            f"{response.status_code}"
+        )
+
+    return response.json()
+
+
+# ============================================================
+# MERCADO LIVRE - ITENS
+# ============================================================
+
+
+def get_items_bulk(item_ids):
+    """
+    Usa o endpoint atual recomendado:
+        /items/bulk?ids=...
+
+    A documentação atual informa que /items?ids=
+    está em processo de descontinuação e recomenda
+    /items/bulk?ids=.
+    """
+
+    item_ids = list(dict.fromkeys(item_ids))
+
+    if not item_ids:
+        return []
+
+    all_items = []
+
+    # Mantemos no máximo 20 por chamada.
+    for start in range(0, len(item_ids), 20):
+        batch = item_ids[start:start + 20]
+
+        params = {
+            "ids": ",".join(batch)
+        }
+
+        response = ml_request(
+            "GET",
+            "/items/bulk",
+            params=params
+        )
+
+        if response.status_code != 200:
+            logger.error(
+                "Erro /items/bulk: HTTP %s",
+                response.status_code
+            )
+            continue
+
+        try:
+            data = response.json()
+        except Exception:
+            logger.error(
+                "Resposta inválida de /items/bulk."
+            )
+            continue
+
+        if not isinstance(data, list):
+            continue
+
+        for result in data:
+            status_code = result.get(
+                "status_code",
+                result.get("code")
             )
 
-            return (
-                "MLB"
-                + numero
-            )
+            body = result.get("body")
+
+            if status_code == 200 and body:
+                all_items.append(body)
+
+            else:
+                logger.warning(
+                    "Item não retornado: %s "
+                    "status=%s",
+                    result.get("id"),
+                    status_code
+                )
+
+    return all_items
+
+
+def get_item(item_id):
+    response = ml_request(
+        "GET",
+        f"/items/{item_id}"
+    )
+
+    if response.status_code != 200:
+        return None
+
+    return response.json()
+
+
+# ============================================================
+# EXTRAÇÃO DOS IDs MLB DA VITRINE
+# ============================================================
+
+
+MLB_PATTERN = re.compile(
+    r"\bMLB\d{6,15}\b",
+    re.IGNORECASE
+)
+
+
+def extract_mlb_ids_from_text(text):
+    if not text:
+        return []
+
+    found = MLB_PATTERN.findall(text)
+
+    result = []
+
+    for item_id in found:
+        item_id = item_id.upper()
+
+        if item_id not in result:
+            result.append(item_id)
+
+    return result
+
+
+def extract_possible_affiliate_links(html):
+    """
+    Procura links no HTML que possam estar associados
+    a anúncios.
+
+    NÃO presume nenhum endpoint privado do Mercado Livre.
+
+    Esta função apenas examina o documento recebido.
+    """
+
+    if not html:
+        return {}
+
+    mapping = {}
+
+    # href="..."
+    hrefs = re.findall(
+        r'''href=["']([^"']+)["']''',
+        html,
+        flags=re.IGNORECASE
+    )
+
+    for href in hrefs:
+        ids = extract_mlb_ids_from_text(href)
+
+        for item_id in ids:
+            mapping[item_id] = href
+
+    # Também procura URLs em JSON/JS.
+    urls = re.findall(
+        r'''https?://[^"'\\\s<>]+''',
+        html,
+        flags=re.IGNORECASE
+    )
+
+    for url in urls:
+        ids = extract_mlb_ids_from_text(url)
+
+        for item_id in ids:
+            mapping[item_id] = url
+
+    return mapping
+
+
+def fetch_vitrine_document(vitrine_url):
+    """
+    Tentativa de obter o documento da vitrine.
+
+    IMPORTANTE:
+    O Render pode receber HTTP 403 do meli.la.
+    Não fazemos bypass de proteção anti-bot.
+    """
+
+    logger.info(
+        "🔎 Acessando vitrine: %s",
+        vitrine_url
+    )
+
+    response = requests.get(
+        vitrine_url,
+        timeout=HTTP_TIMEOUT,
+        allow_redirects=True,
+        headers={
+            "Accept": (
+                "text/html,application/xhtml+xml,"
+                "application/xml;q=0.9,*/*;q=0.8"
+            ),
+            "Accept-Language": "pt-BR,pt;q=0.9",
+        }
+    )
+
+    logger.info(
+        "📊 Vitrine HTTP: %s",
+        response.status_code
+    )
+
+    logger.info(
+        "🔗 URL final: %s",
+        response.url
+    )
+
+    logger.info(
+        "📄 Documento: %s bytes",
+        len(response.content)
+    )
+
+    return response
+
+
+def extract_products_from_vitrine(vitrine_url):
+    """
+    Retorna:
+
+        [
+            {
+                "item_id": "MLB...",
+                "affiliate_url": "...",
+            }
+        ]
+
+    Neste primeiro estágio, os IDs são extraídos
+    do documento da vitrine.
+
+    Se o servidor receber 403, não tenta contornar
+    o bloqueio.
+    """
+
+    response = fetch_vitrine_document(
+        vitrine_url
+    )
+
+    if response.status_code == 403:
+        logger.error(
+            "❌ Vitrine retornou 403. "
+            "Não será feito bypass."
+        )
+
+        return []
+
+    if response.status_code != 200:
+        logger.error(
+            "❌ Vitrine retornou HTTP %s.",
+            response.status_code
+        )
+
+        return []
+
+    try:
+        html = response.text
+    except Exception:
+        logger.exception(
+            "Erro lendo HTML da vitrine."
+        )
+        return []
+
+    item_ids = extract_mlb_ids_from_text(
+        html
+    )
+
+    affiliate_links = (
+        extract_possible_affiliate_links(
+            html
+        )
+    )
+
+    logger.info(
+        "📦 IDs MLB encontrados: %s",
+        len(item_ids)
+    )
+
+    for item_id in item_ids:
+        logger.info(
+            "🛒 Produto detectado: %s",
+            item_id
+        )
+
+    products = []
+
+    for item_id in item_ids:
+        products.append({
+            "item_id": item_id,
+            "affiliate_url": affiliate_links.get(
+                item_id
+            ),
+        })
+
+    return products
+
+
+# ============================================================
+# NORMALIZAÇÃO DO PRODUTO
+# ============================================================
+
+
+def normalize_item(item, affiliate_url=None):
+    if not item:
+        return None
+
+    pictures = item.get(
+        "pictures",
+        []
+    )
+
+    image_url = None
+
+    if pictures:
+        first_picture = pictures[0]
+
+        image_url = (
+            first_picture.get("secure_url")
+            or first_picture.get("url")
+        )
+
+    original_price = item.get(
+        "original_price"
+    )
+
+    current_price = item.get(
+        "price"
+    )
+
+    return {
+        "id": item.get("id"),
+        "title": item.get(
+            "title",
+            "Produto Mercado Livre"
+        ),
+        "image_url": image_url,
+        "price": current_price,
+        "original_price": original_price,
+        "currency": item.get(
+            "currency_id",
+            "BRL"
+        ),
+        "permalink": item.get(
+            "permalink"
+        ),
+        "affiliate_url": (
+            affiliate_url
+            or item.get("permalink")
+        ),
+    }
+
+
+# ============================================================
+# CUPOM
+# ============================================================
+
+
+def get_coupon_for_item(item_id):
+    """
+    Não inventa endpoint de cupom de afiliado.
+
+    Por enquanto retorna None.
+
+    Cupons específicos do programa de afiliados
+    precisam ser obtidos através de um recurso oficial
+    de afiliados, caso disponível para a conta/API.
+    """
 
     return None
 
 
 # ============================================================
-# ENCONTRAR LINKS NO HTML
+# FORMATAÇÃO
 # ============================================================
 
-def extrair_links_html(
-    soup,
-    base_url
-):
 
-    links = []
-
-    # --------------------------------------------------------
-    # LINKS <a>
-    # --------------------------------------------------------
-
-    for a in soup.find_all(
-        "a",
-        href=True
-    ):
-
-        href = normalizar_url(
-            a.get("href"),
-            base_url
-        )
-
-        if not href:
-
-            continue
-
-        if parece_produto_mercado_livre(
-            href
-        ):
-
-            links.append(
-                href
-            )
-
-    # --------------------------------------------------------
-    # DATA-HREF
-    # --------------------------------------------------------
-
-    for tag in soup.find_all():
-
-        for atributo in [
-            "data-href",
-            "data-url",
-            "data-link",
-            "data-product-url"
-        ]:
-
-            valor = tag.get(
-                atributo
-            )
-
-            if not valor:
-
-                continue
-
-            valor = normalizar_url(
-                valor,
-                base_url
-            )
-
-            if parece_produto_mercado_livre(
-                valor
-            ):
-
-                links.append(
-                    valor
-                )
-
-    return links
-
-
-# ============================================================
-# EXTRAIR LINKS POR REGEX
-# ============================================================
-
-def extrair_links_regex(
-    texto,
-    base_url
-):
-
-    links = []
-
-    # URLs completas
-    urls = re.findall(
-        r'https?://[^"\'>\s]+',
-        texto,
-        re.IGNORECASE
-    )
-
-    for url in urls:
-
-        url = normalizar_url(
-            url,
-            base_url
-        )
-
-        if parece_produto_mercado_livre(
-            url
-        ):
-
-            links.append(
-                url
-            )
-
-    # IDs MLB
-    ids = re.findall(
-        r"\bMLB[-_]?\d{6,15}\b",
-        texto,
-        re.IGNORECASE
-    )
-
-    for item in ids:
-
-        numero = re.sub(
-            r"[^0-9]",
-            "",
-            item
-        )
-
-        if not numero:
-
-            continue
-
-        link = (
-            "https://www.mercadolivre.com.br/p/"
-            "MLB"
-            + numero
-        )
-
-        links.append(
-            link
-        )
-
-    return links
-
-
-# ============================================================
-# EXTRAIR PRODUTOS DA VITRINE
-# ============================================================
-
-def extrair_produtos_da_pagina(
-    texto,
-    url_base
-):
-
-    if not texto:
-
-        return []
-
-    produtos = []
+def format_brl(value):
+    if value is None:
+        return None
 
     try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return None
 
-        soup = BeautifulSoup(
-            texto,
-            "html.parser"
-        )
+    formatted = (
+        f"{value:,.2f}"
+        .replace(",", "X")
+        .replace(".", ",")
+        .replace("X", ".")
+    )
 
-    except Exception as e:
+    return f"R$ {formatted}"
 
-        print(
-            f"❌ Erro BeautifulSoup: {e}"
-        )
 
-        return []
+def format_offer(product):
+    title = product.get(
+        "title",
+        "Produto Mercado Livre"
+    )
 
-    # ========================================================
-    # MÉTODO 1
-    # CLASSES DO SEU CÓDIGO ANTIGO
-    # ========================================================
+    current_price = format_brl(
+        product.get("price")
+    )
 
-    seletores = [
+    original_price = format_brl(
+        product.get("original_price")
+    )
 
-        "li.ui-search-layout__item",
+    coupon = product.get("coupon")
 
-        "div.poly-card",
-
-        "div.ui-search-result__wrapper",
-
-        "div.poly-card--list",
-
-        "div.poly-card--grid"
-
+    lines = [
+        "🚨 OFERTA RELÂMPAGO DO DIA 🚨",
+        "",
+        "━━━━━━━━━━━━━━━━━━━━",
+        "",
+        f"📦 {title}",
+        "",
     ]
 
-    itens = []
-
-    for seletor in seletores:
-
-        encontrados = soup.select(
-            seletor
+    if original_price:
+        lines.append(
+            f"❌ De: {original_price}"
         )
 
-        if encontrados:
-
-            print(
-                f"✅ Seletor encontrado:"
-                f" {seletor}"
-                f" -> {len(encontrados)}"
-            )
-
-            itens.extend(
-                encontrados
-            )
-
-    # Dedupe dos cards
-    cards_unicos = []
-
-    ids_cards = set()
-
-    for card in itens:
-
-        identificador = id(
-            card
+    if current_price:
+        lines.append(
+            f"🔥 POR APENAS: {current_price}"
         )
 
-        if identificador in ids_cards:
+    if coupon:
+        lines.extend([
+            "",
+            f"🎟️ CUPOM EXTRA: {coupon}"
+        ])
 
-            continue
+    lines.extend([
+        "",
+        "🚚 Frete Rápido & Compra 100% Segura",
+        "",
+        "━━━━━━━━━━━━━━━━━━━━",
+        "",
+        "👇 GARANTA O SEU ANTES QUE ACABE:",
+        "",
+        "📌 Canal Oficial @raposacacadora",
+    ])
 
-        ids_cards.add(
-            identificador
-        )
+    return "\n".join(lines)
 
-        cards_unicos.append(
-            card
-        )
 
-    print(
-        f"📦 Cards detectados:"
-        f" {len(cards_unicos)}"
+# ============================================================
+# TELEGRAM
+# ============================================================
+
+
+def telegram_url(method):
+    return (
+        f"https://api.telegram.org/"
+        f"bot{TELEGRAM_TOKEN}/{method}"
     )
 
-    # ========================================================
-    # PROCESSAR CARDS
-    # ========================================================
 
-    for item in cards_unicos:
+def send_telegram_request(method, payload):
+    response = requests.post(
+        telegram_url(method),
+        json=payload,
+        timeout=HTTP_TIMEOUT
+    )
 
-        link_produto = ""
-
-        # ----------------------------------------------------
-        # LINK
-        # ----------------------------------------------------
-
-        link_elem = item.find(
-            "a",
-            href=True
+    if response.status_code != 200:
+        logger.error(
+            "Telegram HTTP %s: %s",
+            response.status_code,
+            response.text[:1000]
         )
 
-        if link_elem:
+        return None
 
-            link_produto = normalizar_url(
-                link_elem.get("href"),
-                url_base
-            )
+    try:
+        data = response.json()
+    except Exception:
+        return None
 
-        # Procurar qualquer A caso o primeiro não seja produto
-        if not parece_produto_mercado_livre(
-            link_produto
-        ):
+    if not data.get("ok"):
+        logger.error(
+            "Telegram erro: %s",
+            data
+        )
+        return None
 
-            for a in item.find_all(
-                "a",
-                href=True
-            ):
+    return data
 
-                candidato = normalizar_url(
-                    a.get("href"),
-                    url_base
-                )
 
-                if parece_produto_mercado_livre(
-                    candidato
-                ):
+def send_offer_to_telegram(product):
+    affiliate_url = product.get(
+        "affiliate_url"
+    )
 
-                    link_produto = candidato
-
-                    break
-
-        if not link_produto:
-
-            continue
-
-        # ----------------------------------------------------
-        # TÍTULO
-        # ----------------------------------------------------
-
-        titulo = ""
-
-        titulo_elem = (
-            item.find(
-                "h2"
-            )
-            or
-            item.find(
-                "h3"
-            )
-            or
-            item.find(
-                "a",
-                class_="poly-component__title"
-            )
+    if not affiliate_url:
+        affiliate_url = product.get(
+            "permalink"
         )
 
-        if titulo_elem:
+    text = format_offer(product)
 
-            titulo = titulo_elem.get_text(
-                " ",
-                strip=True
-            )
-
-        if not titulo:
-
-            aria = link_elem.get(
-                "aria-label",
-                ""
-            ) if link_elem else ""
-
-            titulo = aria.strip()
-
-        if not titulo:
-
-            titulo = (
-                "Oportunidade Imperdível "
-                "no Mercado Livre"
-            )
-
-        # ----------------------------------------------------
-        # PREÇO ATUAL
-        # ----------------------------------------------------
-
-        preco_atual = ""
-
-        preco_atual_elem = item.find(
-            "span",
-            class_="andes-money-amount__fraction"
-        )
-
-        centavos_atual_elem = item.find(
-            "span",
-            class_="andes-money-amount__cents"
-        )
-
-        if preco_atual_elem:
-
-            preco_atual = (
-                "R$ "
-                + preco_atual_elem.get_text(
-                    strip=True
-                )
-            )
-
-            if centavos_atual_elem:
-
-                preco_atual += (
-                    ","
-                    + centavos_atual_elem.get_text(
-                        strip=True
-                    )
-                )
-
-            else:
-
-                preco_atual += ",00"
-
-        # ----------------------------------------------------
-        # PREÇO ANTIGO
-        # ----------------------------------------------------
-
-        preco_antigo = ""
-
-        antigo_container = (
-            item.find(
-                "s",
-                class_="andes-money-amount"
-            )
-            or
-            item.find(
-                "span",
-                class_="andes-money-amount--previous"
-            )
-            or
-            item.find(
-                class_=re.compile(
-                    "previous"
-                )
-            )
-        )
-
-        if antigo_container:
-
-            frac_antigo = antigo_container.find(
-                "span",
-                class_="andes-money-amount__fraction"
-            )
-
-            cents_antigo = antigo_container.find(
-                "span",
-                class_="andes-money-amount__cents"
-            )
-
-            if frac_antigo:
-
-                preco_antigo = (
-                    "R$ "
-                    + frac_antigo.get_text(
-                        strip=True
-                    )
-                )
-
-                if cents_antigo:
-
-                    preco_antigo += (
-                        ","
-                        + cents_antigo.get_text(
-                            strip=True
-                        )
-                    )
-
-                else:
-
-                    preco_antigo += ",00"
-
-        # ----------------------------------------------------
-        # CUPOM
-        # ----------------------------------------------------
-
-        cupom = ""
-
-        for tag in item.find_all(
+    reply_markup = {
+        "inline_keyboard": [
             [
-                "span",
-                "div",
-                "p"
+                {
+                    "text": "🛒 COMPRAR AGORA",
+                    "url": affiliate_url
+                }
             ]
-        ):
+        ]
+    }
 
-            texto_tag = tag.get_text(
-                " ",
-                strip=True
-            )
-
-            texto_upper = (
-                texto_tag.upper()
-            )
-
-            if (
-                "CUPOM"
-                in texto_upper
-                or
-                "OFF"
-                in texto_upper
-            ):
-
-                if (
-                    3
-                    <= len(texto_tag)
-                    <= 60
-                ):
-
-                    cupom = texto_tag
-
-                    break
-
-        # ----------------------------------------------------
-        # IMAGEM
-        # ----------------------------------------------------
-
-        foto_url = ""
-
-        img = item.find(
-            "img"
-        )
-
-        if img:
-
-            for atributo in [
-                "data-src",
-                "src",
-                "data-lazy-src",
-                "data-lazy-icon"
-            ]:
-
-                valor = img.get(
-                    atributo
-                )
-
-                if valor:
-
-                    foto_url = normalizar_url(
-                        valor,
-                        url_base
-                    )
-
-                    if foto_url:
-
-                        break
-
-        # ----------------------------------------------------
-        # SALVAR
-        # ----------------------------------------------------
-
-        produtos.append({
-
-            "link":
-                link_produto,
-
-            "titulo":
-                titulo,
-
-            "preco_atual":
-                preco_atual,
-
-            "preco_antigo":
-                preco_antigo,
-
-            "cupom":
-                cupom,
-
-            "imagem":
-                foto_url
-
-        })
-
-    # ========================================================
-    # SEGUNDA TENTATIVA:
-    # LINKS DIRETOS NO HTML
-    # ========================================================
-
-    links_diretos = (
-        extrair_links_html(
-            soup,
-            url_base
-        )
+    image_url = product.get(
+        "image_url"
     )
 
-    # ========================================================
-    # TERCEIRA TENTATIVA:
-    # REGEX
-    # ========================================================
-
-    links_regex = (
-        extrair_links_regex(
-            texto,
-            url_base
+    if image_url:
+        result = send_telegram_request(
+            "sendPhoto",
+            {
+                "chat_id": CHAT_ID,
+                "photo": image_url,
+                "caption": text,
+                "reply_markup": reply_markup,
+            }
         )
-    )
-
-    todos_links = (
-        links_diretos
-        + links_regex
-    )
-
-    # ========================================================
-    # ADICIONAR LINKS QUE NÃO ESTAVAM NOS CARDS
-    # ========================================================
-
-    existentes = set()
-
-    for produto in produtos:
-
-        mlb = extrair_id_mlb(
-            produto["link"]
-        )
-
-        if mlb:
-
-            existentes.add(
-                mlb
-            )
-
-        else:
-
-            existentes.add(
-                produto["link"]
-            )
-
-    for link in todos_links:
-
-        mlb = extrair_id_mlb(
-            link
-        )
-
-        chave = (
-            mlb
-            if mlb
-            else link
-        )
-
-        if chave in existentes:
-
-            continue
-
-        produtos.append({
-
-            "link":
-                link,
-
-            "titulo":
-                "Oferta Imperdível "
-                "no Mercado Livre",
-
-            "preco_atual":
-                "",
-
-            "preco_antigo":
-                "",
-
-            "cupom":
-                "",
-
-            "imagem":
-                ""
-
-        })
-
-        existentes.add(
-            chave
-        )
-
-    # ========================================================
-    # DEDUPLICAR
-    # ========================================================
-
-    resultado = []
-
-    vistos = set()
-
-    for produto in produtos:
-
-        link = produto.get(
-            "link",
-            ""
-        )
-
-        mlb = extrair_id_mlb(
-            link
-        )
-
-        chave = (
-            mlb
-            if mlb
-            else link
-        )
-
-        if not chave:
-
-            continue
-
-        if chave in vistos:
-
-            continue
-
-        vistos.add(
-            chave
-        )
-
-        resultado.append(
-            produto
-        )
-
-    print(
-        f"🎯 Produtos encontrados:"
-        f" {len(resultado)}"
-    )
-
-    return resultado
-
-
-# ============================================================
-# ACESSAR VITRINE
-# ============================================================
-
-def acessar_vitrine(
-    url_vitrine
-):
-
-    print("")
-    print(
-        "=========================================="
-    )
-
-    print(
-        "🔎 ACESSANDO VITRINE"
-    )
-
-    print(
-        "=========================================="
-    )
-
-    print(
-        f"🔗 {url_vitrine}"
-    )
-
-    headers = obter_headers()
-
-    inicio = time.time()
-
-    try:
-
-        resposta = session.get(
-
-            url_vitrine,
-
-            headers=headers,
-
-            allow_redirects=True,
-
-            timeout=HTTP_TIMEOUT
-
-        )
-
-        tempo = (
-            time.time()
-            - inicio
-        )
-
-        print(
-            f"⏱️ Resposta em "
-            f"{tempo:.2f}s"
-        )
-
-        print(
-            f"📊 HTTP: "
-            f"{resposta.status_code}"
-        )
-
-        print(
-            f"🔗 URL final: "
-            f"{resposta.url}"
-        )
-
-        print(
-            f"📄 HTML: "
-            f"{len(resposta.text)} bytes"
-        )
-
-        # ----------------------------------------------------
-        # 403
-        # ----------------------------------------------------
-
-        if resposta.status_code == 403:
-
-            print("")
-            print(
-                "⚠️ MERCADO LIVRE RETORNOU 403."
-            )
-
-            print(
-                "⚠️ O acesso automatizado "
-                "foi bloqueado."
-            )
-
-            # Mesmo com 403, tentamos extrair
-            # alguma informação do HTML.
-            produtos = (
-                extrair_produtos_da_pagina(
-                    resposta.text,
-                    resposta.url
-                )
-            )
-
-            if produtos:
-
-                print(
-                    "⚠️ Apesar do 403, "
-                    "foram encontrados "
-                    "produtos no HTML."
-                )
-
-                return (
-                    resposta,
-                    produtos
-                )
-
-            return (
-                resposta,
-                []
-            )
-
-        # ----------------------------------------------------
-        # OUTROS ERROS
-        # ----------------------------------------------------
-
-        if resposta.status_code >= 400:
-
-            print(
-                f"❌ HTTP {resposta.status_code}"
-            )
-
-            return (
-                resposta,
-                []
-            )
-
-        # ----------------------------------------------------
-        # OK
-        # ----------------------------------------------------
-
-        produtos = (
-            extrair_produtos_da_pagina(
-                resposta.text,
-                resposta.url
-            )
-        )
-
-        return (
-            resposta,
-            produtos
-        )
-
-    except requests.exceptions.Timeout:
-
-        print(
-            "❌ Timeout acessando a vitrine."
-        )
-
-        return (
-            None,
-            []
-        )
-
-    except requests.exceptions.RequestException as e:
-
-        print(
-            f"❌ Erro HTTP: {e}"
-        )
-
-        return (
-            None,
-            []
-        )
-
-    except Exception as e:
-
-        print(
-            f"❌ Erro inesperado: {e}"
-        )
-
-        return (
-            None,
-            []
-        )
-
-
-# ============================================================
-# BUSCAR DADOS INDIVIDUAIS DO PRODUTO
-# ============================================================
-
-def completar_dados_produto(
-    produto
-):
-
-    link = produto.get(
-        "link",
-        ""
-    )
-
-    if not link:
-
-        return produto
-
-    # Se já temos imagem e preço,
-    # não precisamos acessar novamente.
-    if (
-        produto.get("imagem")
-        and
-        produto.get("preco_atual")
-    ):
-
-        return produto
-
-    print(
-        f"🔍 Complementando:"
-        f" {link}"
-    )
-
-    headers = obter_headers()
-
-    try:
-
-        resposta = session.get(
-
-            link,
-
-            headers=headers,
-
-            allow_redirects=True,
-
-            timeout=HTTP_TIMEOUT
-
-        )
-
-        if resposta.status_code >= 400:
-
-            print(
-                f"⚠️ Produto retornou "
-                f"HTTP {resposta.status_code}"
-            )
-
-            return produto
-
-        soup = BeautifulSoup(
-            resposta.text,
-            "html.parser"
-        )
-
-        # ----------------------------------------------------
-        # TÍTULO
-        # ----------------------------------------------------
-
-        if not produto.get(
-            "titulo"
-        ):
-
-            og_title = soup.find(
-                "meta",
-                property="og:title"
-            )
-
-            if og_title:
-
-                produto["titulo"] = (
-                    og_title.get(
-                        "content",
-                        ""
-                    ).strip()
-                )
-
-        # ----------------------------------------------------
-        # IMAGEM
-        # ----------------------------------------------------
-
-        if not produto.get(
-            "imagem"
-        ):
-
-            og_image = soup.find(
-                "meta",
-                property="og:image"
-            )
-
-            if og_image:
-
-                produto["imagem"] = (
-                    og_image.get(
-                        "content",
-                        ""
-                    ).strip()
-                )
-
-        # ----------------------------------------------------
-        # PREÇO
-        # ----------------------------------------------------
-
-        if not produto.get(
-            "preco_atual"
-        ):
-
-            preco_elem = soup.find(
-                "span",
-                class_="andes-money-amount__fraction"
-            )
-
-            cents_elem = soup.find(
-                "span",
-                class_="andes-money-amount__cents"
-            )
-
-            if preco_elem:
-
-                preco = (
-                    "R$ "
-                    + preco_elem.get_text(
-                        strip=True
-                    )
-                )
-
-                if cents_elem:
-
-                    preco += (
-                        ","
-                        + cents_elem.get_text(
-                            strip=True
-                        )
-                    )
-
-                else:
-
-                    preco += ",00"
-
-                produto[
-                    "preco_atual"
-                ] = preco
-
-        return produto
-
-    except Exception as e:
-
-        print(
-            f"⚠️ Erro complementando produto:"
-            f" {e}"
-        )
-
-        return produto
-
-
-# ============================================================
-# ENVIAR PARA TELEGRAM
-# ============================================================
-
-def enviar_oferta(
-    produto
-):
-
-    if not TELEGRAM_TOKEN:
-
-        print(
-            "❌ TELEGRAM_TOKEN não configurado."
-        )
-
-        return False
-
-    link = produto.get(
-        "link",
-        ""
-    )
-
-    titulo = produto.get(
-        "titulo",
-        "Oferta Imperdível "
-        "no Mercado Livre"
-    )
-
-    imagem = produto.get(
-        "imagem",
-        ""
-    )
-
-    preco_atual = produto.get(
-        "preco_atual",
-        ""
-    )
-
-    preco_antigo = produto.get(
-        "preco_antigo",
-        ""
-    )
-
-    cupom = produto.get(
-        "cupom",
-        ""
-    )
-
-    # --------------------------------------------------------
-    # ESCAPAR HTML
-    # --------------------------------------------------------
-
-    titulo = html.escape(
-        titulo
-    )
-
-    # --------------------------------------------------------
-    # PREÇOS
-    # --------------------------------------------------------
-
-    atual_float = (
-        converter_preco_float(
-            preco_atual
-        )
-    )
-
-    antigo_float = (
-        converter_preco_float(
-            preco_antigo
-        )
-    )
-
-    if (
-        antigo_float > atual_float
-        and
-        antigo_float > 0
-        and
-        atual_float > 0
-    ):
-
-        bloco_preco = (
-
-            f"❌ <s>De: "
-            f"{html.escape(preco_antigo)}"
-            f"</s>\n"
-
-            f"🔥 <b>POR APENAS:</b> "
-            f"<code>"
-            f"{html.escape(preco_atual)}"
-            f"</code>\n"
-
-        )
-
-    elif preco_atual:
-
-        bloco_preco = (
-
-            f"💥 <b>POR APENAS:</b> "
-            f"<code>"
-            f"{html.escape(preco_atual)}"
-            f"</code>\n"
-
-        )
-
     else:
-
-        bloco_preco = ""
-
-    # --------------------------------------------------------
-    # CUPOM
-    # --------------------------------------------------------
-
-    bloco_cupom = ""
-
-    if cupom:
-
-        bloco_cupom = (
-
-            f"🎟️ <b>CUPOM EXTRA:</b> "
-            f"<i>"
-            f"{html.escape(cupom)}"
-            f"</i>\n"
-
+        result = send_telegram_request(
+            "sendMessage",
+            {
+                "chat_id": CHAT_ID,
+                "text": text,
+                "reply_markup": reply_markup,
+                "disable_web_page_preview": False,
+            }
         )
 
-    # --------------------------------------------------------
-    # LEGENDA
-    # --------------------------------------------------------
+    return result is not None
 
-    legenda = (
 
-        "🚨 <b>OFERTA RELÂMPAGO DO DIA</b> 🚨\n"
+# ============================================================
+# PROCESSAMENTO
+# ============================================================
 
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
 
-        f"📦 <b>{titulo}</b>\n\n"
-
-        f"{bloco_preco}"
-
-        f"{bloco_cupom}"
-
-        "🚚 <i>Frete Rápido &amp; "
-        "Compra 100% Segura</i>\n\n"
-
-        "━━━━━━━━━━━━━━━━━━━━\n"
-
-        "👇 <b>GARANTA O SEU ANTES QUE ACABE:</b>\n\n"
-
-        "📌 <i>Canal Oficial "
-        "@raposacacadora</i>"
-
+def processar_vitrine(
+    vitrine_url,
+    quantidade,
+    intervalo
+):
+    logger.info("")
+    logger.info("🦊 RAPOSA CAÇADORA")
+    logger.info(
+        "🔗 Vitrine: %s",
+        vitrine_url
+    )
+    logger.info(
+        "📦 Quantidade: %s",
+        quantidade
+    )
+    logger.info(
+        "⏱️ Intervalo: %s segundos",
+        intervalo
     )
 
-    # ========================================================
-    # TELEGRAM API
-    # ========================================================
-
     try:
-
-        # ----------------------------------------------------
-        # COM FOTO
-        # ----------------------------------------------------
-
-        if (
-            imagem
-            and
-            imagem.startswith(
-                "http"
-            )
-        ):
-
-            api_url = (
-                "https://api.telegram.org/"
-                f"bot{TELEGRAM_TOKEN}/sendPhoto"
-            )
-
-            keyboard = {
-
-                "inline_keyboard": [
-
-                    [
-
-                        {
-
-                            "text":
-                                "🛒 COMPRAR AGORA",
-
-                            "url":
-                                link
-
-                        }
-
-                    ]
-
-                ]
-
-            }
-
-            payload = {
-
-                "chat_id":
-                    CHAT_ID,
-
-                "photo":
-                    imagem,
-
-                "caption":
-                    legenda,
-
-                "parse_mode":
-                    "HTML",
-
-                "reply_markup":
-                    json.dumps(
-                        keyboard
-                    )
-
-            }
-
-        # ----------------------------------------------------
-        # SEM FOTO
-        # ----------------------------------------------------
-
-        else:
-
-            api_url = (
-                "https://api.telegram.org/"
-                f"bot{TELEGRAM_TOKEN}/sendMessage"
-            )
-
-            keyboard = {
-
-                "inline_keyboard": [
-
-                    [
-
-                        {
-
-                            "text":
-                                "🛒 COMPRAR AGORA",
-
-                            "url":
-                                link
-
-                        }
-
-                    ]
-
-                ]
-
-            }
-
-            payload = {
-
-                "chat_id":
-                    CHAT_ID,
-
-                "text":
-                    legenda,
-
-                "parse_mode":
-                    "HTML",
-
-                "reply_markup":
-                    json.dumps(
-                        keyboard
-                    )
-
-            }
-
-        resposta = session.post(
-
-            api_url,
-
-            data=payload,
-
-            timeout=HTTP_TIMEOUT
-
-        )
-
-        if resposta.status_code == 200:
-
-            resultado = resposta.json()
-
-            if resultado.get(
-                "ok"
-            ):
-
-                print(
-                    "✅ Oferta enviada "
-                    "ao Telegram."
-                )
-
-                return True
-
-        print(
-            "❌ Erro Telegram:"
-        )
-
-        print(
-            resposta.text[:2000]
-        )
-
-        return False
-
-    except Exception as e:
-
-        print(
-            f"❌ Erro enviando Telegram:"
-            f" {e}"
-        )
-
-        return False
-
-
-# ============================================================
-# PROCESSAR VITRINE
-# ============================================================
-
-def processar_e_postar_vitrine(
-    url_vitrine,
-    quantidade,
-    intervalo_minutos
-):
-
-    global automacoes_ativas
-
-    with automacoes_lock:
-
-        automacoes_ativas += 1
-
-    try:
-
-        print("")
-        print(
-            "============================================================"
-        )
-
-        print(
-            "🦊 RAPOSA CAÇADORA"
-        )
-
-        print(
-            "============================================================"
-        )
-
-        print(
-            f"🔗 Vitrine: {url_vitrine}"
-        )
-
-        print(
-            f"📦 Quantidade: {quantidade}"
-        )
-
-        print(
-            f"⏱️ Intervalo: "
-            f"{intervalo_minutos} minuto(s)"
-        )
-
-        # ====================================================
-        # ACESSAR VITRINE
-        # ====================================================
-
-        resposta, produtos = (
-            acessar_vitrine(
-                url_vitrine
+        # 1. Descobrir os anúncios.
+        candidates = (
+            extract_products_from_vitrine(
+                vitrine_url
             )
         )
 
-        # ====================================================
-        # NENHUM PRODUTO
-        # ====================================================
-
-        if not produtos:
-
-            print("")
-            print(
-                "❌ NENHUM PRODUTO FOI ENCONTRADO."
+        if not candidates:
+            logger.warning(
+                "❌ Nenhum produto encontrado "
+                "na vitrine."
             )
-
-            if resposta is not None:
-
-                print(
-                    f"📊 HTTP recebido:"
-                    f" {resposta.status_code}"
-                )
-
-            print(
-                "🛑 Automação encerrada."
-            )
-
             return
 
-        # ====================================================
-        # HISTÓRICO
-        # ====================================================
+        # 2. Histórico.
+        history = load_history()
 
-        historico = (
-            carregar_historico()
+        new_candidates = [
+            candidate
+            for candidate in candidates
+            if candidate["item_id"] not in history
+        ]
+
+        if not new_candidates:
+            logger.info(
+                "ℹ️ Todos os produtos encontrados "
+                "já foram publicados."
+            )
+            return
+
+        # 3. Limita quantidade.
+        selected = new_candidates[
+            :max(1, int(quantidade))
+        ]
+
+        item_ids = [
+            item["item_id"]
+            for item in selected
+        ]
+
+        affiliate_map = {
+            item["item_id"]: item.get(
+                "affiliate_url"
+            )
+            for item in selected
+        }
+
+        # 4. Busca dados pela API oficial.
+        logger.info(
+            "🔎 Consultando %s item(s) "
+            "na API oficial do Mercado Livre.",
+            len(item_ids)
         )
 
-        print(
-            f"📚 Histórico:"
-            f" {len(historico)} itens"
+        ml_items = get_items_bulk(
+            item_ids
         )
 
-        # ====================================================
-        # FILTRAR PRODUTOS
-        # ====================================================
-
-        produtos_ineditos = []
-
-        for produto in produtos:
-
-            link = produto.get(
-                "link",
-                ""
+        if not ml_items:
+            logger.warning(
+                "❌ API Mercado Livre não "
+                "retornou produtos."
             )
+            return
 
-            mlb = extrair_id_mlb(
-                link
-            )
-
-            chave = (
-                mlb
-                if mlb
-                else link
-            )
-
-            if not chave:
-
-                continue
-
-            if chave in historico:
-
-                continue
-
-            produtos_ineditos.append(
-                produto
-            )
-
-        print(
-            f"🆕 Produtos inéditos:"
-            f" {len(produtos_ineditos)}"
-        )
-
-        # ====================================================
-        # SE ACABARAM OS PRODUTOS
-        # ====================================================
-
-        if not produtos_ineditos:
-
-            print(
-                "🔄 Todos os produtos já "
-                "foram publicados."
-            )
-
-            print(
-                "♻️ Resetando histórico."
-            )
-
-            limpar_historico()
-
-            produtos_ineditos = produtos
-
-        # ====================================================
-        # LIMITAR QUANTIDADE
-        # ====================================================
-
-        produtos_para_postar = (
-            produtos_ineditos[
-                :quantidade
-            ]
-        )
-
-        print(
-            f"📋 Serão processados:"
-            f" {len(produtos_para_postar)}"
-        )
-
-        publicados = 0
-
-        # ====================================================
-        # LOOP
-        # ====================================================
-
-        for indice, produto in enumerate(
-            produtos_para_postar,
+        # 5. Publicação.
+        for index, item in enumerate(
+            ml_items,
             start=1
         ):
+            item_id = item.get("id")
 
-            print("")
-            print(
-                "--------------------------------------------"
-            )
+            if not item_id:
+                continue
 
-            print(
-                f"🛒 Produto "
-                f"{indice}/"
-                f"{len(produtos_para_postar)}"
-            )
+            if item_id in history:
+                continue
 
-            print(
-                f"🔗 {produto.get('link')}"
-            )
-
-            # ------------------------------------------------
-            # COMPLETAR DADOS
-            # ------------------------------------------------
-
-            produto = (
-                completar_dados_produto(
-                    produto
+            product = normalize_item(
+                item,
+                affiliate_url=affiliate_map.get(
+                    item_id
                 )
             )
 
-            # ------------------------------------------------
-            # ENVIAR
-            # ------------------------------------------------
+            if not product:
+                continue
 
-            sucesso = (
-                enviar_oferta(
-                    produto
-                )
+            coupon = get_coupon_for_item(
+                item_id
             )
 
-            if sucesso:
+            product["coupon"] = coupon
 
-                link = produto.get(
-                    "link",
-                    ""
+            logger.info(
+                "📤 Publicando %s/%s: %s",
+                index,
+                len(ml_items),
+                product["title"]
+            )
+
+            success = send_offer_to_telegram(
+                product
+            )
+
+            if success:
+                save_history(item_id)
+
+                logger.info(
+                    "✅ Publicado: %s",
+                    item_id
                 )
-
-                mlb = extrair_id_mlb(
-                    link
-                )
-
-                chave = (
-                    mlb
-                    if mlb
-                    else link
-                )
-
-                salvar_historico(
-                    chave
-                )
-
-                publicados += 1
-
-                print(
-                    f"✅ Publicado:"
-                    f" {produto.get('titulo', '')[:60]}"
-                )
-
-                # ------------------------------------------------
-                # INTERVALO
-                # ------------------------------------------------
-
-                if (
-                    indice
-                    <
-                    len(produtos_para_postar)
-                ):
-
-                    segundos = (
-                        intervalo_minutos
-                        * 60
-                    )
-
-                    print(
-                        f"⏳ Aguardando "
-                        f"{intervalo_minutos} "
-                        f"minuto(s)..."
-                    )
-
-                    time.sleep(
-                        segundos
-                    )
-
             else:
-
-                print(
-                    "⚠️ Produto não publicado."
+                logger.error(
+                    "❌ Falha ao publicar: %s",
+                    item_id
                 )
 
-        # ====================================================
-        # FINAL
-        # ====================================================
+            if (
+                index < len(ml_items)
+                and intervalo > 0
+            ):
+                logger.info(
+                    "⏳ Aguardando %s segundos...",
+                    intervalo
+                )
 
-        print("")
-        print(
-            "============================================================"
-        )
+                time.sleep(intervalo)
 
-        print(
-            "🏁 AUTOMAÇÃO FINALIZADA"
-        )
-
-        print(
-            f"📦 Produtos publicados:"
-            f" {publicados}"
-        )
-
-        print(
-            "============================================================"
-        )
-
-    except Exception as e:
-
-        print("")
-        print(
-            f"❌ ERRO NA AUTOMAÇÃO:"
-            f" {e}"
-        )
-
-    finally:
-
-        with automacoes_lock:
-
-            automacoes_ativas -= 1
-
-        print(
-            "🦊 Thread encerrada."
+    except Exception:
+        logger.exception(
+            "🔥 Erro geral no processamento."
         )
 
 
@@ -2401,245 +1244,183 @@ def processar_e_postar_vitrine(
 # API CONFIGURAR
 # ============================================================
 
-@app.route(
-    "/api/configurar",
-    methods=[
-        "POST",
-        "OPTIONS"
-    ]
-)
-@app.route(
-    "/configurar",
-    methods=[
-        "POST",
-        "OPTIONS"
-    ]
-)
-def api_configurar():
 
-    if request.method == "OPTIONS":
+@app.route("/api/configurar", methods=["OPTIONS"])
+def configurar_options():
+    return (
+        "",
+        200,
+        {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": (
+                "Content-Type, "
+                "X-Telegram-Init-Data"
+            ),
+            "Access-Control-Allow-Methods": (
+                "POST, OPTIONS"
+            ),
+        }
+    )
 
-        return "", 200
+
+@app.route("/api/configurar", methods=["POST"])
+def configurar():
+    init_data = request.headers.get(
+        "X-Telegram-Init-Data",
+        ""
+    )
+
+    if not validate_telegram_init_data(
+        init_data
+    ):
+        return jsonify({
+            "ok": False,
+            "error": "Telegram initData inválido."
+        }), 401
+
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+    vitrine_url = str(
+        data.get("link")
+        or data.get("vitrine")
+        or data.get("url")
+        or ""
+    ).strip()
 
     try:
-
-        dados = (
-            request.get_json(
-                silent=True
+        quantidade = int(
+            data.get(
+                "quantidade",
+                data.get("quantity", 5)
             )
-            or {}
         )
+    except Exception:
+        quantidade = 5
 
-        print("")
-        print(
-            "============================================================"
-        )
-
-        print(
-            "📥 NOVA CONFIGURAÇÃO"
-        )
-
-        print(
-            "============================================================"
-        )
-
-        # ====================================================
-        # LINK
-        # ====================================================
-
-        link = str(
-            dados.get(
-                "link",
-                dados.get(
-                    "linkCanal",
-                    ""
-                )
+    try:
+        intervalo_minutos = float(
+            data.get(
+                "intervalo",
+                data.get("interval", 1)
             )
-        ).strip()
-
-        # ====================================================
-        # INTERVALO
-        # ====================================================
-
-        try:
-
-            intervalo_minutos = int(
-                dados.get(
-                    "intervalo",
-                    30
-                )
-            )
-
-        except Exception:
-
-            intervalo_minutos = 30
-
-        # ====================================================
-        # QUANTIDADE
-        # ====================================================
-
-        try:
-
-            quantidade = int(
-                dados.get(
-                    "quantidade",
-                    5
-                )
-            )
-
-        except Exception:
-
-            quantidade = 5
-
-        # ====================================================
-        # INIT DATA
-        # ====================================================
-
-        init_data = str(
-            dados.get(
-                "initData",
-                ""
-            )
-        ).strip()
-
-        print(
-            f"🔗 Link: {link}"
         )
+    except Exception:
+        intervalo_minutos = 1
 
-        print(
-            f"📦 Quantidade: {quantidade}"
-        )
-
-        print(
-            f"⏱️ Intervalo:"
-            f" {intervalo_minutos} minuto(s)"
-        )
-
-        # ====================================================
-        # VALIDAR LINK
-        # ====================================================
-
-        if not link:
-
-            return jsonify({
-
-                "erro":
-                    "O link da vitrine "
-                    "é obrigatório."
-
-            }), 400
-
-        # ====================================================
-        # VALIDAR INTERVALO
-        # ====================================================
-
-        if (
-            intervalo_minutos
-            <
-            MIN_INTERVALO_MINUTOS
-        ):
-
-            intervalo_minutos = (
-                MIN_INTERVALO_MINUTOS
-            )
-
-        # ====================================================
-        # VALIDAR QUANTIDADE
-        # ====================================================
-
-        if quantidade < 1:
-
-            quantidade = 1
-
-        if quantidade > MAX_QUANTIDADE:
-
-            quantidade = (
-                MAX_QUANTIDADE
-            )
-
-        # ====================================================
-        # VALIDAR TELEGRAM
-        # ====================================================
-
-        if not validar_init_data(
-            init_data
-        ):
-
-            return jsonify({
-
-                "erro":
-                    "Autenticação do Telegram "
-                    "inválida ou expirada."
-
-            }), 403
-
-        # ====================================================
-        # INICIAR THREAD
-        # ====================================================
-
-        thread = threading.Thread(
-
-            target=
-                processar_e_postar_vitrine,
-
-            args=(
-
-                link,
-
-                quantidade,
-
-                intervalo_minutos
-
-            ),
-
-            daemon=True
-
-        )
-
-        thread.start()
-
-        print(
-            "🚀 Automação iniciada "
-            "em segundo plano."
-        )
-
-        print(
-            "============================================================"
-        )
-
+    if not vitrine_url:
         return jsonify({
+            "ok": False,
+            "error": "Link da vitrine não informado."
+        }), 400
 
-            "sucesso":
-                True,
-
-            "mensagem":
-                "🦊 Automação iniciada "
-                "com sucesso!",
-
-            "link":
-                link,
-
-            "quantidade":
-                quantidade,
-
-            "intervalo_minutos":
-                intervalo_minutos
-
-        }), 200
-
-    except Exception as e:
-
-        print(
-            f"❌ Erro API:"
-            f" {e}"
+    if not (
+        vitrine_url.startswith(
+            "https://meli.la/"
         )
-
+        or
+        vitrine_url.startswith(
+            "https://www.mercadolivre.com.br/"
+        )
+        or
+        vitrine_url.startswith(
+            "https://mercadolivre.com.br/"
+        )
+    ):
         return jsonify({
+            "ok": False,
+            "error": "Link Mercado Livre inválido."
+        }), 400
 
-            "erro":
-                f"Erro interno: {e}"
+    quantidade = max(
+        1,
+        min(quantidade, 100)
+    )
 
-        }), 500
+    intervalo_segundos = max(
+        0,
+        int(intervalo_minutos * 60)
+    )
+
+    logger.info("")
+    logger.info("📥 NOVA CONFIGURAÇÃO")
+    logger.info(
+        "🔗 Link: %s",
+        vitrine_url
+    )
+    logger.info(
+        "📦 Quantidade: %s",
+        quantidade
+    )
+    logger.info(
+        "⏱️ Intervalo: %s minuto(s)",
+        intervalo_minutos
+    )
+    logger.info(
+        "✅ Telegram initData válido."
+    )
+
+    # NÃO espera o processamento terminar.
+    worker = threading.Thread(
+        target=processar_vitrine,
+        args=(
+            vitrine_url,
+            quantidade,
+            intervalo_segundos,
+        ),
+        daemon=True
+    )
+
+    worker.start()
+
+    return jsonify({
+        "ok": True,
+        "message": (
+            "Automação iniciada em segundo plano."
+        ),
+        "quantidade": quantidade,
+        "intervalo_segundos": intervalo_segundos,
+    }), 200, {
+        "Access-Control-Allow-Origin": "*"
+    }
+
+
+# ============================================================
+# HEALTH
+# ============================================================
+
+
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({
+        "status": "ok",
+        "service": "bot-raposa-cacadora",
+        "mercado_livre_configurado": (
+            mercado_livre_configurado()
+        ),
+        "mercado_livre_autorizado": bool(
+            runtime_token.get("access_token")
+            or runtime_token.get("refresh_token")
+        ),
+        "telegram_configurado": bool(
+            TELEGRAM_TOKEN
+        ),
+        "chat_id": CHAT_ID,
+        "timestamp": datetime.now(
+            timezone.utc
+        ).isoformat(),
+    })
+
+
+@app.route("/", methods=["GET"])
+def index():
+    return jsonify({
+        "service": "Bot Raposa Caçadora",
+        "status": "online",
+        "health": "/health",
+        "oauth": "/oauth/mercadolivre",
+    })
 
 
 # ============================================================
@@ -2647,39 +1428,12 @@ def api_configurar():
 # ============================================================
 
 if __name__ == "__main__":
-
-    print("")
-    print(
-        "============================================================"
-    )
-
-    print(
-        "🦊 RAPOSA CAÇADORA"
-    )
-
-    print(
-        "============================================================"
-    )
-
-    print(
-        f"🌐 Porta: {PORT}"
-    )
-
-    print(
-        f"🤖 Telegram configurado:"
-        f" {bool(TELEGRAM_TOKEN)}"
-    )
-
-    print(
-        f"📢 Chat configurado:"
-        f" {bool(CHAT_ID)}"
-    )
-
-    print(
-        "============================================================"
+    port = int(
+        os.getenv("PORT", "5000")
     )
 
     app.run(
         host="0.0.0.0",
-        port=PORT
+        port=port,
+        debug=False
     )

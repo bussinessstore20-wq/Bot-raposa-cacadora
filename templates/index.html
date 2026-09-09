@@ -551,7 +551,6 @@
       class="add-btn"
       id="addLinkBtn"
       type="button"
-      onclick="adicionarLink()"
     >
       <i class="fa-solid fa-plus"></i>
       ADICIONAR PRODUTO
@@ -616,7 +615,7 @@
           <button
             type="button"
             class="quantity-button"
-            onclick="alterarQuantidade(-1)"
+            id="btnMenos"
           >
             <i class="fa-solid fa-minus"></i>
           </button>
@@ -631,7 +630,7 @@
           <button
             type="button"
             class="quantity-button"
-            onclick="alterarQuantidade(1)"
+            id="btnMais"
           >
             <i class="fa-solid fa-plus"></i>
           </button>
@@ -676,7 +675,6 @@
       class="start-btn"
       id="btn-iniciar"
       type="button"
-      onclick="enviarConfiguracao()"
     >
       <i class="fa-solid fa-rocket"></i>
       INICIAR AUTOMAÇÃO
@@ -715,12 +713,38 @@
 <script>
 
   /* ==========================================================
+     DEBUG
+  ========================================================== */
+
+  console.log("========================================");
+  console.log("[APP] index.html carregado");
+  console.log("[APP] URL:", window.location.href);
+  console.log("[APP] Host:", window.location.host);
+  console.log("[APP] Path:", window.location.pathname);
+  console.log("[APP] Telegram disponível:", !!window.Telegram);
+  console.log("========================================");
+
+
+  /* ==========================================================
      TELEGRAM
   ========================================================== */
 
-  const tg = window.Telegram?.WebApp || null;
+  const tg =
+    window.Telegram?.WebApp || null;
 
   if (tg) {
+
+    console.log("[TELEGRAM] WebApp detectado");
+    console.log(
+      "[TELEGRAM] initData disponível:",
+      !!tg.initData
+    );
+
+    console.log(
+      "[TELEGRAM] initDataUnsafe:",
+      tg.initDataUnsafe
+    );
+
     tg.ready();
     tg.expand();
 
@@ -731,6 +755,13 @@
     if (tg.setBackgroundColor) {
       tg.setBackgroundColor("#070707");
     }
+
+  } else {
+
+    console.warn(
+      "[TELEGRAM] WebApp não detectado. A página provavelmente está fora do Telegram."
+    );
+
   }
 
 
@@ -773,11 +804,40 @@
   const btn =
     document.getElementById("btn-iniciar");
 
+  const btnMenos =
+    document.getElementById("btnMenos");
+
+  const btnMais =
+    document.getElementById("btnMais");
+
   const msgBox =
     document.getElementById("mensagem");
 
   const loading =
     document.getElementById("loading");
+
+
+  /* ==========================================================
+     VERIFICAÇÃO DOS ELEMENTOS
+  ========================================================== */
+
+  console.log(
+    "[APP] Elementos:",
+    {
+      linksContainer: !!linksContainer,
+      addLinkBtn: !!addLinkBtn,
+      linkCounter: !!linkCounter,
+      summaryLinks: !!summaryLinks,
+      summaryInterval: !!summaryInterval,
+      summaryPosts: !!summaryPosts,
+      quantidadeEl: !!quantidadeEl,
+      btn: !!btn,
+      btnMenos: !!btnMenos,
+      btnMais: !!btnMais,
+      msgBox: !!msgBox,
+      loading: !!loading
+    }
+  );
 
 
   /* ==========================================================
@@ -793,6 +853,8 @@
 
   function adicionarLink() {
 
+    console.log("[APP] adicionarLink()");
+
     const total =
       document.querySelectorAll(".link-row").length;
 
@@ -806,12 +868,14 @@
       return;
     }
 
-    const numero = total + 1;
+    const numero =
+      total + 1;
 
     const row =
       document.createElement("div");
 
-    row.className = "link-row";
+    row.className =
+      "link-row";
 
     row.innerHTML = `
 
@@ -852,34 +916,67 @@
     const status =
       row.querySelector(".link-status");
 
-    input.addEventListener("input", function() {
+    input.addEventListener(
+      "input",
+      function() {
 
-      validarInput(
-        input,
-        row,
-        status
-      );
+        console.log(
+          "[APP] Link alterado:",
+          input.value
+        );
 
-      atualizarInterface();
-
-    });
-
-    row
-      .querySelector(".remove-link")
-      .addEventListener("click", function() {
-
-        row.remove();
-
-        renumerar();
+        validarInput(
+          input,
+          row,
+          status
+        );
 
         atualizarInterface();
 
-      });
+      }
+    );
+
+    row
+      .querySelector(".remove-link")
+      .addEventListener(
+        "click",
+        function() {
+
+          console.log(
+            "[APP] Removendo link"
+          );
+
+          row.remove();
+
+          renumerar();
+
+          atualizarInterface();
+
+        }
+      );
 
     input.focus();
 
     atualizarInterface();
   }
+
+
+  /* ==========================================================
+     BOTÃO ADICIONAR
+  ========================================================== */
+
+  addLinkBtn.addEventListener(
+    "click",
+    function() {
+
+      console.log(
+        "[APP] Botão ADICIONAR PRODUTO clicado"
+      );
+
+      adicionarLink();
+
+    }
+  );
 
 
   /* ==========================================================
@@ -890,13 +987,16 @@
 
     try {
 
-      const url = new URL(link);
+      const url =
+        new URL(link);
 
       if (
         url.protocol !== "http:" &&
         url.protocol !== "https:"
       ) {
+
         return false;
+
       }
 
       return url.hostname
@@ -904,27 +1004,41 @@
         .includes("shopee");
 
     } catch {
+
       return false;
+
     }
+
   }
 
 
-  function validarInput(input, row, status) {
+  function validarInput(
+    input,
+    row,
+    status
+  ) {
 
     const valor =
       input.value.trim();
 
-    row.classList.remove("valid");
+    row.classList.remove(
+      "valid"
+    );
 
-    status.innerHTML = "";
+    status.innerHTML =
+      "";
 
     if (!valor) {
       return;
     }
 
-    if (validarLinkShopee(valor)) {
+    if (
+      validarLinkShopee(valor)
+    ) {
 
-      row.classList.add("valid");
+      row.classList.add(
+        "valid"
+      );
 
       status.innerHTML =
         '<i class="fa-solid fa-circle-check" style="color:#32d583"></i>';
@@ -935,6 +1049,7 @@
         '<i class="fa-solid fa-circle-xmark" style="color:#ff5c5c"></i>';
 
     }
+
   }
 
 
@@ -946,12 +1061,19 @@
 
     document
       .querySelectorAll(".link-row")
-      .forEach(function(row, index) {
+      .forEach(
+        function(row, index) {
 
-        row.querySelector(".link-number").innerText =
-          String(index + 1).padStart(2, "0");
+          row
+            .querySelector(".link-number")
+            .innerText =
+              String(
+                index + 1
+              ).padStart(2, "0");
 
-      });
+        }
+      );
+
   }
 
 
@@ -962,10 +1084,19 @@
   function obterLinks() {
 
     return [
-      ...document.querySelectorAll(".link-input")
+      ...document.querySelectorAll(
+        ".link-input"
+      )
     ]
-      .map(input => input.value.trim())
-      .filter(link => link.length > 0);
+      .map(
+        input =>
+          input.value.trim()
+      )
+      .filter(
+        link =>
+          link.length > 0
+      );
+
   }
 
 
@@ -973,9 +1104,17 @@
      QUANTIDADE
   ========================================================== */
 
-  function alterarQuantidade(valor) {
+  function alterarQuantidade(
+    valor
+  ) {
 
-    const total = obterLinks().length;
+    console.log(
+      "[APP] alterarQuantidade:",
+      valor
+    );
+
+    const total =
+      obterLinks().length;
 
     if (total === 0) {
 
@@ -1000,7 +1139,28 @@
       );
 
     atualizarInterface();
+
   }
+
+
+  btnMenos.addEventListener(
+    "click",
+    function() {
+
+      alterarQuantidade(-1);
+
+    }
+  );
+
+
+  btnMais.addEventListener(
+    "click",
+    function() {
+
+      alterarQuantidade(1);
+
+    }
+  );
 
 
   /* ==========================================================
@@ -1009,39 +1169,68 @@
 
   document
     .querySelectorAll(".interval")
-    .forEach(function(button) {
+    .forEach(
+      function(button) {
 
-      button.addEventListener("click", function() {
+        button.addEventListener(
+          "click",
+          function() {
 
-        document
-          .querySelectorAll(".interval")
-          .forEach(function(item) {
-            item.classList.remove("active");
-          });
+            console.log(
+              "[APP] Intervalo:",
+              button.dataset.segundos
+            );
 
-        button.classList.add("active");
+            document
+              .querySelectorAll(
+                ".interval"
+              )
+              .forEach(
+                function(item) {
 
-        intervaloSelecionado =
-          Number(button.dataset.segundos);
+                  item.classList.remove(
+                    "active"
+                  );
 
-        atualizarInterface();
+                }
+              );
 
-      });
+            button.classList.add(
+              "active"
+            );
 
-    });
+            intervaloSelecionado =
+              Number(
+                button.dataset.segundos
+              );
+
+            atualizarInterface();
+
+          }
+        );
+
+      }
+    );
 
 
   /* ==========================================================
      FORMATAR INTERVALO
   ========================================================== */
 
-  function formatarIntervalo(segundos) {
+  function formatarIntervalo(
+    segundos
+  ) {
 
-    if (segundos < 60) {
+    if (
+      segundos < 60
+    ) {
+
       return `${segundos}s`;
+
     }
 
     return `${segundos / 60}min`;
+
   }
 
 
@@ -1051,7 +1240,8 @@
 
   function atualizarInterface() {
 
-    const links = obterLinks();
+    const links =
+      obterLinks();
 
     summaryLinks.innerText =
       links.length;
@@ -1060,13 +1250,18 @@
       `${links.length} / ${MAX_LINKS}`;
 
     summaryInterval.innerText =
-      formatarIntervalo(intervaloSelecionado);
+      formatarIntervalo(
+        intervaloSelecionado
+      );
 
     if (
       links.length > 0 &&
       quantidade > links.length
     ) {
-      quantidade = links.length;
+
+      quantidade =
+        links.length;
+
     }
 
     quantidade =
@@ -1085,12 +1280,16 @@
       quantidade;
 
     const quantidadeCampos =
-      document.querySelectorAll(".link-row").length;
+      document.querySelectorAll(
+        ".link-row"
+      ).length;
 
     addLinkBtn.disabled =
       quantidadeCampos >= MAX_LINKS;
 
-    if (addLinkBtn.disabled) {
+    if (
+      addLinkBtn.disabled
+    ) {
 
       addLinkBtn.innerHTML =
         '<i class="fa-solid fa-check"></i> LIMITE DE 20';
@@ -1101,6 +1300,7 @@
         '<i class="fa-solid fa-plus"></i> ADICIONAR PRODUTO';
 
     }
+
   }
 
 
@@ -1108,7 +1308,16 @@
      MENSAGEM
   ========================================================== */
 
-  function mostrarMensagem(texto, tipo) {
+  function mostrarMensagem(
+    texto,
+    tipo
+  ) {
+
+    console.log(
+      "[APP] MENSAGEM:",
+      tipo,
+      texto
+    );
 
     msgBox.className =
       tipo === "sucesso"
@@ -1120,22 +1329,69 @@
 
     msgBox.style.display =
       "block";
+
   }
 
 
   /* ==========================================================
-     ENVIAR PARA FLASK / RENDER
+     ENVIO
   ========================================================== */
 
   async function enviarConfiguracao() {
 
+    console.log(
+      "========================================"
+    );
+
+    console.log(
+      "[APP] BOTÃO INICIAR CLICADO"
+    );
+
+    console.log(
+      "[APP] Data:",
+      new Date().toISOString()
+    );
+
+    console.log(
+      "[APP] URL:",
+      window.location.href
+    );
+
+    console.log(
+      "[APP] Endpoint:",
+      "/api/configurar"
+    );
+
+    console.log(
+      "[APP] Método:",
+      "POST"
+    );
+
+
     const links =
       obterLinks();
+
+    console.log(
+      "[APP] Links:",
+      links
+    );
+
 
     msgBox.style.display =
       "none";
 
-    if (links.length === 0) {
+
+    /* --------------------------------------------------------
+       VALIDAR LINKS
+    -------------------------------------------------------- */
+
+    if (
+      links.length === 0
+    ) {
+
+      console.error(
+        "[APP] Nenhum link informado"
+      );
 
       mostrarMensagem(
         "❌ Adicione pelo menos 1 produto da Shopee.",
@@ -1143,14 +1399,27 @@
       );
 
       return;
+
     }
+
 
     const invalidos =
       links.filter(
-        link => !validarLinkShopee(link)
+        link =>
+          !validarLinkShopee(
+            link
+          )
       );
 
-    if (invalidos.length > 0) {
+
+    if (
+      invalidos.length > 0
+    ) {
+
+      console.error(
+        "[APP] Links inválidos:",
+        invalidos
+      );
 
       mostrarMensagem(
         "❌ Corrija os links inválidos antes de iniciar.",
@@ -1158,12 +1427,21 @@
       );
 
       return;
+
     }
+
 
     if (
       quantidade < 1 ||
       quantidade > links.length
     ) {
+
+      console.error(
+        "[APP] Quantidade inválida:",
+        quantidade,
+        "links:",
+        links.length
+      );
 
       mostrarMensagem(
         "❌ A quantidade de postagens é inválida.",
@@ -1171,7 +1449,40 @@
       );
 
       return;
+
     }
+
+
+    /* --------------------------------------------------------
+       TELEGRAM
+    -------------------------------------------------------- */
+
+    const initData =
+      tg
+        ? tg.initData || ""
+        : "";
+
+    const user =
+      tg &&
+      tg.initDataUnsafe
+        ? tg.initDataUnsafe.user || null
+        : null;
+
+
+    console.log(
+      "[TELEGRAM] initData existe:",
+      !!initData
+    );
+
+    console.log(
+      "[TELEGRAM] initData tamanho:",
+      initData.length
+    );
+
+    console.log(
+      "[TELEGRAM] usuário:",
+      user
+    );
 
 
     /* --------------------------------------------------------
@@ -1180,30 +1491,63 @@
 
     const dados = {
 
-      links: links.slice(0, quantidade),
+      links:
+        links.slice(
+          0,
+          quantidade
+        ),
 
-      intervalo: intervaloSelecionado,
+      intervalo:
+        intervaloSelecionado,
 
-      quantidade: quantidade,
+      quantidade:
+        quantidade,
 
       initData:
-        tg
-          ? tg.initData
-          : "",
+        initData,
 
       user:
-        tg && tg.initDataUnsafe
-          ? tg.initDataUnsafe.user || null
-          : null
+        user
 
     };
+
+
+    console.log(
+      "[APP] Payload preparado:",
+      {
+        links: dados.links,
+        intervalo: dados.intervalo,
+        quantidade: dados.quantidade,
+        initDataExiste: !!dados.initData,
+        initDataTamanho: dados.initData.length,
+        user: dados.user
+      }
+    );
+
+
+    /* --------------------------------------------------------
+       URL FINAL
+    -------------------------------------------------------- */
+
+    const endpoint =
+      new URL(
+        "/api/configurar",
+        window.location.origin
+      ).toString();
+
+
+    console.log(
+      "[APP] URL final:",
+      endpoint
+    );
 
 
     /* --------------------------------------------------------
        ESTADO VISUAL
     -------------------------------------------------------- */
 
-    btn.disabled = true;
+    btn.disabled =
+      true;
 
     btn.innerHTML =
       '<i class="fa-solid fa-circle-notch fa-spin"></i> ENVIANDO...';
@@ -1212,63 +1556,157 @@
       "block";
 
 
+    /* --------------------------------------------------------
+       FETCH
+    -------------------------------------------------------- */
+
     try {
 
-      /*
-        IMPORTANTE:
+      console.log(
+        "[FETCH] Iniciando POST..."
+      );
 
-        Como o HTML é servido pelo próprio Flask,
-        usamos caminho relativo.
+      const inicio =
+        Date.now();
 
-        Isso funciona no Render sem colocar
-        domínio fixo.
-      */
 
       const resposta =
         await fetch(
-          "/api/configurar",
+          endpoint,
           {
-            method: "POST",
 
-            headers: {
-              "Content-Type":
-                "application/json"
-            },
+            method:
+              "POST",
+
+            headers:
+              {
+                "Content-Type":
+                  "application/json",
+
+                "Accept":
+                  "application/json"
+              },
 
             body:
-              JSON.stringify(dados)
+              JSON.stringify(
+                dados
+              )
+
           }
         );
 
+
+      const tempo =
+        Date.now() - inicio;
+
+
+      console.log(
+        "[FETCH] Resposta recebida em",
+        tempo,
+        "ms"
+      );
+
+      console.log(
+        "[FETCH] HTTP:",
+        resposta.status
+      );
+
+      console.log(
+        "[FETCH] OK:",
+        resposta.ok
+      );
+
+      console.log(
+        "[FETCH] Content-Type:",
+        resposta.headers.get(
+          "content-type"
+        )
+      );
+
+
+      /* ------------------------------------------------------
+         RESPOSTA
+      ------------------------------------------------------ */
 
       const texto =
         await resposta.text();
 
 
-      let resultado = {};
+      console.log(
+        "[FETCH] Resposta bruta:",
+        texto
+      );
+
+
+      let resultado =
+        {};
+
 
       try {
+
         resultado =
-          JSON.parse(texto);
-      } catch {
-        resultado = {};
+          JSON.parse(
+            texto
+          );
+
+      } catch (erroJson) {
+
+        console.error(
+          "[FETCH] Resposta não é JSON:",
+          erroJson
+        );
+
       }
 
 
-      if (!resposta.ok) {
+      console.log(
+        "[FETCH] JSON:",
+        resultado
+      );
 
-        throw new Error(
+
+      /* ------------------------------------------------------
+         ERRO HTTP
+      ------------------------------------------------------ */
+
+      if (
+        !resposta.ok
+      ) {
+
+        const mensagemErro =
           resultado.erro ||
           resultado.error ||
           resultado.mensagem ||
-          `Erro HTTP ${resposta.status}`
+          texto ||
+          `Erro HTTP ${resposta.status}`;
+
+
+        console.error(
+          "[FETCH] ERRO HTTP:",
+          mensagemErro
         );
+
+
+        throw new Error(
+          mensagemErro
+        );
+
       }
 
 
       /* ------------------------------------------------------
          SUCESSO
       ------------------------------------------------------ */
+
+      console.log(
+        "[APP] AUTOMAÇÃO INICIADA COM SUCESSO"
+      );
+
+      console.log(
+        "[APP] Resultado:",
+        resultado
+      );
+
 
       mostrarMensagem(
 
@@ -1283,15 +1721,17 @@
       );
 
 
-      btn.disabled = false;
+      btn.disabled =
+        false;
 
       btn.innerHTML =
         '<i class="fa-solid fa-check"></i> AUTOMAÇÃO INICIADA';
 
 
-      /* Telegram */
-
-      if (tg && tg.HapticFeedback) {
+      if (
+        tg &&
+        tg.HapticFeedback
+      ) {
 
         tg.HapticFeedback.notificationOccurred(
           "success"
@@ -1303,24 +1743,54 @@
     } catch (erro) {
 
       console.error(
-        "Erro ao enviar:",
+        "========================================"
+      );
+
+      console.error(
+        "[APP] ERRO NO ENVIO"
+      );
+
+      console.error(
+        "[APP] Tipo:",
+        erro?.name
+      );
+
+      console.error(
+        "[APP] Mensagem:",
+        erro?.message
+      );
+
+      console.error(
+        "[APP] Objeto:",
         erro
+      );
+
+      console.error(
+        "========================================"
       );
 
 
       mostrarMensagem(
-        "❌ " + erro.message,
+        "❌ " +
+        (
+          erro.message ||
+          "Erro ao enviar configuração."
+        ),
         "erro"
       );
 
 
-      btn.disabled = false;
+      btn.disabled =
+        false;
 
       btn.innerHTML =
         '<i class="fa-solid fa-rocket"></i> TENTAR NOVAMENTE';
 
 
-      if (tg && tg.HapticFeedback) {
+      if (
+        tg &&
+        tg.HapticFeedback
+      ) {
 
         tg.HapticFeedback.notificationOccurred(
           "error"
@@ -1333,9 +1803,72 @@
       loading.style.display =
         "none";
 
+      console.log(
+        "[APP] envioConfiguracao() finalizada"
+      );
+
     }
 
   }
+
+
+  /* ==========================================================
+     CLIQUE NO BOTÃO
+  ========================================================== */
+
+  btn.addEventListener(
+    "click",
+    function(event) {
+
+      console.log(
+        "[APP] EVENTO CLICK DETECTADO"
+      );
+
+      console.log(
+        "[APP] target:",
+        event.target
+      );
+
+      enviarConfiguracao();
+
+    }
+  );
+
+
+  /* ==========================================================
+     ERROS GLOBAIS DO JAVASCRIPT
+  ========================================================== */
+
+  window.addEventListener(
+    "error",
+    function(event) {
+
+      console.error(
+        "[JS ERROR]",
+        event.message,
+        "arquivo:",
+        event.filename,
+        "linha:",
+        event.lineno,
+        "coluna:",
+        event.colno
+      );
+
+    }
+  );
+
+
+  window.addEventListener(
+    "unhandledrejection",
+    function(event) {
+
+      console.error(
+        "[PROMISE ERROR]",
+        event.reason
+      );
+
+    }
+  );
 
 
   /* ==========================================================
@@ -1343,6 +1876,14 @@
   ========================================================== */
 
   atualizarInterface();
+
+  console.log(
+    "[APP] Inicialização concluída"
+  );
+
+  console.log(
+    "========================================"
+  );
 
 </script>
 

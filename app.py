@@ -5,10 +5,10 @@ import json
 import threading
 import time
 import uuid
-import urllib.request
-import urllib.parse
 
 from urllib.parse import parse_qsl
+
+import requests
 
 from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
@@ -39,7 +39,11 @@ BOT_TOKEN = os.environ.get(
     ""
 ).strip()
 
-TELEGRAM_CHANNEL = "@raposacacadora"
+# Canal onde o bot irá publicar
+CHANNEL_USERNAME = os.environ.get(
+    "CHANNEL_USERNAME",
+    "@raposacacadora"
+).strip()
 
 MAX_LINKS = 20
 
@@ -61,7 +65,89 @@ tarefas_lock = threading.Lock()
 
 
 # ============================================================
-# TELEGRAM - VALIDAÇÃO DO MINI APP
+# TELEGRAM API
+# ============================================================
+
+def telegram_api(method, data=None):
+    """
+    Executa uma chamada para a API oficial do Telegram.
+    """
+
+    if not BOT_TOKEN:
+        raise RuntimeError(
+            "BOT_TOKEN não configurado no Render."
+        )
+
+    url = (
+        f"https://api.telegram.org/bot"
+        f"{BOT_TOKEN}/{method}"
+    )
+
+    resposta = requests.post(
+        url,
+        json=data or {},
+        timeout=30
+    )
+
+    try:
+        resultado = resposta.json()
+    except Exception:
+        raise RuntimeError(
+            f"Telegram retornou resposta inválida "
+            f"(HTTP {resposta.status_code})."
+        )
+
+    if not resposta.ok or not resultado.get("ok"):
+        descricao = resultado.get(
+            "description",
+            "Erro desconhecido da API do Telegram."
+        )
+
+        raise RuntimeError(
+            f"Telegram: {descricao}"
+        )
+
+    return resultado
+
+
+def testar_bot():
+    """
+    Testa se o token do bot está funcionando.
+    """
+
+    return telegram_api("getMe")
+
+
+def enviar_produto_telegram(link):
+    """
+    Publica o produto no canal.
+
+    Por enquanto a postagem contém o link Shopee.
+    Depois podemos transformar isso em uma postagem
+    completa com título, preço, imagem etc.
+    """
+
+    mensagem = (
+        "🦊 <b>Nova oferta Shopee</b>\n\n"
+        f"🛍️ <a href=\"{link}\">Ver produto na Shopee</a>\n\n"
+        "🔥 Confira esta oferta!"
+    )
+
+    resultado = telegram_api(
+        "sendMessage",
+        {
+            "chat_id": CHANNEL_USERNAME,
+            "text": mensagem,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": False
+        }
+    )
+
+    return resultado
+
+
+# ============================================================
+# TELEGRAM WEB APP
 # ============================================================
 
 def validar_init_data(init_data):
@@ -69,7 +155,7 @@ def validar_init_data(init_data):
     Valida o initData recebido do Telegram.
 
     Se BOT_TOKEN não estiver configurado,
-    permite o funcionamento para testes.
+    permite funcionamento para testes.
     """
 
     if not BOT_TOKEN:
@@ -130,7 +216,7 @@ def validar_init_data(init_data):
 
 def obter_usuario(init_data):
     """
-    Obtém o objeto user do Telegram.
+    Obtém o usuário enviado pelo Telegram.
     """
 
     if not init_data:
@@ -152,9 +238,7 @@ def obter_usuario(init_data):
         if not usuario:
             return None
 
-        return json.loads(
-            usuario
-        )
+        return json.loads(usuario)
 
     except Exception as erro:
 
@@ -172,7 +256,7 @@ def obter_usuario(init_data):
 
 def link_shopee_valido(link):
     """
-    Validação básica do link da Shopee.
+    Validação básica do link Shopee.
     """
 
     if not isinstance(
@@ -203,164 +287,7 @@ def link_shopee_valido(link):
 
 
 # ============================================================
-# TELEGRAM - PUBLICAR MENSAGEM
-# ============================================================
-
-def enviar_mensagem_telegram(
-    mensagem,
-    usuario=None
-):
-    """
-    Envia uma mensagem para o canal do Telegram.
-
-    Usa diretamente a Telegram Bot API.
-    """
-
-    if not BOT_TOKEN:
-
-        raise Exception(
-            "BOT_TOKEN não configurado no Render."
-        )
-
-    url = (
-        f"https://api.telegram.org/bot"
-        f"{BOT_TOKEN}/sendMessage"
-    )
-
-    dados = urllib.parse.urlencode({
-
-        "chat_id":
-            TELEGRAM_CHANNEL,
-
-        "text":
-            mensagem,
-
-        "parse_mode":
-            "HTML",
-
-        "disable_web_page_preview":
-            "false"
-
-    }).encode("utf-8")
-
-    requisicao = urllib.request.Request(
-
-        url,
-
-        data=dados,
-
-        method="POST",
-
-        headers={
-            "Content-Type":
-                "application/x-www-form-urlencoded"
-        }
-
-    )
-
-    try:
-
-        with urllib.request.urlopen(
-            requisicao,
-            timeout=30
-        ) as resposta:
-
-            conteudo = (
-                resposta
-                .read()
-                .decode("utf-8")
-            )
-
-        resultado = json.loads(
-            conteudo
-        )
-
-    except Exception as erro:
-
-        print(
-            "[TELEGRAM] Erro:",
-            erro
-        )
-
-        raise Exception(
-            f"Erro ao comunicar com o Telegram: {erro}"
-        )
-
-    if not resultado.get("ok"):
-
-        raise Exception(
-            resultado.get(
-                "description",
-                "Telegram recusou a mensagem."
-            )
-        )
-
-    return resultado
-
-
-# ============================================================
-# PUBLICAÇÃO REAL
-# ============================================================
-
-def publicar_produto(
-    link,
-    usuario
-):
-    """
-    Publica o link da Shopee no canal.
-    """
-
-    print(
-        "----------------------------------------"
-    )
-
-    print(
-        "[PUBLICAÇÃO]"
-    )
-
-    print(
-        "Canal:",
-        TELEGRAM_CHANNEL
-    )
-
-    print(
-        "Usuário:",
-        usuario
-    )
-
-    print(
-        "Link:",
-        link
-    )
-
-    print(
-        "----------------------------------------"
-    )
-
-    mensagem = (
-        "🦊 <b>RAPOSA CAÇADORA</b>\n\n"
-        "🔥 <b>OFERTA ENCONTRADA!</b>\n\n"
-        "🛍️ <b>Confira o produto:</b>\n"
-        f"{link}\n\n"
-        "⚡ Aproveite enquanto estiver disponível!"
-    )
-
-    enviar_mensagem_telegram(
-        mensagem,
-        usuario
-    )
-
-    return {
-        "sucesso":
-            True,
-
-        "mensagem":
-            "Produto publicado no canal."
-    }
-
-
-# ============================================================
-# CRIAR TAREFA
+# TAREFAS
 # ============================================================
 
 def criar_tarefa(
@@ -423,22 +350,63 @@ def criar_tarefa(
 
 
 # ============================================================
+# PUBLICAÇÃO REAL
+# ============================================================
+
+def publicar_produto(
+    link,
+    usuario
+):
+
+    print(
+        "----------------------------------------"
+    )
+
+    print(
+        "[PUBLICAÇÃO TELEGRAM]"
+    )
+
+    print(
+        "Usuário:",
+        usuario
+    )
+
+    print(
+        "Canal:",
+        CHANNEL_USERNAME
+    )
+
+    print(
+        "Link:",
+        link
+    )
+
+    print(
+        "----------------------------------------"
+    )
+
+    resultado = enviar_produto_telegram(
+        link
+    )
+
+    return {
+        "sucesso": True,
+        "mensagem": "Produto publicado no Telegram.",
+        "telegram": resultado
+    }
+
+
+# ============================================================
 # WORKER
 # ============================================================
 
-def executar_tarefa(
-    task_id
-):
+def executar_tarefa(task_id):
 
     print(
         f"[TASK] Iniciando {task_id}"
     )
 
     while True:
-
-        # ----------------------------------------------------
-        # BUSCA TAREFA
-        # ----------------------------------------------------
 
         with tarefas_lock:
 
@@ -449,13 +417,9 @@ def executar_tarefa(
             if not tarefa:
                 return
 
-            if tarefa[
-                "cancelada"
-            ]:
+            if tarefa["cancelada"]:
 
-                tarefa[
-                    "status"
-                ] = "cancelada"
+                tarefa["status"] = "cancelada"
 
                 return
 
@@ -464,9 +428,7 @@ def executar_tarefa(
             ]
 
             links = list(
-                tarefa[
-                    "links"
-                ]
+                tarefa["links"]
             )
 
             quantidade = tarefa[
@@ -495,13 +457,9 @@ def executar_tarefa(
 
                 if tarefa:
 
-                    tarefa[
-                        "status"
-                    ] = "concluida"
+                    tarefa["status"] = "concluida"
 
-                    tarefa[
-                        "progresso"
-                    ] = 100
+                    tarefa["progresso"] = 100
 
                     tarefa[
                         "produto_atual"
@@ -521,13 +479,9 @@ def executar_tarefa(
         # PRODUTO ATUAL
         # ----------------------------------------------------
 
-        link = links[
-            indice
-        ]
+        link = links[indice]
 
-        numero_produto = (
-            indice + 1
-        )
+        numero_produto = indice + 1
 
         # ----------------------------------------------------
         # PROCESSANDO
@@ -570,11 +524,9 @@ def executar_tarefa(
                 usuario
             )
 
-            sucesso = (
-                resultado.get(
-                    "sucesso",
-                    False
-                )
+            sucesso = resultado.get(
+                "sucesso",
+                False
             )
 
         except Exception as erro:
@@ -587,8 +539,7 @@ def executar_tarefa(
             sucesso = False
 
             resultado = {
-                "mensagem":
-                    str(erro)
+                "mensagem": str(erro)
             }
 
         # ----------------------------------------------------
@@ -604,9 +555,7 @@ def executar_tarefa(
             if not tarefa:
                 return
 
-            if tarefa[
-                "cancelada"
-            ]:
+            if tarefa["cancelada"]:
 
                 tarefa[
                     "status"
@@ -627,7 +576,13 @@ def executar_tarefa(
                         link,
 
                     "status":
-                        "postado"
+                        "postado",
+
+                    "mensagem":
+                        resultado.get(
+                            "mensagem",
+                            "Publicado com sucesso."
+                        )
                 })
 
                 tarefa[
@@ -687,13 +642,14 @@ def executar_tarefa(
                 ] = "erro"
 
         # ----------------------------------------------------
-        # SE HOUVE ERRO
+        # ERRO
         # ----------------------------------------------------
 
         if not sucesso:
 
             print(
-                f"[TASK] Produto {numero_produto} falhou."
+                f"[TASK] Produto "
+                f"{numero_produto} falhou."
             )
 
             time.sleep(1)
@@ -789,7 +745,7 @@ def index():
 
 
 # ============================================================
-# HEALTH CHECK
+# HEALTH
 # ============================================================
 
 @app.route(
@@ -806,15 +762,70 @@ def health():
         "service":
             "raposa-cacadora",
 
-        "timestamp":
-            int(time.time()),
+        "channel":
+            CHANNEL_USERNAME,
 
-        "telegram":
+        "telegram_configurado":
             bool(BOT_TOKEN),
 
-        "canal":
-            TELEGRAM_CHANNEL
+        "timestamp":
+            int(time.time())
     })
+
+
+# ============================================================
+# TESTAR TELEGRAM
+# ============================================================
+
+@app.route(
+    "/api/telegram/testar",
+    methods=["GET"]
+)
+def testar_telegram():
+
+    try:
+
+        resultado = testar_bot()
+
+        bot = resultado.get(
+            "result",
+            {}
+        )
+
+        return jsonify({
+
+            "sucesso":
+                True,
+
+            "bot":
+                bot.get(
+                    "username",
+                    ""
+                ),
+
+            "canal":
+                CHANNEL_USERNAME,
+
+            "mensagem":
+                "Bot conectado à API do Telegram."
+        })
+
+    except Exception as erro:
+
+        print(
+            "Erro testando Telegram:",
+            erro
+        )
+
+        return jsonify({
+
+            "sucesso":
+                False,
+
+            "erro":
+                str(erro)
+
+        }), 500
 
 
 # ============================================================
@@ -910,9 +921,7 @@ def configurar():
         invalidos = [
             link
             for link in links
-            if not link_shopee_valido(
-                link
-            )
+            if not link_shopee_valido(link)
         ]
 
         if invalidos:
@@ -995,24 +1004,28 @@ def configurar():
         # LIMITA LINKS
         # ----------------------------------------------------
 
-        links = links[
-            :quantidade
-        ]
+        links = links[:quantidade]
+
+        # ----------------------------------------------------
+        # BOT TOKEN
+        # ----------------------------------------------------
+
+        if not BOT_TOKEN:
+
+            return jsonify({
+                "erro":
+                    "BOT_TOKEN não configurado no Render."
+            }), 500
 
         # ----------------------------------------------------
         # CRIA TAREFA
         # ----------------------------------------------------
 
         task_id = criar_tarefa(
-
             links=links,
-
             intervalo=intervalo,
-
             quantidade=quantidade,
-
             usuario=usuario
-
         )
 
         # ----------------------------------------------------
@@ -1020,13 +1033,9 @@ def configurar():
         # ----------------------------------------------------
 
         thread = threading.Thread(
-
             target=executar_tarefa,
-
             args=(task_id,),
-
             daemon=True
-
         )
 
         thread.start()
@@ -1053,8 +1062,7 @@ def configurar():
                 intervalo,
 
             "canal":
-                TELEGRAM_CHANNEL
-
+                CHANNEL_USERNAME
         })
 
     except Exception as erro:

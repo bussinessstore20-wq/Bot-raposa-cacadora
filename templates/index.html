@@ -499,28 +499,6 @@
       color: var(--orange);
       margin-right: 5px;
     }
-
-    .debug {
-      margin-top: 12px;
-      padding: 10px;
-      border-radius: 10px;
-      color: #777;
-      background: #050505;
-      border: 1px solid rgba(255,255,255,.05);
-      font-family: monospace;
-      font-size: 8px;
-      line-height: 1.5;
-      white-space: pre-wrap;
-      word-break: break-word;
-      max-height: 220px;
-      overflow-y: auto;
-    }
-
-    .debug-title {
-      color: var(--orange);
-      font-weight: 900;
-      margin-bottom: 5px;
-    }
   </style>
 </head>
 
@@ -779,19 +757,6 @@
 
     </div>
 
-    <div
-      class="debug"
-      id="debug"
-    >
-      <div class="debug-title">
-        DEBUG
-      </div>
-
-      <div id="debugLog">
-        Página carregando...
-      </div>
-    </div>
-
   </main>
 
   <div class="footer">
@@ -804,7 +769,7 @@
 <script>
 
   /* ==========================================================
-     CONFIGURAÇÃO PRINCIPAL
+     CONFIGURAÇÃO
   ========================================================== */
 
   const API_URL =
@@ -812,45 +777,8 @@
 
   const MAX_LINKS = 20;
 
-
   let intervaloSelecionado = 10;
-
   let quantidade = 1;
-
-
-  /* ==========================================================
-     DEBUG
-  ========================================================== */
-
-  const debugLog =
-    document.getElementById("debugLog");
-
-
-  function debug(mensagem) {
-
-    const agora =
-      new Date().toLocaleTimeString(
-        "pt-BR"
-      );
-
-    console.log(
-      mensagem
-    );
-
-    debugLog.innerText +=
-      `\n[${agora}] ${mensagem}`;
-
-    const box =
-      document.getElementById("debug");
-
-    box.scrollTop =
-      box.scrollHeight;
-  }
-
-
-  debug(
-    "Página carregando..."
-  );
 
 
   /* ==========================================================
@@ -863,45 +791,23 @@
 
   if (tg) {
 
-    debug(
-      "Telegram WebApp detectado."
-    );
-
     try {
-
       tg.ready();
-
-      debug(
-        "tg.ready() executado."
-      );
-
     } catch (erro) {
-
-      debug(
-        "Erro no tg.ready(): " +
+      console.error(
+        "Erro no tg.ready():",
         erro
       );
-
     }
-
 
     try {
-
       tg.expand();
-
-      debug(
-        "tg.expand() executado."
-      );
-
     } catch (erro) {
-
-      debug(
-        "Erro no tg.expand(): " +
+      console.error(
+        "Erro no tg.expand():",
         erro
       );
-
     }
-
 
     try {
 
@@ -915,13 +821,12 @@
 
     } catch (erro) {
 
-      debug(
-        "Erro header Telegram: " +
+      console.error(
+        "Erro no header do Telegram:",
         erro
       );
 
     }
-
 
     try {
 
@@ -935,45 +840,12 @@
 
     } catch (erro) {
 
-      debug(
-        "Erro background Telegram: " +
+      console.error(
+        "Erro no background do Telegram:",
         erro
       );
 
     }
-
-
-    debug(
-      "initData presente: " +
-      Boolean(tg.initData)
-    );
-
-
-    if (
-      tg.initDataUnsafe &&
-      tg.initDataUnsafe.user
-    ) {
-
-      debug(
-        "Usuário Telegram: " +
-        JSON.stringify(
-          tg.initDataUnsafe.user
-        )
-      );
-
-    } else {
-
-      debug(
-        "Usuário Telegram não disponível."
-      );
-
-    }
-
-  } else {
-
-    debug(
-      "Telegram WebApp NÃO detectado."
-    );
 
   }
 
@@ -1165,12 +1037,6 @@
 
 
     input.focus();
-
-
-    debug(
-      "Campo de produto criado."
-    );
-
 
     atualizarInterface();
 
@@ -1405,13 +1271,6 @@
 
             atualizarInterface();
 
-
-            debug(
-              "Intervalo selecionado: " +
-              intervaloSelecionado +
-              " segundos."
-            );
-
           }
         );
 
@@ -1554,23 +1413,8 @@
 
   async function enviarConfiguracao() {
 
-    debug(
-      "================================"
-    );
-
-    debug(
-      "BOTÃO INICIAR CLICADO."
-    );
-
-
     const links =
       obterLinks();
-
-
-    debug(
-      "Quantidade de links encontrados: " +
-      links.length
-    );
 
 
     msgBox.style.display =
@@ -1581,16 +1425,10 @@
       links.length === 0
     ) {
 
-      debug(
-        "Nenhum link encontrado."
-      );
-
-
       mostrarMensagem(
         "❌ Adicione pelo menos 1 produto da Shopee.",
         "erro"
       );
-
 
       return;
 
@@ -1606,26 +1444,14 @@
       );
 
 
-    debug(
-      "Links inválidos: " +
-      invalidos.length
-    );
-
-
     if (
       invalidos.length > 0
     ) {
-
-      debug(
-        "Existem links inválidos."
-      );
-
 
       mostrarMensagem(
         "❌ Corrija os links inválidos antes de iniciar.",
         "erro"
       );
-
 
       return;
 
@@ -1637,17 +1463,10 @@
       quantidade > links.length
     ) {
 
-      debug(
-        "Quantidade inválida: " +
-        quantidade
-      );
-
-
       mostrarMensagem(
         "❌ A quantidade de postagens é inválida.",
         "erro"
       );
-
 
       return;
 
@@ -1655,25 +1474,13 @@
 
 
     /* ========================================================
-       INIT DATA
+       INIT DATA TELEGRAM
     ======================================================== */
 
     const initData =
       tg
         ? tg.initData
         : "";
-
-
-    debug(
-      "initData presente: " +
-      Boolean(initData)
-    );
-
-
-    debug(
-      "initData tamanho: " +
-      initData.length
-    );
 
 
     let usuario =
@@ -1688,20 +1495,6 @@
 
       usuario =
         tg.initDataUnsafe.user;
-
-
-      debug(
-        "Usuário: " +
-        JSON.stringify(
-          usuario
-        )
-      );
-
-    } else {
-
-      debug(
-        "Usuário Telegram não disponível."
-      );
 
     }
 
@@ -1733,30 +1526,6 @@
     };
 
 
-    debug(
-      "Payload preparado."
-    );
-
-
-    debug(
-      "Quantidade: " +
-      quantidade
-    );
-
-
-    debug(
-      "Intervalo: " +
-      intervaloSelecionado
-    );
-
-
-    debug(
-      "URL API: " +
-      API_URL +
-      "/api/configurar"
-    );
-
-
     /* ========================================================
        ESTADO VISUAL
     ======================================================== */
@@ -1778,11 +1547,6 @@
     ======================================================== */
 
     try {
-
-      debug(
-        "Iniciando fetch POST..."
-      );
-
 
       const resposta =
         await fetch(
@@ -1812,29 +1576,8 @@
         );
 
 
-      debug(
-        "Fetch terminou."
-      );
-
-
-      debug(
-        "HTTP status: " +
-        resposta.status
-      );
-
-
       const texto =
         await resposta.text();
-
-
-      debug(
-        "Resposta do servidor:"
-      );
-
-
-      debug(
-        texto
-      );
 
 
       let resultado =
@@ -1850,9 +1593,8 @@
 
       } catch {
 
-        debug(
-          "Resposta não é JSON válido."
-        );
+        resultado =
+          {};
 
       }
 
@@ -1874,23 +1616,6 @@
       /* ======================================================
          SUCESSO
       ====================================================== */
-
-      debug(
-        "CONFIGURAÇÃO ACEITA PELO SERVIDOR."
-      );
-
-
-      if (
-        resultado.task_id
-      ) {
-
-        debug(
-          "Task ID: " +
-          resultado.task_id
-        );
-
-      }
-
 
       mostrarMensagem(
 
@@ -1957,16 +1682,6 @@
       );
 
 
-      debug(
-        "ERRO NO FETCH:"
-      );
-
-
-      debug(
-        erro.toString()
-      );
-
-
       mostrarMensagem(
         "❌ " +
         (
@@ -2021,12 +1736,6 @@
     taskId
   ) {
 
-    debug(
-      "Monitorando tarefa: " +
-      taskId
-    );
-
-
     const url =
       API_URL +
       "/api/status/" +
@@ -2060,8 +1769,8 @@
               !resposta.ok
             ) {
 
-              debug(
-                "Status da tarefa HTTP " +
+              console.error(
+                "Status da tarefa HTTP",
                 resposta.status
               );
 
@@ -2072,15 +1781,6 @@
 
             const dados =
               await resposta.json();
-
-
-            debug(
-              "Tarefa: " +
-              dados.status +
-              " | " +
-              dados.progresso +
-              "%"
-            );
 
 
             if (
@@ -2095,11 +1795,6 @@
               mostrarMensagem(
                 "✓ Automação concluída com sucesso.",
                 "sucesso"
-              );
-
-
-              debug(
-                "Automação concluída."
               );
 
 
@@ -2131,9 +1826,9 @@
             erro
           ) {
 
-            debug(
-              "Erro monitorando tarefa: " +
-              erro.message
+            console.error(
+              "Erro monitorando tarefa:",
+              erro
             );
 
           }
@@ -2148,35 +1843,6 @@
   /* ==========================================================
      INICIALIZAÇÃO
   ========================================================== */
-
-  debug(
-    "Página carregada."
-  );
-
-
-  debug(
-    "Origin: " +
-    window.location.origin
-  );
-
-
-  debug(
-    "URL: " +
-    window.location.href
-  );
-
-
-  debug(
-    "Telegram disponível: " +
-    Boolean(tg)
-  );
-
-
-  debug(
-    "API configurada: " +
-    API_URL
-  );
-
 
   atualizarInterface();
 

@@ -12,4 +12,4 @@ services:
         sync: false
 
       - key: CHANNEL_USERNAME
-        value: "@raposacacadora"
+        sync: false

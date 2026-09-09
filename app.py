@@ -7,7 +7,7 @@ import time
 import uuid
 import re
 
-from urllib.parse import parse_qsl, urlparse
+from urllib.parse import parse_qsl, urlparse, unquote
 
 import requests
 from bs4 import BeautifulSoup
@@ -69,26 +69,50 @@ tarefas_lock = threading.Lock()
 # SESSÃO HTTP
 # ============================================================
 
-session = requests.Session()
+def criar_sessao():
 
-session.headers.update({
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/131.0.0.0 Safari/537.36"
-    ),
-    "Accept": (
-        "text/html,application/xhtml+xml,"
-        "application/xml;q=0.9,image/avif,"
-        "image/webp,*/*;q=0.8"
-    ),
-    "Accept-Language": (
-        "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7"
-    ),
-    "Cache-Control": "no-cache",
-    "Pragma": "no-cache",
-    "DNT": "1"
-})
+    sessao = requests.Session()
+
+    sessao.headers.update({
+
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/131.0.0.0 Safari/537.36"
+        ),
+
+        "Accept": (
+            "text/html,application/xhtml+xml,"
+            "application/xml;q=0.9,image/avif,"
+            "image/webp,image/apng,*/*;q=0.8"
+        ),
+
+        "Accept-Language":
+            "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+
+        "Cache-Control":
+            "no-cache",
+
+        "Pragma":
+            "no-cache",
+
+        "Upgrade-Insecure-Requests":
+            "1",
+
+        "Sec-Fetch-Dest":
+            "document",
+
+        "Sec-Fetch-Mode":
+            "navigate",
+
+        "Sec-Fetch-Site":
+            "none",
+
+        "Sec-Fetch-User":
+            "?1"
+    })
+
+    return sessao
 
 
 # ============================================================
@@ -144,10 +168,18 @@ def telegram_get_me():
 
 def limpar_texto(texto):
 
-    if not texto:
+    if texto is None:
         return ""
 
     texto = str(texto)
+
+    texto = (
+        texto
+        .replace("\xa0", " ")
+        .replace("\n", " ")
+        .replace("\r", " ")
+        .replace("\t", " ")
+    )
 
     texto = re.sub(
         r"\s+",
@@ -158,29 +190,20 @@ def limpar_texto(texto):
     return texto.strip()
 
 
-def escapar_html(texto):
+def normalizar_url(url):
 
-    if not texto:
+    if not url:
         return ""
 
-    texto = str(texto)
+    url = str(url).strip()
 
-    texto = texto.replace(
-        "&",
-        "&amp;"
+    url = (
+        url
+        .replace("\\/", "/")
+        .replace("&amp;", "&")
     )
 
-    texto = texto.replace(
-        "<",
-        "&lt;"
-    )
-
-    texto = texto.replace(
-        ">",
-        "&gt;"
-    )
-
-    return texto
+    return url.strip()
 
 
 def formatar_preco(valor):
@@ -193,33 +216,47 @@ def formatar_preco(valor):
     if not valor:
         return ""
 
-    valor = valor.replace(
-        "R$",
-        ""
-    ).strip()
-
-    # Remove espaços
-    valor = valor.replace(
-        " ",
-        ""
+    valor = (
+        valor
+        .replace("R$", "")
+        .replace("BRL", "")
+        .replace("brl", "")
+        .replace(" ", "")
     )
 
-    # Detecta formato brasileiro
-    if "," in valor:
+    # Remove símbolos estranhos, mantendo números,
+    # ponto e vírgula.
+    valor = re.sub(
+        r"[^\d\.,]",
+        "",
+        valor
+    )
 
-        valor = valor.replace(
-            ".",
-            ""
-        )
-
-        valor = valor.replace(
-            ",",
-            "."
-        )
+    if not valor:
+        return ""
 
     try:
 
+        # Formato brasileiro:
+        # 1.299,90
+        if "," in valor:
+
+            valor = valor.replace(
+                ".",
+                ""
+            )
+
+            valor = valor.replace(
+                ",",
+                "."
+            )
+
+        # Formato internacional:
+        # 1299.90
         numero = float(valor)
+
+        if numero <= 0:
+            return ""
 
         return (
             "R$ "
@@ -236,21 +273,25 @@ def formatar_preco(valor):
 
 def converter_preco_float(preco_str):
 
+    if preco_str is None:
+        return 0.0
+
+    preco_str = str(preco_str).strip()
+
     if not preco_str:
         return 0.0
 
     try:
 
-        limpo = str(preco_str)
-
         limpo = (
-            limpo
+            preco_str
             .replace("R$", "")
+            .replace("BRL", "")
+            .replace("brl", "")
             .replace(" ", "")
         )
 
-        # Exemplo:
-        # 1.299,90 -> 1299.90
+        # Se tiver vírgula, assumimos formato BR.
         if "," in limpo:
 
             limpo = limpo.replace(
@@ -263,6 +304,15 @@ def converter_preco_float(preco_str):
                 "."
             )
 
+        else:
+
+            # Mantém decimal com ponto.
+            limpo = re.sub(
+                r"[^\d.]",
+                "",
+                limpo
+            )
+
         return float(limpo)
 
     except Exception:
@@ -270,66 +320,79 @@ def converter_preco_float(preco_str):
         return 0.0
 
 
-def normalizar_url(url):
-
-    if not url:
-        return ""
-
-    url = str(url).strip()
-
-    if not url:
-        return ""
-
-    if url.startswith("//"):
-
-        return "https:" + url
-
-    return url
-
-
-# ============================================================
-# JSON SEGURO
-# ============================================================
-
-def tentar_json(texto):
+def extrair_numero_preco(texto):
 
     if not texto:
-        return None
+        return ""
 
-    try:
+    texto = limpar_texto(texto)
 
-        return json.loads(
-            texto
+    # Primeiro procura R$.
+    encontrado = re.search(
+        r"R\$\s*([0-9][0-9\.,]*)",
+        texto,
+        re.IGNORECASE
+    )
+
+    if encontrado:
+
+        return formatar_preco(
+            encontrado.group(1)
         )
 
-    except Exception:
+    # Depois procura valores com vírgula decimal.
+    encontrado = re.search(
+        r"\b([0-9]{1,3}(?:\.[0-9]{3})*,[0-9]{2})\b",
+        texto
+    )
 
-        pass
+    if encontrado:
 
-    # Algumas páginas colocam lixo antes/depois do JSON
-    try:
+        return formatar_preco(
+            encontrado.group(1)
+        )
 
-        inicio = texto.find("{")
-        fim = texto.rfind("}")
+    # Depois números decimais simples.
+    encontrado = re.search(
+        r"\b([0-9]+\.[0-9]{2})\b",
+        texto
+    )
 
-        if inicio >= 0 and fim > inicio:
+    if encontrado:
 
-            return json.loads(
-                texto[inicio:fim + 1]
-            )
+        return formatar_preco(
+            encontrado.group(1)
+        )
 
-    except Exception:
+    return ""
 
-        pass
 
-    return None
+# ============================================================
+# JSON RECURSIVO
+# ============================================================
+
+def percorrer_json(valor):
+
+    if isinstance(valor, dict):
+
+        yield valor
+
+        for item in valor.values():
+
+            yield from percorrer_json(item)
+
+    elif isinstance(valor, list):
+
+        for item in valor:
+
+            yield from percorrer_json(item)
 
 
 # ============================================================
 # EXTRAÇÃO DE JSON-LD
 # ============================================================
 
-def extrair_blocos_json_ld(soup):
+def extrair_json_ld(soup):
 
     blocos = []
 
@@ -342,52 +405,31 @@ def extrair_blocos_json_ld(soup):
 
         try:
 
-            conteudo = (
-                script.string
-                or
-                script.get_text()
-            )
+            conteudo = script.string
 
             if not conteudo:
+
+                conteudo = script.get_text(
+                    strip=True
+                )
+
+            if not conteudo:
+
                 continue
 
-            dados = tentar_json(
+            conteudo = conteudo.strip()
+
+            dados = json.loads(
                 conteudo
             )
 
-            if dados is None:
-                continue
-
-            if isinstance(
-                dados,
-                list
-            ):
-
-                blocos.extend(
-                    dados
-                )
-
-            elif isinstance(
-                dados,
-                dict
-            ):
-
-                blocos.append(
-                    dados
-                )
-
-                graph = dados.get(
-                    "@graph"
-                )
-
-                if isinstance(
-                    graph,
-                    list
-                ):
-
-                    blocos.extend(
-                        graph
+            blocos.extend(
+                list(
+                    percorrer_json(
+                        dados
                     )
+                )
+            )
 
         except Exception:
 
@@ -397,12 +439,12 @@ def extrair_blocos_json_ld(soup):
 
 
 # ============================================================
-# PREÇO JSON-LD
+# EXTRAÇÃO DE PREÇO DO JSON-LD
 # ============================================================
 
 def extrair_preco_schema(soup):
 
-    blocos = extrair_blocos_json_ld(
+    blocos = extrair_json_ld(
         soup
     )
 
@@ -414,21 +456,7 @@ def extrair_preco_schema(soup):
         ):
             continue
 
-        # Produto diretamente
-        preco = bloco.get(
-            "price"
-        )
-
-        if preco:
-
-            formatado = formatar_preco(
-                preco
-            )
-
-            if formatado:
-                return formatado
-
-        # Offers
+        # Product > offers
         offers = bloco.get(
             "offers"
         )
@@ -438,229 +466,63 @@ def extrair_preco_schema(soup):
             list
         ):
 
-            for oferta in offers:
-
-                if not isinstance(
-                    oferta,
-                    dict
-                ):
-                    continue
-
-                preco = (
-                    oferta.get("price")
-                    or
-                    oferta.get("lowPrice")
-                )
-
-                if preco:
-
-                    formatado = (
-                        formatar_preco(
-                            preco
-                        )
-                    )
-
-                    if formatado:
-                        return formatado
+            ofertas = offers
 
         elif isinstance(
             offers,
             dict
         ):
 
+            ofertas = [
+                offers
+            ]
+
+        else:
+
+            ofertas = []
+
+        for oferta in ofertas:
+
+            if not isinstance(
+                oferta,
+                dict
+            ):
+                continue
+
             preco = (
-                offers.get("price")
+                oferta.get("price")
                 or
-                offers.get("lowPrice")
+                oferta.get("lowPrice")
+                or
+                oferta.get("highPrice")
             )
 
             if preco:
 
-                formatado = formatar_preco(
+                resultado = formatar_preco(
                     preco
                 )
 
-                if formatado:
-                    return formatado
+                if resultado:
 
-    return ""
+                    return resultado
 
-
-# ============================================================
-# EXTRAÇÃO GENÉRICA DE PREÇO
-# ============================================================
-
-def extrair_preco_meta(soup):
-
-    possiveis = [
-
-        ("product:price:amount", "property"),
-        ("og:price:amount", "property"),
-        ("product:price", "property"),
-        ("price", "name"),
-        ("price", "itemprop"),
-        ("lowPrice", "name"),
-        ("priceAmount", "name")
-    ]
-
-    for nome, atributo in possiveis:
-
-        try:
-
-            meta = soup.find(
-                "meta",
-                attrs={
-                    atributo: nome
-                }
-            )
-
-            if not meta:
-                continue
-
-            valor = meta.get(
-                "content",
-                ""
-            )
-
-            preco = formatar_preco(
-                valor
-            )
-
-            if preco:
-                return preco
-
-        except Exception:
-
-            continue
-
-    return ""
-
-
-def extrair_preco_texto(soup):
-
-    try:
-
-        # Primeiro tenta elementos que normalmente
-        # carregam preços.
-        seletores = [
-
-            "[class*='price']",
-
-            "[class*='Price']",
-
-            "[class*='amount']",
-
-            "[class*='Amount']",
-
-            "[itemprop='price']"
-        ]
-
-        candidatos = []
-
-        for seletor in seletores:
-
-            try:
-
-                encontrados = soup.select(
-                    seletor
-                )
-
-                candidatos.extend(
-                    encontrados[:30]
-                )
-
-            except Exception:
-
-                continue
-
-        # Tenta os candidatos primeiro
-        for elemento in candidatos:
-
-            try:
-
-                texto = elemento.get_text(
-                    " ",
-                    strip=True
-                )
-
-                if not texto:
-                    continue
-
-                encontrados = re.findall(
-                    r"R\$\s*[\d\.,]+",
-                    texto
-                )
-
-                for preco in encontrados:
-
-                    valor = re.sub(
-                        r"[^\d\.,]",
-                        "",
-                        preco
-                    )
-
-                    formatado = (
-                        formatar_preco(
-                            valor
-                        )
-                    )
-
-                    if formatado:
-
-                        numero = (
-                            converter_preco_float(
-                                formatado
-                            )
-                        )
-
-                        if numero > 0:
-
-                            return formatado
-
-            except Exception:
-
-                continue
-
-        # Último recurso: página inteira
-        texto = soup.get_text(
-            " ",
-            strip=True
+        # Às vezes o próprio bloco contém price.
+        preco = (
+            bloco.get("price")
+            or
+            bloco.get("lowPrice")
         )
 
-        encontrados = re.findall(
-            r"R\$\s*[\d\.,]+",
-            texto
-        )
+        if preco:
 
-        for preco in encontrados:
-
-            valor = re.sub(
-                r"[^\d\.,]",
-                "",
+            resultado = formatar_preco(
                 preco
             )
 
-            formatado = (
-                formatar_preco(
-                    valor
-                )
-            )
+            if resultado:
 
-            if formatado:
-
-                numero = (
-                    converter_preco_float(
-                        formatado
-                    )
-                )
-
-                if numero > 0:
-
-                    return formatado
-
-    except Exception:
-
-        pass
+                return resultado
 
     return ""
 
@@ -671,61 +533,13 @@ def extrair_preco_texto(soup):
 
 def extrair_titulo(soup):
 
-    # ========================================================
-    # OG TITLE
-    # ========================================================
+    candidatos = []
 
-    meta = soup.find(
-        "meta",
-        property="og:title"
-    )
-
-    if meta:
-
-        titulo = limpar_texto(
-            meta.get(
-                "content",
-                ""
-            )
-        )
-
-        if titulo:
-
-            return titulo
-
-    # ========================================================
-    # TWITTER
-    # ========================================================
-
-    meta = soup.find(
-        "meta",
-        attrs={
-            "name": "twitter:title"
-        }
-    )
-
-    if meta:
-
-        titulo = limpar_texto(
-            meta.get(
-                "content",
-                ""
-            )
-        )
-
-        if titulo:
-
-            return titulo
-
-    # ========================================================
+    # --------------------------------------------------------
     # JSON-LD
-    # ========================================================
+    # --------------------------------------------------------
 
-    blocos = extrair_blocos_json_ld(
-        soup
-    )
-
-    for bloco in blocos:
+    for bloco in extrair_json_ld(soup):
 
         if not isinstance(
             bloco,
@@ -733,46 +547,111 @@ def extrair_titulo(soup):
         ):
             continue
 
-        titulo = (
-            bloco.get("name")
-            or
-            bloco.get("headline")
+        tipo = bloco.get(
+            "@type",
+            ""
         )
 
-        if titulo:
+        nome = bloco.get(
+            "name",
+            ""
+        )
 
-            titulo = limpar_texto(
-                titulo
+        if nome:
+
+            nome = limpar_texto(
+                nome
             )
 
-            if titulo:
+            if nome:
 
-                return titulo
+                # Prioriza Product.
+                if (
+                    tipo == "Product"
+                    or
+                    (
+                        isinstance(
+                            tipo,
+                            list
+                        )
+                        and
+                        "Product" in tipo
+                    )
+                ):
 
-    # ========================================================
+                    candidatos.insert(
+                        0,
+                        nome
+                    )
+
+                else:
+
+                    candidatos.append(
+                        nome
+                    )
+
+    # --------------------------------------------------------
+    # META OG
+    # --------------------------------------------------------
+
+    metas = [
+
+        ("property", "og:title"),
+
+        ("name", "twitter:title"),
+
+        ("name", "title")
+    ]
+
+    for atributo, valor in metas:
+
+        meta = soup.find(
+            "meta",
+            attrs={
+                atributo:
+                    valor
+            }
+        )
+
+        if meta:
+
+            conteudo = limpar_texto(
+                meta.get(
+                    "content",
+                    ""
+                )
+            )
+
+            if conteudo:
+
+                candidatos.append(
+                    conteudo
+                )
+
+    # --------------------------------------------------------
     # H1
-    # ========================================================
+    # --------------------------------------------------------
 
-    h1 = soup.find(
+    for h1 in soup.find_all(
         "h1"
-    )
+    ):
 
-    if h1:
-
-        titulo = limpar_texto(
+        texto = limpar_texto(
             h1.get_text(
                 " ",
                 strip=True
             )
         )
 
-        if titulo:
+        if texto:
 
-            return titulo
+            candidatos.append(
+                texto
+            )
 
-    # ========================================================
+    # --------------------------------------------------------
     # TITLE
-    # ========================================================
+    # --------------------------------------------------------
 
     title = soup.find(
         "title"
@@ -780,18 +659,68 @@ def extrair_titulo(soup):
 
     if title:
 
-        titulo = limpar_texto(
+        texto = limpar_texto(
             title.get_text(
-                " ",
                 strip=True
             )
         )
 
-        if titulo:
+        if texto:
 
-            return titulo
+            candidatos.append(
+                texto
+            )
 
-    return "Oferta Imperdível"
+    # --------------------------------------------------------
+    # FILTROS
+    # --------------------------------------------------------
+
+    termos_genericos = [
+
+        "shopee brasil",
+        "ofertas incríveis",
+        "ofertas incriveis",
+        "melhores preços do mercado",
+        "melhores precos do mercado",
+        "compre na shopee",
+        "shopee"
+    ]
+
+    vistos = set()
+
+    for candidato in candidatos:
+
+        candidato = limpar_texto(
+            candidato
+        )
+
+        if not candidato:
+            continue
+
+        chave = candidato.lower()
+
+        if chave in vistos:
+            continue
+
+        vistos.add(
+            chave
+        )
+
+        # Ignora títulos claramente genéricos.
+        if any(
+            termo in chave
+            for termo in termos_genericos
+        ):
+
+            continue
+
+        # Evita título excessivamente pequeno.
+        if len(candidato) < 4:
+            continue
+
+        return candidato
+
+    return ""
 
 
 # ============================================================
@@ -800,92 +729,54 @@ def extrair_titulo(soup):
 
 def extrair_imagem(soup):
 
-    # ========================================================
+    candidatos = []
+
+    # --------------------------------------------------------
     # OG IMAGE
-    # ========================================================
+    # --------------------------------------------------------
 
-    meta = soup.find(
-        "meta",
-        property="og:image"
-    )
+    for atributo, valor in [
 
-    if meta:
+        ("property", "og:image"),
 
-        imagem = normalizar_url(
-            meta.get(
-                "content",
-                ""
+        ("property", "og:image:url"),
+
+        ("name", "twitter:image"),
+
+        ("name", "twitter:image:src")
+
+    ]:
+
+        meta = soup.find(
+            "meta",
+            attrs={
+                atributo:
+                    valor
+            }
+        )
+
+        if meta:
+
+            url = normalizar_url(
+                meta.get(
+                    "content",
+                    ""
+                )
             )
-        )
 
-        if imagem.startswith(
-            "http"
-        ):
+            if url.startswith(
+                "http"
+            ):
 
-            return imagem
+                candidatos.append(
+                    url
+                )
 
-    # ========================================================
-    # OG IMAGE SECUNDÁRIA
-    # ========================================================
-
-    metas = soup.find_all(
-        "meta",
-        property=re.compile(
-            r"og:image",
-            re.I
-        )
-    )
-
-    for meta in metas:
-
-        imagem = normalizar_url(
-            meta.get(
-                "content",
-                ""
-            )
-        )
-
-        if imagem.startswith(
-            "http"
-        ):
-
-            return imagem
-
-    # ========================================================
-    # TWITTER
-    # ========================================================
-
-    meta = soup.find(
-        "meta",
-        attrs={
-            "name": "twitter:image"
-        }
-    )
-
-    if meta:
-
-        imagem = normalizar_url(
-            meta.get(
-                "content",
-                ""
-            )
-        )
-
-        if imagem.startswith(
-            "http"
-        ):
-
-            return imagem
-
-    # ========================================================
+    # --------------------------------------------------------
     # JSON-LD
-    # ========================================================
+    # --------------------------------------------------------
 
-    blocos = extrair_blocos_json_ld(
-        soup
-    )
-
-    for bloco in blocos:
+    for bloco in extrair_json_ld(soup):
 
         if not isinstance(
             bloco,
@@ -899,155 +790,227 @@ def extrair_imagem(soup):
 
         if isinstance(
             imagem,
+            str
+        ):
+
+            candidatos.append(
+                normalizar_url(
+                    imagem
+                )
+            )
+
+        elif isinstance(
+            imagem,
             list
         ):
 
             for item in imagem:
 
-                item = normalizar_url(
-                    item
-                )
-
-                if item.startswith(
-                    "http"
+                if isinstance(
+                    item,
+                    str
                 ):
 
-                    return item
+                    candidatos.append(
+                        normalizar_url(
+                            item
+                        )
+                    )
 
-        elif isinstance(
-            imagem,
-            str
-        ):
+                elif isinstance(
+                    item,
+                    dict
+                ):
 
-            imagem = normalizar_url(
-                imagem
-            )
+                    url = item.get(
+                        "url"
+                    )
 
-            if imagem.startswith(
-                "http"
-            ):
+                    if url:
 
-                return imagem
+                        candidatos.append(
+                            normalizar_url(
+                                url
+                            )
+                        )
 
         elif isinstance(
             imagem,
             dict
         ):
 
-            imagem = (
-                imagem.get("url")
-                or
-                imagem.get("contentUrl")
-                or
-                ""
+            url = imagem.get(
+                "url"
             )
 
-            imagem = normalizar_url(
-                imagem
-            )
+            if url:
 
-            if imagem.startswith(
-                "http"
-            ):
+                candidatos.append(
+                    normalizar_url(
+                        url
+                    )
+                )
 
-                return imagem
+    # --------------------------------------------------------
+    # IMAGENS HTML
+    # --------------------------------------------------------
 
-    # ========================================================
-    # IMAGENS DA PÁGINA
-    # ========================================================
-
-    imagens = soup.find_all(
+    for img in soup.find_all(
         "img"
-    )
-
-    candidatos = []
-
-    for img in imagens:
+    )[:50]:
 
         for atributo in [
-            "src",
+
             "data-src",
             "data-original",
             "data-lazy",
-            "data-lazy-src"
+            "src"
+
         ]:
 
-            imagem = img.get(
-                atributo,
-                ""
+            url = normalizar_url(
+                img.get(
+                    atributo,
+                    ""
+                )
             )
 
-            imagem = normalizar_url(
-                imagem
-            )
-
-            if not imagem.startswith(
+            if url.startswith(
                 "http"
             ):
-                continue
 
-            candidatos.append(
-                imagem
-            )
+                candidatos.append(
+                    url
+                )
 
-    # Prioriza imagens relacionadas à Shopee
-    for imagem in candidatos:
+    # --------------------------------------------------------
+    # VALIDAÇÃO
+    # --------------------------------------------------------
 
-        imagem_lower = imagem.lower()
+    vistos = set()
 
-        if (
-            "shopee" in imagem_lower
-            or
-            "susercontent" in imagem_lower
+    for url in candidatos:
+
+        if not url:
+            continue
+
+        if url in vistos:
+            continue
+
+        vistos.add(
+            url
+        )
+
+        # Ignora SVGs e imagens minúsculas/generic.
+        url_lower = url.lower()
+
+        if url_lower.endswith(
+            ".svg"
         ):
+            continue
 
-            return imagem
-
-    # Qualquer imagem HTTP válida
-    for imagem in candidatos:
-
-        if imagem.startswith(
-            "http"
-        ):
-
-            return imagem
+        return url
 
     return ""
 
 
 # ============================================================
-# EXTRAÇÃO DE PREÇO ANTIGO
+# EXTRAÇÃO DE PREÇO POR META
 # ============================================================
 
-def extrair_preco_antigo(soup):
+def extrair_preco_meta(soup):
+
+    atributos = [
+
+        ("property", "product:price:amount"),
+
+        ("property", "og:price:amount"),
+
+        ("name", "product:price:amount"),
+
+        ("name", "price"),
+
+        ("itemprop", "price")
+
+    ]
+
+    for atributo, valor in atributos:
+
+        elementos = soup.find_all(
+            "meta",
+            attrs={
+                atributo:
+                    valor
+            }
+        )
+
+        for elemento in elementos:
+
+            valor_preco = elemento.get(
+                "content",
+                ""
+            )
+
+            resultado = formatar_preco(
+                valor_preco
+            )
+
+            if resultado:
+
+                return resultado
+
+    # Itemprop sem meta.
+    elementos = soup.find_all(
+        attrs={
+            "itemprop":
+                "price"
+        }
+    )
+
+    for elemento in elementos:
+
+        valor_preco = (
+            elemento.get(
+                "content"
+            )
+            or
+            elemento.get_text(
+                " ",
+                strip=True
+            )
+        )
+
+        resultado = formatar_preco(
+            valor_preco
+        )
+
+        if resultado:
+
+            return resultado
+
+    return ""
+
+
+# ============================================================
+# EXTRAÇÃO DE PREÇO DO HTML
+# ============================================================
+
+def extrair_preco_html(soup):
 
     seletores = [
 
-        "s",
+        ".andes-money-amount__fraction",
 
-        "del",
+        ".ui-pdp-price__part",
 
-        ".price-original",
+        "[class*='price']",
 
-        ".original-price",
+        "[class*='Price']",
 
-        ".old-price",
+        "[class*='preco']",
 
-        ".previous-price",
+        "[class*='Preco']"
 
-        ".andes-money-amount--previous",
-
-        "[class*='original']",
-
-        "[class*='Original']",
-
-        "[class*='old-price']",
-
-        "[class*='oldPrice']",
-
-        "[class*='previous']",
-
-        "[class*='Previous']"
     ]
 
     for seletor in seletores:
@@ -1058,67 +1021,270 @@ def extrair_preco_antigo(soup):
                 seletor
             )
 
-            for elemento in elementos:
-
-                texto = elemento.get_text(
-                    " ",
-                    strip=True
-                )
-
-                encontrados = re.findall(
-                    r"R\$\s*[\d\.,]+",
-                    texto
-                )
-
-                if encontrados:
-
-                    preco = encontrados[0]
-
-                    valor = (
-                        converter_preco_float(
-                            preco
-                        )
-                    )
-
-                    if valor > 0:
-
-                        return preco
-
         except Exception:
 
             continue
+
+        for elemento in elementos[:30]:
+
+            texto = limpar_texto(
+                elemento.get_text(
+                    " ",
+                    strip=True
+                )
+            )
+
+            if not texto:
+                continue
+
+            # Primeiro tenta R$.
+            resultado = extrair_numero_preco(
+                texto
+            )
+
+            if resultado:
+
+                return resultado
+
+    # Procura diretamente no texto da página.
+    texto_total = limpar_texto(
+        soup.get_text(
+            " ",
+            strip=True
+        )
+    )
+
+    # Preços com R$.
+    encontrados = re.findall(
+        r"R\$\s*[0-9][0-9\.,]*",
+        texto_total,
+        re.IGNORECASE
+    )
+
+    for valor in encontrados:
+
+        resultado = formatar_preco(
+            valor
+        )
+
+        if resultado:
+
+            numero = converter_preco_float(
+                resultado
+            )
+
+            # Evita valores absurdos.
+            if 0 < numero < 10000000:
+
+                return resultado
 
     return ""
 
 
 # ============================================================
-# EXTRAÇÃO PRINCIPAL DO PRODUTO
+# EXTRAÇÃO DE PREÇO
+# ============================================================
+
+def extrair_preco(soup):
+
+    # 1. JSON-LD
+    resultado = extrair_preco_schema(
+        soup
+    )
+
+    if resultado:
+
+        return resultado
+
+    # 2. Meta
+    resultado = extrair_preco_meta(
+        soup
+    )
+
+    if resultado:
+
+        return resultado
+
+    # 3. Classes HTML
+    resultado = extrair_preco_html(
+        soup
+    )
+
+    if resultado:
+
+        return resultado
+
+    return ""
+
+
+# ============================================================
+# PREÇO ANTIGO
+# ============================================================
+
+def extrair_preco_antigo(soup, preco_atual):
+
+    valor_atual = converter_preco_float(
+        preco_atual
+    )
+
+    candidatos = []
+
+    # --------------------------------------------------------
+    # ELEMENTOS COM INDÍCIO DE PREÇO ANTERIOR
+    # --------------------------------------------------------
+
+    seletores = [
+
+        "s",
+
+        "del",
+
+        ".andes-money-amount--previous",
+
+        ".ui-pdp-price__part--old",
+
+        ".ui-pdp-price__original-value",
+
+        "[class*='previous']",
+
+        "[class*='Previous']",
+
+        "[class*='old-price']",
+
+        "[class*='oldPrice']",
+
+        "[class*='original']",
+
+        "[class*='Original']",
+
+        "[class*='list-price']",
+
+        "[class*='ListPrice']"
+
+    ]
+
+    for seletor in seletores:
+
+        try:
+
+            elementos = soup.select(
+                seletor
+            )
+
+        except Exception:
+
+            continue
+
+        for elemento in elementos:
+
+            texto = limpar_texto(
+                elemento.get_text(
+                    " ",
+                    strip=True
+                )
+            )
+
+            if not texto:
+                continue
+
+            resultado = extrair_numero_preco(
+                texto
+            )
+
+            if resultado:
+
+                candidatos.append(
+                    resultado
+                )
+
+    # --------------------------------------------------------
+    # ESCOLHE UM PREÇO MAIOR QUE O ATUAL
+    # --------------------------------------------------------
+
+    maior = 0.0
+    melhor = ""
+
+    for candidato in candidatos:
+
+        numero = converter_preco_float(
+            candidato
+        )
+
+        if (
+            numero > valor_atual
+            and
+            numero > maior
+        ):
+
+            maior = numero
+            melhor = candidato
+
+    return melhor
+
+
+# ============================================================
+# EXTRAI DADOS DO PRODUTO
 # ============================================================
 
 def extrair_dados_produto(link):
 
-    print(
-        "========================================"
-    )
+    """
+    Extrator robusto para páginas da Shopee.
 
-    print(
-        "[PRODUTO] Iniciando extração"
-    )
+    Tenta:
+    - link original;
+    - redirecionamentos;
+    - HTML final;
+    - JSON-LD;
+    - OG metadata;
+    - meta price;
+    - elementos HTML;
+    - imagens.
+    """
 
-    print(
-        "[PRODUTO] Link:",
+    link = normalizar_url(
         link
     )
 
+    if not link:
+
+        return {
+
+            "sucesso":
+                False,
+
+            "erro":
+                "Link vazio."
+        }
+
+    sessao = criar_sessao()
+
+    resposta = None
+
     try:
 
-        # ====================================================
-        # PRIMEIRA REQUISIÇÃO
-        # ====================================================
+        print(
+            "========================================"
+        )
 
-        resposta = session.get(
+        print(
+            "[PRODUTO] Abrindo link:"
+        )
+
+        print(
+            link
+        )
+
+        # ----------------------------------------------------
+        # PRIMEIRA TENTATIVA
+        # ----------------------------------------------------
+
+        resposta = sessao.get(
+
             link,
-            timeout=30,
+
+            timeout=35,
+
             allow_redirects=True
         )
 
@@ -1132,112 +1298,159 @@ def extrair_dados_produto(link):
             resposta.url
         )
 
+        # ----------------------------------------------------
+        # ALGUNS SERVIDORES PODEM RECUSAR A PRIMEIRA
+        # REQUISIÇÃO. TENTA NOVAMENTE COM REFERER.
+        # ----------------------------------------------------
+
+        if (
+            resposta.status_code != 200
+            or
+            len(resposta.text or "") < 500
+        ):
+
+            print(
+                "[PRODUTO] Primeira resposta insuficiente."
+            )
+
+            headers_2 = {
+
+                "Referer":
+                    "https://shopee.com.br/",
+
+                "User-Agent":
+                    (
+                        "Mozilla/5.0 (Linux; Android 13) "
+                        "AppleWebKit/537.36 "
+                        "(KHTML, like Gecko) "
+                        "Chrome/131.0.0.0 "
+                        "Mobile Safari/537.36"
+                    ),
+
+                "Accept-Language":
+                    "pt-BR,pt;q=0.9"
+            }
+
+            resposta = sessao.get(
+
+                link,
+
+                headers=headers_2,
+
+                timeout=35,
+
+                allow_redirects=True
+            )
+
+            print(
+                "[PRODUTO] Segunda tentativa HTTP:",
+                resposta.status_code
+            )
+
+            print(
+                "[PRODUTO] Segunda URL final:",
+                resposta.url
+            )
+
         if resposta.status_code != 200:
 
             return {
 
-                "sucesso": False,
+                "sucesso":
+                    False,
 
                 "erro":
                     (
-                        "Não foi possível acessar a página "
-                        f"do produto. HTTP {resposta.status_code}"
-                    )
+                        "A Shopee não permitiu acessar "
+                        f"a página. HTTP {resposta.status_code}"
+                    ),
+
+                "url_final":
+                    resposta.url
             }
 
-        # ====================================================
-        # HTML
-        # ====================================================
+        html = resposta.text or ""
+
+        if len(html) < 100:
+
+            return {
+
+                "sucesso":
+                    False,
+
+                "erro":
+                    "A Shopee retornou uma página vazia."
+            }
 
         soup = BeautifulSoup(
-            resposta.text,
+            html,
             "html.parser"
         )
 
-        # ====================================================
-        # TÍTULO
-        # ====================================================
+        # ----------------------------------------------------
+        # DADOS
+        # ----------------------------------------------------
 
         titulo = extrair_titulo(
             soup
         )
 
-        # ====================================================
-        # IMAGEM
-        # ====================================================
-
-        foto_url = extrair_imagem(
+        preco_atual = extrair_preco(
             soup
         )
 
-        # ====================================================
-        # PREÇO
-        # ====================================================
-
-        preco_atual = ""
-
-        # 1. JSON-LD
-        preco_atual = (
-            extrair_preco_schema(
-                soup
-            )
+        preco_antigo = extrair_preco_antigo(
+            soup,
+            preco_atual
         )
 
-        # 2. Meta tags
-        if not preco_atual:
-
-            preco_atual = (
-                extrair_preco_meta(
-                    soup
-                )
-            )
-
-        # 3. HTML/texto
-        if not preco_atual:
-
-            preco_atual = (
-                extrair_preco_texto(
-                    soup
-                )
-            )
-
-        # ====================================================
-        # PREÇO ANTIGO
-        # ====================================================
-
-        preco_antigo = (
-            extrair_preco_antigo(
-                soup
-            )
+        imagem = extrair_imagem(
+            soup
         )
 
-        # ====================================================
-        # VALIDAÇÃO DOS PREÇOS
-        # ====================================================
+        # ----------------------------------------------------
+        # LIMPA TÍTULO
+        # ----------------------------------------------------
 
-        valor_atual = (
-            converter_preco_float(
-                preco_atual
-            )
+        titulo = limpar_texto(
+            titulo
         )
 
-        valor_antigo = (
-            converter_preco_float(
-                preco_antigo
-            )
+        # Alguns títulos podem vir com o nome do site.
+        titulo = re.sub(
+            r"\s*[\|\-]\s*Shopee.*$",
+            "",
+            titulo,
+            flags=re.IGNORECASE
+        )
+
+        titulo = limpar_texto(
+            titulo
+        )
+
+        # ----------------------------------------------------
+        # VALIDAÇÃO
+        # ----------------------------------------------------
+
+        valor_atual = converter_preco_float(
+            preco_atual
+        )
+
+        valor_antigo = converter_preco_float(
+            preco_antigo
         )
 
         if (
-            valor_antigo <= 0
-            or
             valor_antigo <= valor_atual
+            or
+            valor_antigo <= 0
         ):
 
             preco_antigo = ""
 
-        # ====================================================
+        # ----------------------------------------------------
         # LOG
-        # ====================================================
+        # ----------------------------------------------------
 
         print(
             "[PRODUTO] Título:",
@@ -1256,16 +1469,40 @@ def extrair_dados_produto(link):
 
         print(
             "[PRODUTO] Imagem:",
-            foto_url
+            imagem
         )
 
         print(
             "========================================"
         )
 
-        # ====================================================
-        # RETORNO
-        # ====================================================
+        # ----------------------------------------------------
+        # NÃO ACEITA DADOS GENÉRICOS
+        # ----------------------------------------------------
+
+        titulo_generico = (
+
+            not titulo
+            or
+            titulo.lower() in {
+
+                "oferta imperdível",
+
+                "oferta imperdivel",
+
+                "shopee brasil",
+
+                "shopee"
+            }
+        )
+
+        if titulo_generico:
+
+            titulo = ""
+
+        # ----------------------------------------------------
+        # RETORNA
+        # ----------------------------------------------------
 
         return {
 
@@ -1282,10 +1519,13 @@ def extrair_dados_produto(link):
                 preco_antigo,
 
             "imagem":
-                foto_url,
+                imagem,
 
             "link":
-                link
+                link,
+
+            "url_final":
+                resposta.url
         }
 
     except requests.RequestException as erro:
@@ -1322,6 +1562,78 @@ def extrair_dados_produto(link):
 
 
 # ============================================================
+# DOWNLOAD DA IMAGEM
+# ============================================================
+
+def baixar_imagem(
+    foto_url,
+    referer=""
+):
+
+    if not foto_url:
+
+        return None
+
+    try:
+
+        headers = {
+
+            "User-Agent":
+                (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 "
+                    "(KHTML, like Gecko) "
+                    "Chrome/131.0.0.0 Safari/537.36"
+                ),
+
+            "Accept":
+                "image/avif,image/webp,image/apng,"
+                "image/svg+xml,image/*,*/*;q=0.8"
+        }
+
+        if referer:
+
+            headers[
+                "Referer"
+            ] = referer
+
+        resposta = requests.get(
+
+            foto_url,
+
+            headers=headers,
+
+            timeout=30
+        )
+
+        if resposta.status_code != 200:
+
+            print(
+                "[IMAGEM] HTTP:",
+                resposta.status_code
+            )
+
+            return None
+
+        conteudo = resposta.content
+
+        if not conteudo:
+
+            return None
+
+        return conteudo
+
+    except Exception as erro:
+
+        print(
+            "[IMAGEM] Erro:",
+            erro
+        )
+
+        return None
+
+
+# ============================================================
 # TELEGRAM - ENVIO DE TEXTO
 # ============================================================
 
@@ -1340,7 +1652,8 @@ def telegram_enviar_mensagem(
 
         return {
 
-            "ok": False,
+            "ok":
+                False,
 
             "erro":
                 "BOT_TOKEN não está disponível."
@@ -1350,7 +1663,8 @@ def telegram_enviar_mensagem(
 
         return {
 
-            "ok": False,
+            "ok":
+                False,
 
             "erro":
                 "CHANNEL_USERNAME não configurado."
@@ -1377,19 +1691,24 @@ def telegram_enviar_mensagem(
 
             payload[
                 "reply_markup"
-            ] = reply_markup
+            ] = json.dumps(
+                reply_markup
+            )
 
         resposta = requests.post(
+
             telegram_api_url(
                 "sendMessage"
             ),
+
             json=payload,
+
             timeout=30
         )
 
         try:
 
-            return resposta.json()
+            resultado = resposta.json()
 
         except Exception:
 
@@ -1405,6 +1724,8 @@ def telegram_enviar_mensagem(
                     )
             }
 
+        return resultado
+
     except requests.RequestException as erro:
 
         return {
@@ -1418,14 +1739,15 @@ def telegram_enviar_mensagem(
 
 
 # ============================================================
-# TELEGRAM - ENVIO DE FOTO POR URL
+# TELEGRAM - ENVIO DE FOTO
 # ============================================================
 
-def telegram_enviar_foto_url(
+def telegram_enviar_foto(
     foto,
     legenda,
     canal,
-    reply_markup=None
+    reply_markup=None,
+    referer=""
 ):
 
     token = os.environ.get(
@@ -1455,26 +1777,28 @@ def telegram_enviar_foto_url(
                 "CHANNEL_USERNAME não configurado."
         }
 
-    if not foto:
-
-        return {
-
-            "ok":
-                False,
-
-            "erro":
-                "URL da imagem não encontrada."
-        }
-
     try:
+
+        conteudo_imagem = baixar_imagem(
+            foto,
+            referer=referer
+        )
+
+        if not conteudo_imagem:
+
+            return {
+
+                "ok":
+                    False,
+
+                "erro":
+                    "Não foi possível baixar a imagem do produto."
+            }
 
         payload = {
 
             "chat_id":
                 canal,
-
-            "photo":
-                foto,
 
             "caption":
                 legenda,
@@ -1487,156 +1811,6 @@ def telegram_enviar_foto_url(
 
             payload[
                 "reply_markup"
-            ] = reply_markup
-
-        resposta = requests.post(
-
-            telegram_api_url(
-                "sendPhoto"
-            ),
-
-            json=payload,
-
-            timeout=40
-        )
-
-        try:
-
-            return resposta.json()
-
-        except Exception:
-
-            return {
-
-                "ok":
-                    False,
-
-                "erro":
-                    (
-                        "Telegram retornou HTTP "
-                        f"{resposta.status_code}"
-                    )
-            }
-
-    except requests.RequestException as erro:
-
-        print(
-            "[TELEGRAM] Erro imagem:",
-            erro
-        )
-
-        return {
-
-            "ok":
-                False,
-
-            "erro":
-                str(erro)
-        }
-
-
-# ============================================================
-# TELEGRAM - ENVIO DE FOTO POR DOWNLOAD
-# ============================================================
-
-def telegram_enviar_foto_download(
-    foto,
-    legenda,
-    canal,
-    reply_markup=None
-):
-
-    token = os.environ.get(
-        "BOT_TOKEN",
-        ""
-    ).strip()
-
-    if not token:
-
-        return {
-
-            "ok":
-                False,
-
-            "erro":
-                "BOT_TOKEN não está disponível."
-        }
-
-    try:
-
-        resposta_imagem = session.get(
-            foto,
-            timeout=30,
-            headers={
-                "User-Agent":
-                    (
-                        "Mozilla/5.0 "
-                        "(Windows NT 10.0; Win64; x64) "
-                        "AppleWebKit/537.36 "
-                        "(KHTML, like Gecko) "
-                        "Chrome/131.0.0.0 Safari/537.36"
-                    )
-            }
-        )
-
-        if resposta_imagem.status_code != 200:
-
-            return {
-
-                "ok":
-                    False,
-
-                "erro":
-                    (
-                        "Não foi possível baixar a imagem. "
-                        f"HTTP {resposta_imagem.status_code}"
-                    )
-            }
-
-        content_type = (
-            resposta_imagem.headers.get(
-                "Content-Type",
-                ""
-            )
-        )
-
-        extensao = ".jpg"
-
-        if "png" in content_type.lower():
-            extensao = ".png"
-
-        elif "webp" in content_type.lower():
-            extensao = ".webp"
-
-        elif "gif" in content_type.lower():
-            extensao = ".gif"
-
-        files = {
-
-            "photo":
-                (
-                    "produto" + extensao,
-                    resposta_imagem.content,
-                    content_type or "image/jpeg"
-                )
-        }
-
-        data = {
-
-            "chat_id":
-                canal,
-
-            "caption":
-                legenda,
-
-            "parse_mode":
-                "HTML"
-        }
-
-        if reply_markup:
-
-            data[
-                "reply_markup"
             ] = json.dumps(
                 reply_markup
             )
@@ -1647,16 +1821,24 @@ def telegram_enviar_foto_download(
                 "sendPhoto"
             ),
 
-            data=data,
+            data=payload,
 
-            files=files,
+            files={
 
-            timeout=50
+                "photo":
+                    (
+                        "produto.jpg",
+                        conteudo_imagem,
+                        "image/jpeg"
+                    )
+            },
+
+            timeout=40
         )
 
         try:
 
-            return resposta.json()
+            resultado = resposta.json()
 
         except Exception:
 
@@ -1672,10 +1854,12 @@ def telegram_enviar_foto_download(
                     )
             }
 
+        return resultado
+
     except Exception as erro:
 
         print(
-            "[TELEGRAM] Erro download foto:",
+            "[TELEGRAM] Erro ao enviar foto:",
             erro
         )
 
@@ -1745,9 +1929,7 @@ def debug_telegram():
         "erro":
             resultado.get(
                 "erro"
-            )
-            or
-            resultado.get(
+            ) or resultado.get(
                 "description"
             )
     })
@@ -1991,26 +2173,20 @@ def link_shopee_valido(link):
 
         return False
 
-    try:
+    dominio = urlparse(
+        link
+    ).netloc.lower()
 
-        dominio = (
-            urlparse(
-                link
-            ).netloc.lower()
-        )
-
-    except Exception:
-
-        return False
-
-    # Aceita domínios da Shopee.
-    #
-    # Também aceita links encurtados que contenham
-    # "shopee" no domínio.
     return (
         "shopee." in dominio
         or
-        "shopee" in dominio
+        dominio.endswith(
+            "shopee.com"
+        )
+        or
+        dominio.endswith(
+            "shopee.com.br"
+        )
     )
 
 
@@ -2111,17 +2287,17 @@ def publicar_produto(
     )
 
     print(
-        "[TELEGRAM] Usuário:",
+        "Usuário:",
         usuario
     )
 
     print(
-        "[TELEGRAM] Canal:",
+        "Canal:",
         canal
     )
 
     print(
-        "[TELEGRAM] Link:",
+        "Link:",
         link
     )
 
@@ -2149,16 +2325,13 @@ def publicar_produto(
             "mensagem":
                 dados.get(
                     "erro",
-                    (
-                        "Não foi possível obter "
-                        "os dados do produto."
-                    )
+                    "Não foi possível acessar o produto."
                 )
         }
 
     titulo = dados.get(
         "titulo",
-        "Oferta Imperdível"
+        ""
     )
 
     preco_atual = dados.get(
@@ -2176,28 +2349,39 @@ def publicar_produto(
         ""
     )
 
+    url_final = dados.get(
+        "url_final",
+        link
+    )
+
     # ========================================================
-    # ESCAPA TÍTULO
+    # NÃO PUBLICA DADOS GENÉRICOS
     # ========================================================
 
-    titulo_html = escapar_html(
-        titulo
-    )
+    if not titulo:
+
+        return {
+
+            "sucesso":
+                False,
+
+            "mensagem":
+                (
+                    "Não foi possível identificar o título "
+                    "real do produto na Shopee."
+                )
+        }
 
     # ========================================================
     # PREÇOS
     # ========================================================
 
-    valor_atual = (
-        converter_preco_float(
-            preco_atual
-        )
+    valor_atual = converter_preco_float(
+        preco_atual
     )
 
-    valor_antigo = (
-        converter_preco_float(
-            preco_antigo
-        )
+    valor_antigo = converter_preco_float(
+        preco_antigo
     )
 
     if (
@@ -2210,10 +2394,10 @@ def publicar_produto(
 
         bloco_preco = (
 
-            f"💰 <s>De: {escapar_html(preco_antigo)}</s>\n"
+            f"💰 <s>De: {preco_antigo}</s>\n"
 
             f"🔥 <b>POR APENAS: "
-            f"{escapar_html(preco_atual)}!</b>"
+            f"{preco_atual}!</b>\n"
         )
 
     elif preco_atual:
@@ -2221,7 +2405,7 @@ def publicar_produto(
         bloco_preco = (
 
             f"💰 <b>POR APENAS: "
-            f"{escapar_html(preco_atual)}!</b>"
+            f"{preco_atual}!</b>\n"
         )
 
     else:
@@ -2229,8 +2413,28 @@ def publicar_produto(
         bloco_preco = (
 
             "💰 <b>Confira o preço "
-            "especial da oferta!</b>"
+            "da oferta!</b>\n"
         )
+
+    # ========================================================
+    # ESCAPA HTML
+    # ========================================================
+
+    def escapar_html(texto):
+
+        if texto is None:
+            return ""
+
+        return (
+            str(texto)
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+        )
+
+    titulo_html = escapar_html(
+        titulo
+    )
 
     # ========================================================
     # LEGENDA
@@ -2242,18 +2446,19 @@ def publicar_produto(
 
         f"📦 <b>{titulo_html}</b>\n\n"
 
-        f"{bloco_preco}\n\n"
+        f"{bloco_preco}\n"
 
-        "🚨 <b>Corre porque essa oferta pode acabar "
-        "a qualquer momento!</b>\n\n"
+        "🚨 <b>Corre porque essa oferta pode "
+        "acabar a qualquer momento!</b>\n\n"
 
         "👇 <b>APROVEITE AGORA!</b>\n\n"
 
-        "🦊 <b>Raposa Caçadora</b>"
+        "🦊 <b>Raposa Caçadora</b>\n"
+        "📌 Ofertas selecionadas todos os dias"
     )
 
     # ========================================================
-    # BOTÃO DE COMPRA
+    # BOTÃO REAL DO TELEGRAM
     # ========================================================
 
     reply_markup = {
@@ -2268,16 +2473,18 @@ def publicar_produto(
                         "🛒 COMPRAR AGORA",
 
                     "url":
-                        link
+                        url_final or link
                 }
 
             ]
 
         ]
+
     }
 
     # ========================================================
-    # ENVIA FOTO
+    # PRIMEIRA OPÇÃO:
+    # FOTO + LEGENDA
     # ========================================================
 
     resultado = None
@@ -2291,10 +2498,14 @@ def publicar_produto(
     ):
 
         print(
-            "[TELEGRAM] Tentando enviar foto por URL..."
+            "[TELEGRAM] Tentando enviar foto:"
         )
 
-        resultado = telegram_enviar_foto_url(
+        print(
+            foto_url
+        )
+
+        resultado = telegram_enviar_foto(
 
             foto=foto_url,
 
@@ -2302,52 +2513,51 @@ def publicar_produto(
 
             canal=canal,
 
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
+
+            referer=url_final
         )
 
-        # ====================================================
-        # FALLBACK
-        # ====================================================
+        # ----------------------------------------------------
+        # SE FALHAR, ENVIA TEXTO
+        # ----------------------------------------------------
 
         if not resultado.get(
             "ok"
         ):
 
             print(
-                "[TELEGRAM] URL da imagem falhou."
+                "[TELEGRAM] Falha ao enviar imagem."
             )
 
             print(
-                "[TELEGRAM] Tentando baixar a imagem..."
-            )
-
-            resultado = (
-                telegram_enviar_foto_download(
-
-                    foto=foto_url,
-
-                    legenda=legenda,
-
-                    canal=canal,
-
-                    reply_markup=reply_markup
+                "[TELEGRAM] Motivo:",
+                resultado.get(
+                    "description"
+                )
+                or
+                resultado.get(
+                    "erro"
                 )
             )
 
-    # ========================================================
-    # SEM FOTO OU FOTO FALHOU
-    # ========================================================
+            print(
+                "[TELEGRAM] Enviando mensagem como fallback."
+            )
 
-    if (
-        not resultado
-        or
-        not resultado.get(
-            "ok"
-        )
-    ):
+            resultado = telegram_enviar_mensagem(
+
+                texto=legenda,
+
+                canal=canal,
+
+                reply_markup=reply_markup
+            )
+
+    else:
 
         print(
-            "[TELEGRAM] Enviando mensagem sem foto."
+            "[TELEGRAM] Produto não possui imagem."
         )
 
         resultado = telegram_enviar_mensagem(
@@ -2360,7 +2570,7 @@ def publicar_produto(
         )
 
     # ========================================================
-    # ERRO TELEGRAM
+    # RESULTADO
     # ========================================================
 
     if not resultado.get(
@@ -2397,10 +2607,6 @@ def publicar_produto(
             "mensagem":
                 erro
         }
-
-    # ========================================================
-    # RESULTADO
-    # ========================================================
 
     mensagem_telegram = resultado.get(
         "result",
@@ -2439,7 +2645,10 @@ def publicar_produto(
             preco_antigo,
 
         "imagem":
-            foto_url
+            foto_url,
+
+        "url_final":
+            url_final
     }
 
 
@@ -2527,10 +2736,6 @@ def executar_tarefa(
                     tarefa[
                         "produto_link"
                     ] = ""
-
-            print(
-                f"[TASK] Finalizada {task_id}"
-            )
 
             return
 
@@ -2665,6 +2870,16 @@ def executar_tarefa(
                     "preco_antigo":
                         resultado.get(
                             "preco_antigo"
+                        ),
+
+                    "imagem":
+                        resultado.get(
+                            "imagem"
+                        ),
+
+                    "url_final":
+                        resultado.get(
+                            "url_final"
                         )
                 })
 
@@ -2738,7 +2953,6 @@ def executar_tarefa(
 
         if not sucesso:
 
-            # Continua para o próximo produto
             time.sleep(
                 1
             )
@@ -2873,10 +3087,7 @@ def configurar():
             return jsonify({
 
                 "erro":
-                    (
-                        "BOT_TOKEN não está disponível "
-                        "para o processo do Render."
-                    )
+                    "BOT_TOKEN não está disponível para o processo do Render."
             }), 500
 
         # ====================================================
@@ -2893,10 +3104,7 @@ def configurar():
             return jsonify({
 
                 "erro":
-                    (
-                        "CHANNEL_USERNAME não está disponível "
-                        "para o processo do Render."
-                    )
+                    "CHANNEL_USERNAME não está disponível para o processo do Render."
             }), 500
 
         # ====================================================
@@ -2986,7 +3194,7 @@ def configurar():
             }), 400
 
         # ====================================================
-        # VALIDAÇÃO DOS LINKS
+        # VALIDAÇÃO
         # ====================================================
 
         invalidos = [
@@ -3005,13 +3213,7 @@ def configurar():
             return jsonify({
 
                 "erro":
-                    (
-                        "Um ou mais links não são "
-                        "links válidos da Shopee."
-                    ),
-
-                "links_invalidos":
-                    invalidos[:5]
+                    "Um ou mais links não são links válidos da Shopee."
             }), 400
 
         # ====================================================
@@ -3048,10 +3250,7 @@ def configurar():
             return jsonify({
 
                 "erro":
-                    (
-                        "A quantidade não pode ser "
-                        "maior que os produtos."
-                    )
+                    "A quantidade não pode ser maior que os produtos."
             }), 400
 
         if quantidade > MAX_LINKS:
@@ -3264,7 +3463,74 @@ def parar(task_id):
 
 
 # ============================================================
-# EXECUÇÃO LOCAL / RENDER
+# TESTE DIRETO DE UM LINK
+# ============================================================
+
+@app.route(
+    "/api/testar-produto",
+    methods=["POST"]
+)
+def testar_produto():
+
+    try:
+
+        dados = request.get_json(
+            silent=True
+        ) or {}
+
+        link = str(
+            dados.get(
+                "link",
+                ""
+            )
+        ).strip()
+
+        if not link:
+
+            return jsonify({
+
+                "sucesso":
+                    False,
+
+                "erro":
+                    "Informe um link."
+            }), 400
+
+        if not link_shopee_valido(
+            link
+        ):
+
+            return jsonify({
+
+                "sucesso":
+                    False,
+
+                "erro":
+                    "O link não parece ser da Shopee."
+            }), 400
+
+        resultado = extrair_dados_produto(
+            link
+        )
+
+        return jsonify(
+            resultado
+        )
+
+    except Exception as erro:
+
+        return jsonify({
+
+            "sucesso":
+                False,
+
+            "erro":
+                str(erro)
+        }), 500
+
+
+# ============================================================
+# EXECUÇÃO LOCAL
 # ============================================================
 
 if __name__ == "__main__":

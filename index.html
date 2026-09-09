@@ -1,435 +1,3124 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-  <title>Bot Raposa Caçadora</title>
+    <meta name="theme-color" content="#080808">
 
-  <!-- Telegram WebApp SDK -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>Raposa Caçadora</title>
 
-  <!-- FontAwesome -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-  >
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+    <style>
+        /* =========================================================
+           RAPOSA CAÇADORA
+           PARTE 1 — DESIGN + DASHBOARD + AUTOMAÇÃO
+           ========================================================= */
 
-    body {
-      font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        Roboto,
-        Helvetica,
-        Arial,
-        sans-serif;
+        :root {
+            --bg: #070707;
+            --bg-soft: #0d0d0e;
+            --card: rgba(20, 20, 21, .78);
+            --card-solid: #111112;
 
-      background-color: #1c1c1e;
-      color: #ffffff;
-      padding: 20px;
-      margin: 0;
-    }
+            --orange: #ff6a00;
+            --orange-light: #ff8a33;
+            --orange-dark: #c94f00;
 
-    .container {
-      max-width: 400px;
-      margin: 0 auto;
-    }
+            --gold: #d7a84b;
 
-    h2 {
-      text-align: center;
-      margin-bottom: 25px;
-      color: #ff6b00;
-    }
+            --green: #27d17f;
+            --red: #ff4d5e;
+            --yellow: #ffb020;
 
-    .form-group {
-      margin-bottom: 15px;
-    }
+            --text: #f5f5f5;
+            --text-soft: #a2a2a8;
+            --text-muted: #66666d;
 
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-size: 14px;
-      color: #aaa;
-    }
+            --border: rgba(255,255,255,.075);
+            --border-orange: rgba(255,106,0,.28);
 
-    input {
-      width: 100%;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #333;
-      background-color: #2c2c2e;
-      color: #fff;
-      font-size: 16px;
-      outline: none;
-    }
+            --radius: 18px;
+            --radius-sm: 13px;
 
-    input:focus {
-      border-color: #ff6b00;
-    }
+            --shadow:
+                0 18px 45px rgba(0,0,0,.35);
 
-    button {
-      width: 100%;
-      padding: 14px;
-      border-radius: 8px;
-      border: none;
-      background-color: #ff6b00;
-      color: white;
-      font-weight: bold;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
+            --nav-height: 76px;
+        }
 
-    button:hover {
-      background-color: #e85f00;
-    }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-    button:disabled {
-      background-color: #555;
-      cursor: not-allowed;
-    }
+        html {
+            background: var(--bg);
+            color-scheme: dark;
+        }
 
-    #mensagem {
-      margin-top: 15px;
-      padding: 12px;
-      border-radius: 8px;
-      display: none;
-      font-size: 14px;
-      word-break: break-word;
-    }
+        body {
+            min-height: 100vh;
+            background:
+                radial-gradient(
+                    circle at 85% -10%,
+                    rgba(255,106,0,.09),
+                    transparent 32%
+                ),
+                radial-gradient(
+                    circle at -10% 35%,
+                    rgba(255,106,0,.045),
+                    transparent 28%
+                ),
+                var(--bg);
 
-    .msg-sucesso {
-      background-color: rgba(46, 204, 113, 0.2);
-      border: 1px solid #2ecc71;
-      color: #2ecc71;
-    }
+            color: var(--text);
+            font-family:
+                Inter,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
 
-    .msg-erro {
-      background-color: rgba(231, 76, 60, 0.2);
-      border: 1px solid #e74c3c;
-      color: #e74c3c;
-    }
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: calc(var(--nav-height) + 20px);
+            overflow-x: hidden;
+        }
 
-    .info {
-      margin-top: 20px;
-      padding: 12px;
-      background-color: #2c2c2e;
-      border-radius: 8px;
-      color: #aaa;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-  </style>
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        button {
+            border: 0;
+            cursor: pointer;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 18px 15px 30px;
+        }
+
+        /* =========================================================
+           HEADER
+           ========================================================= */
+
+        .top-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 22px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+
+        .brand-icon {
+            width: 43px;
+            height: 43px;
+            border-radius: 14px;
+
+            display: grid;
+            place-items: center;
+
+            font-size: 22px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(255,106,0,.20),
+                    rgba(255,106,0,.055)
+                );
+
+            border: 1px solid var(--border-orange);
+
+            box-shadow:
+                0 0 25px rgba(255,106,0,.08);
+        }
+
+        .brand-text h1 {
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: -.3px;
+        }
+
+        .brand-text span {
+            display: block;
+            margin-top: 3px;
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .server-status {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+
+            padding: 8px 10px;
+
+            border-radius: 999px;
+            background: rgba(255,255,255,.035);
+            border: 1px solid var(--border);
+
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: .5px;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 10px rgba(39,209,127,.65);
+
+            animation: pulse 2s infinite;
+        }
+
+        .server-status.offline .status-dot {
+            background: var(--red);
+            box-shadow: 0 0 10px rgba(255,77,94,.55);
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .45;
+            }
+        }
+
+        /* =========================================================
+           TELAS
+           ========================================================= */
+
+        .screen {
+            display: none;
+            animation: screenIn .28s ease;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes screenIn {
+            from {
+                opacity: 0;
+                transform: translateY(7px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .screen-title {
+            margin-bottom: 17px;
+        }
+
+        .screen-title h2 {
+            font-size: 23px;
+            letter-spacing: -.7px;
+        }
+
+        .screen-title p {
+            color: var(--text-soft);
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        /* =========================================================
+           HERO
+           ========================================================= */
+
+        .hero {
+            position: relative;
+            overflow: hidden;
+
+            padding: 22px;
+            margin-bottom: 14px;
+
+            border-radius: 22px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(255,106,0,.13),
+                    rgba(255,255,255,.025) 48%,
+                    rgba(255,255,255,.015)
+                );
+
+            border: 1px solid var(--border-orange);
+
+            box-shadow: var(--shadow);
+        }
+
+        .hero::after {
+            content: "";
+
+            position: absolute;
+            width: 170px;
+            height: 170px;
+
+            right: -80px;
+            top: -90px;
+
+            border-radius: 50%;
+
+            background: rgba(255,106,0,.10);
+            filter: blur(35px);
+
+            pointer-events: none;
+        }
+
+        .hero-label {
+            color: var(--orange-light);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            margin-bottom: 9px;
+        }
+
+        .hero h2 {
+            font-size: 24px;
+            line-height: 1.12;
+            letter-spacing: -.8px;
+            max-width: 300px;
+        }
+
+        .hero p {
+            color: var(--text-soft);
+            font-size: 12px;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        /* =========================================================
+           CARDS DE ESTATÍSTICAS
+           ========================================================= */
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .stat-card {
+            padding: 17px;
+
+            background: var(--card);
+            backdrop-filter: blur(15px);
+
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+
+            box-shadow: 0 10px 28px rgba(0,0,0,.18);
+
+            transition:
+                transform .2s ease,
+                border-color .2s ease;
+        }
+
+        .stat-card:active {
+            transform: scale(.98);
+        }
+
+        .stat-number {
+            font-size: 25px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .stat-label {
+            margin-top: 5px;
+
+            color: var(--text-muted);
+
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: .8px;
+        }
+
+        .stat-orange .stat-number {
+            color: var(--orange-light);
+        }
+
+        .stat-green .stat-number {
+            color: var(--green);
+        }
+
+        .stat-yellow .stat-number {
+            color: var(--yellow);
+        }
+
+        .stat-red .stat-number {
+            color: var(--red);
+        }
+
+        /* =========================================================
+           CARD PADRÃO
+           ========================================================= */
+
+        .card {
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(255,255,255,.045),
+                    rgba(255,255,255,.018)
+                );
+
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+
+            padding: 18px;
+            margin-bottom: 14px;
+
+            box-shadow: var(--shadow);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .card-subtitle {
+            color: var(--text-muted);
+            font-size: 10px;
+            margin-top: 4px;
+        }
+
+        .section-label {
+            display: block;
+
+            color: var(--text-muted);
+
+            font-size: 9px;
+            font-weight: 800;
+
+            letter-spacing: .9px;
+            text-transform: uppercase;
+
+            margin-bottom: 9px;
+        }
+
+        /* =========================================================
+           INPUT
+           ========================================================= */
+
+        .input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .input {
+            width: 100%;
+            min-height: 46px;
+
+            color: var(--text);
+
+            background: rgba(0,0,0,.28);
+
+            border: 1px solid var(--border);
+            border-radius: 13px;
+
+            padding: 0 13px;
+
+            outline: none;
+
+            transition:
+                border-color .2s ease,
+                box-shadow .2s ease;
+        }
+
+        .input::placeholder {
+            color: #55555c;
+        }
+
+        .input:focus {
+            border-color: var(--border-orange);
+
+            box-shadow:
+                0 0 0 3px rgba(255,106,0,.07);
+        }
+
+        /* =========================================================
+           BOTÕES
+           ========================================================= */
+
+        .btn {
+            min-height: 46px;
+
+            padding: 0 16px;
+
+            border-radius: 13px;
+
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+
+            font-size: 11px;
+            font-weight: 800;
+
+            transition:
+                transform .15s ease,
+                opacity .15s ease,
+                box-shadow .2s ease;
+        }
+
+        .btn:active {
+            transform: scale(.97);
+        }
+
+        .btn-primary {
+            color: #fff;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    var(--orange-light),
+                    var(--orange-dark)
+                );
+
+            box-shadow:
+                0 10px 25px rgba(255,106,0,.18);
+        }
+
+        .btn-primary:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            color: var(--text);
+
+            background: rgba(255,255,255,.045);
+
+            border: 1px solid var(--border);
+        }
+
+        .btn-danger {
+            color: var(--red);
+
+            background: rgba(255,77,94,.07);
+
+            border: 1px solid rgba(255,77,94,.18);
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        /* =========================================================
+           PRODUTOS
+           ========================================================= */
+
+        .products-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            margin-bottom: 10px;
+        }
+
+        .products-counter {
+            color: var(--orange-light);
+
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .products-counter.limit {
+            color: var(--red);
+        }
+
+        .products-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .product-item {
+            position: relative;
+
+            padding: 13px;
+
+            border-radius: 14px;
+
+            background: rgba(0,0,0,.22);
+
+            border: 1px solid var(--border);
+
+            animation: itemIn .22s ease;
+        }
+
+        @keyframes itemIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .product-top {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 9px;
+        }
+
+        .product-number {
+            width: 27px;
+            height: 27px;
+
+            flex: 0 0 27px;
+
+            display: grid;
+            place-items: center;
+
+            border-radius: 9px;
+
+            color: var(--orange-light);
+
+            background: rgba(255,106,0,.09);
+
+            border: 1px solid rgba(255,106,0,.16);
+
+            font-size: 9px;
+            font-weight: 800;
+        }
+
+        .product-name {
+            flex: 1;
+
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .remove-product {
+            width: 29px;
+            height: 29px;
+
+            display: grid;
+            place-items: center;
+
+            border-radius: 9px;
+
+            color: var(--text-muted);
+            background: rgba(255,255,255,.035);
+
+            font-size: 15px;
+        }
+
+        .remove-product:hover {
+            color: var(--red);
+        }
+
+        .product-input {
+            font-size: 10px;
+            min-height: 40px;
+        }
+
+        .product-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            margin-top: 8px;
+        }
+
+        .product-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+
+            color: var(--text-muted);
+
+            font-size: 8px;
+            font-weight: 800;
+            letter-spacing: .6px;
+        }
+
+        .status-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #555;
+        }
+
+        .product-item.valid {
+            border-color: rgba(39,209,127,.17);
+        }
+
+        .product-item.valid .status-indicator {
+            background: var(--green);
+            box-shadow: 0 0 8px rgba(39,209,127,.4);
+        }
+
+        .product-item.valid .product-status {
+            color: var(--green);
+        }
+
+        .product-item.invalid {
+            border-color: rgba(255,77,94,.25);
+        }
+
+        .product-item.invalid .status-indicator {
+            background: var(--red);
+        }
+
+        .product-item.invalid .product-status {
+            color: var(--red);
+        }
+
+        .add-product {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .paste-hint {
+            margin-top: 9px;
+
+            color: var(--text-muted);
+
+            font-size: 9px;
+            line-height: 1.5;
+        }
+
+        /* =========================================================
+           INTERVALOS
+           ========================================================= */
+
+        .interval-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 7px;
+        }
+
+        .interval-option {
+            min-height: 67px;
+
+            padding: 9px 5px;
+
+            border-radius: 13px;
+
+            background: rgba(255,255,255,.025);
+
+            border: 1px solid var(--border);
+
+            color: var(--text);
+
+            transition:
+                background .2s ease,
+                border-color .2s ease,
+                transform .15s ease;
+        }
+
+        .interval-option:active {
+            transform: scale(.97);
+        }
+
+        .interval-option.selected {
+            background: rgba(255,106,0,.09);
+            border-color: var(--border-orange);
+
+            box-shadow:
+                inset 0 0 0 1px rgba(255,106,0,.05);
+        }
+
+        .interval-icon {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .interval-time {
+            display: block;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .interval-desc {
+            display: block;
+
+            color: var(--text-muted);
+
+            font-size: 7px;
+            margin-top: 2px;
+        }
+
+        /* =========================================================
+           QUANTIDADE
+           ========================================================= */
+
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 7px;
+
+            background: rgba(0,0,0,.25);
+
+            border: 1px solid var(--border);
+            border-radius: 14px;
+        }
+
+        .quantity-info strong {
+            display: block;
+            font-size: 11px;
+        }
+
+        .quantity-info span {
+            display: block;
+
+            color: var(--text-muted);
+
+            font-size: 8px;
+            margin-top: 3px;
+        }
+
+        .quantity-buttons {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .quantity-btn {
+            width: 34px;
+            height: 34px;
+
+            border-radius: 10px;
+
+            color: var(--text);
+            background: rgba(255,255,255,.06);
+
+            font-size: 17px;
+        }
+
+        .quantity-value {
+            width: 34px;
+            text-align: center;
+
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        /* =========================================================
+           RESUMO
+           ========================================================= */
+
+        .summary {
+            padding: 15px;
+
+            border-radius: 14px;
+
+            background: rgba(255,255,255,.025);
+
+            border: 1px solid var(--border);
+        }
+
+        .summary-title {
+            color: var(--text-muted);
+
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: .9px;
+
+            margin-bottom: 11px;
+        }
+
+        .summary-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 7px 0;
+
+            border-bottom: 1px solid rgba(255,255,255,.04);
+
+            font-size: 10px;
+        }
+
+        .summary-row:last-child {
+            border-bottom: 0;
+        }
+
+        .summary-row span:first-child {
+            color: var(--text-muted);
+        }
+
+        .summary-row strong {
+            font-weight: 700;
+        }
+
+        /* =========================================================
+           TOAST
+           ========================================================= */
+
+        .toast-container {
+            position: fixed;
+
+            left: 15px;
+            right: 15px;
+            bottom: calc(var(--nav-height) + 15px);
+
+            z-index: 1000;
+
+            pointer-events: none;
+        }
+
+        .toast {
+            max-width: 540px;
+            margin: 0 auto;
+
+            padding: 13px 15px;
+
+            border-radius: 13px;
+
+            background: #171718;
+            border: 1px solid var(--border);
+
+            box-shadow: 0 15px 40px rgba(0,0,0,.5);
+
+            font-size: 11px;
+            line-height: 1.4;
+
+            animation: toastIn .25s ease;
+        }
+
+        .toast.success {
+            border-color: rgba(39,209,127,.25);
+        }
+
+        .toast.error {
+            border-color: rgba(255,77,94,.28);
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* =========================================================
+           NAVEGAÇÃO
+           ========================================================= */
+
+        .bottom-nav {
+            position: fixed;
+
+            left: 50%;
+            bottom: 9px;
+
+            transform: translateX(-50%);
+
+            width: min(530px, calc(100% - 18px));
+            height: var(--nav-height);
+
+            z-index: 900;
+
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+
+            padding: 7px;
+
+            border-radius: 21px;
+
+            background: rgba(17,17,18,.92);
+
+            backdrop-filter: blur(20px);
+
+            border: 1px solid rgba(255,255,255,.08);
+
+            box-shadow:
+                0 15px 50px rgba(0,0,0,.55);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+
+            border-radius: 15px;
+
+            color: #68686f;
+
+            background: transparent;
+
+            transition:
+                color .2s ease,
+                background .2s ease;
+        }
+
+        .nav-item.active {
+            color: var(--orange-light);
+
+            background: rgba(255,106,0,.08);
+        }
+
+        .nav-icon {
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .nav-label {
+            font-size: 8px;
+            font-weight: 800;
+        }
+
+        /* =========================================================
+           TELAS FUTURAS
+           ========================================================= */
+
+        .placeholder {
+            min-height: 280px;
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+
+            text-align: center;
+
+            color: var(--text-muted);
+        }
+
+        .placeholder-icon {
+            font-size: 35px;
+            margin-bottom: 12px;
+            opacity: .7;
+        }
+
+        .placeholder strong {
+            color: var(--text-soft);
+            font-size: 13px;
+        }
+
+        .placeholder span {
+            max-width: 260px;
+            margin-top: 6px;
+
+            font-size: 10px;
+            line-height: 1.5;
+        }
+
+        /* =========================================================
+           RESPONSIVIDADE
+           ========================================================= */
+
+        @media (max-width: 360px) {
+            .app {
+                padding-left: 11px;
+                padding-right: 11px;
+            }
+
+            .interval-grid {
+                gap: 4px;
+            }
+
+            .interval-option {
+                padding-left: 2px;
+                padding-right: 2px;
+            }
+
+            .interval-time {
+                font-size: 9px;
+            }
+
+            .hero h2 {
+                font-size: 21px;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-  <div class="container">
+<div class="app">
 
-    <h2>🦊 Raposa Caçadora</h2>
+    <!-- =========================================================
+         HEADER
+         ========================================================= -->
 
-    <div class="form-group">
-      <label for="linkCanal">
-        Link da vitrine / produto:
-      </label>
+    <header class="top-header">
 
-      <input
-        type="text"
-        id="linkCanal"
-        placeholder="https://meli.la/18mjK4a"
-        autocomplete="off"
-      >
-    </div>
+        <div class="brand">
 
-    <div class="form-group">
-      <label for="intervalo">
-        Intervalo entre postagens (minutos):
-      </label>
+            <div class="brand-icon">
+                🦊
+            </div>
 
-      <input
-        type="number"
-        id="intervalo"
-        value="30"
-        min="1"
-        step="1"
-      >
-    </div>
+            <div class="brand-text">
+                <h1>Raposa Caçadora</h1>
+                <span>Automação inteligente de ofertas Shopee</span>
+            </div>
 
-    <div class="form-group">
-      <label for="quantidade">
-        Quantidade de ofertas:
-      </label>
+        </div>
 
-      <input
-        type="number"
-        id="quantidade"
-        value="5"
-        min="1"
-        max="50"
-        step="1"
-      >
-    </div>
+        <div class="server-status" id="serverStatus">
+
+            <span class="status-dot"></span>
+
+            <span id="serverStatusText">
+                BOT ONLINE
+            </span>
+
+        </div>
+
+    </header>
+
+
+    <!-- =========================================================
+         INÍCIO
+         ========================================================= -->
+
+    <main>
+
+        <section
+            class="screen active"
+            id="screen-home"
+            data-screen="home">
+
+            <div class="hero">
+
+                <div class="hero-label">
+                    SHOPEE AUTOMATION
+                </div>
+
+                <h2>
+                    Automação inteligente de ofertas.
+                </h2>
+
+                <p>
+                    Gerencie seus produtos Shopee com velocidade,
+                    controle e acompanhamento centralizado.
+                </p>
+
+            </div>
+
+
+            <div class="stats-grid">
+
+                <div class="stat-card stat-orange">
+                    <div class="stat-number" id="statOffers">
+                        0
+                    </div>
+
+                    <div class="stat-label">
+                        OFERTAS HOJE
+                    </div>
+                </div>
+
+                <div class="stat-card stat-green">
+                    <div class="stat-number" id="statPosted">
+                        0
+                    </div>
+
+                    <div class="stat-label">
+                        POSTADAS
+                    </div>
+                </div>
+
+                <div class="stat-card stat-yellow">
+                    <div class="stat-number" id="statPending">
+                        0
+                    </div>
+
+                    <div class="stat-label">
+                        PENDENTES
+                    </div>
+                </div>
+
+                <div class="stat-card stat-red">
+                    <div class="stat-number" id="statErrors">
+                        0
+                    </div>
+
+                    <div class="stat-label">
+                        ERROS
+                    </div>
+                </div>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <div>
+                        <div class="card-title">
+                            Nova automação
+                        </div>
+
+                        <div class="card-subtitle">
+                            Configure uma nova sequência Shopee
+                        </div>
+                    </div>
+
+                    <span style="font-size:20px;">🚀</span>
+
+                </div>
+
+                <div class="summary">
+
+                    <div class="summary-row">
+                        <span>Produtos</span>
+                        <strong id="homeProducts">
+                            0
+                        </strong>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Intervalo</span>
+                        <strong id="homeInterval">
+                            1 min
+                        </strong>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Postagens</span>
+                        <strong id="homeQuantity">
+                            1
+                        </strong>
+                    </div>
+
+                </div>
+
+                <div style="height:10px;"></div>
+
+                <button
+                    class="btn btn-primary btn-full"
+                    onclick="navigateTo('automation')">
+
+                    🚀 CONFIGURAR AUTOMAÇÃO
+
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             AUTOMAÇÃO
+             ===================================================== -->
+
+        <section
+            class="screen"
+            id="screen-automation"
+            data-screen="automation">
+
+            <div class="screen-title">
+
+                <h2>
+                    Automação
+                </h2>
+
+                <p>
+                    Configure os produtos que serão processados.
+                </p>
+
+            </div>
+
+
+            <!-- PRODUTOS -->
+
+            <div class="card">
+
+                <div class="products-header">
+
+                    <div>
+                        <div class="card-title">
+                            Produtos Shopee
+                        </div>
+
+                        <div class="card-subtitle">
+                            Adicione até 20 links
+                        </div>
+                    </div>
+
+                    <div
+                        class="products-counter"
+                        id="productsCounter">
+
+                        0 / 20
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="products-list"
+                    id="productsList">
+                </div>
+
+
+                <button
+                    class="btn btn-secondary add-product"
+                    id="addProductButton"
+                    onclick="addProduct()">
+
+                    + ADICIONAR PRODUTO
+
+                </button>
+
+
+                <p class="paste-hint">
+
+                    Dica: você pode colar vários links separados
+                    por quebra de linha, espaço ou vírgula.
+
+                </p>
+
+            </div>
+
+
+            <!-- INTERVALOS -->
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <div>
+                        <div class="card-title">
+                            Intervalo
+                        </div>
+
+                        <div class="card-subtitle">
+                            Tempo entre as postagens
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <div class="interval-grid">
+
+                    <button
+                        class="interval-option"
+                        data-interval="10"
+                        onclick="selectInterval(10, this)">
+
+                        <div class="interval-icon">
+                            ⚡
+                        </div>
+
+                        <span class="interval-time">
+                            10s
+                        </span>
+
+                        <span class="interval-desc">
+                            Rápido
+                        </span>
+
+                    </button>
+
+
+                    <button
+                        class="interval-option selected"
+                        data-interval="60"
+                        onclick="selectInterval(60, this)">
+
+                        <div class="interval-icon">
+                            🚀
+                        </div>
+
+                        <span class="interval-time">
+                            1 min
+                        </span>
+
+                        <span class="interval-desc">
+                            Normal
+                        </span>
+
+                    </button>
+
+
+                    <button
+                        class="interval-option"
+                        data-interval="300"
+                        onclick="selectInterval(300, this)">
+
+                        <div class="interval-icon">
+                            🛡️
+                        </div>
+
+                        <span class="interval-time">
+                            5 min
+                        </span>
+
+                        <span class="interval-desc">
+                            Moderado
+                        </span>
+
+                    </button>
+
+
+                    <button
+                        class="interval-option"
+                        data-interval="600"
+                        onclick="selectInterval(600, this)">
+
+                        <div class="interval-icon">
+                            ◷
+                        </div>
+
+                        <span class="interval-time">
+                            10 min
+                        </span>
+
+                        <span class="interval-desc">
+                            Conservador
+                        </span>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- QUANTIDADE -->
+
+            <div class="card">
+
+                <div class="quantity-control">
+
+                    <div class="quantity-info">
+
+                        <strong>
+                            Quantidade de postagens
+                        </strong>
+
+                        <span>
+                            Mínimo 1 • máximo 20
+                        </span>
+
+                    </div>
+
+
+                    <div class="quantity-buttons">
+
+                        <button
+                            class="quantity-btn"
+                            onclick="changeQuantity(-1)">
+
+                            −
+
+                        </button>
+
+                        <div
+                            class="quantity-value"
+                            id="quantityValue">
+
+                            1
+
+                        </div>
+
+                        <button
+                            class="quantity-btn"
+                            onclick="changeQuantity(1)">
+
+                            +
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- RESUMO -->
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <div>
+                        <div class="card-title">
+                            Resumo
+                        </div>
+
+                        <div class="card-subtitle">
+                            Confira antes de iniciar
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <div class="summary">
+
+                    <div class="summary-row">
+                        <span>Produtos</span>
+
+                        <strong id="summaryProducts">
+                            0
+                        </strong>
+                    </div>
+
+
+                    <div class="summary-row">
+                        <span>Intervalo</span>
+
+                        <strong id="summaryInterval">
+                            1 min
+                        </strong>
+                    </div>
+
+
+                    <div class="summary-row">
+                        <span>Postagens</span>
+
+                        <strong id="summaryQuantity">
+                            1
+                        </strong>
+                    </div>
+
+
+                    <div class="summary-row">
+                        <span>Início</span>
+
+                        <strong>
+                            Agora
+                        </strong>
+                    </div>
+
+                </div>
+
+
+                <div style="height:12px;"></div>
+
+
+                <button
+                    class="btn btn-primary btn-full"
+                    id="startAutomationButton"
+                    onclick="startAutomation()">
+
+                    🚀 INICIAR AUTOMAÇÃO
+
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             HISTÓRICO — PARTE 2
+             ===================================================== -->
+
+        <section
+            class="screen"
+            id="screen-history"
+            data-screen="history">
+
+            <div class="screen-title">
+
+                <h2>
+                    Histórico
+                </h2>
+
+                <p>
+                    Acompanhe suas automações anteriores.
+                </p>
+
+            </div>
+
+            <div class="card placeholder">
+
+                <div class="placeholder-icon">
+                    📊
+                </div>
+
+                <strong>
+                    Histórico preparado
+                </strong>
+
+                <span>
+                    A integração com o histórico real será adicionada
+                    na segunda parte.
+                </span>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             CONFIGURAÇÕES — PARTE 2
+             ===================================================== -->
+
+        <section
+            class="screen"
+            id="screen-settings"
+            data-screen="settings">
+
+            <div class="screen-title">
+
+                <h2>
+                    Configurações
+                </h2>
+
+                <p>
+                    Preferências da Raposa Caçadora.
+                </p>
+
+            </div>
+
+            <div class="card placeholder">
+
+                <div class="placeholder-icon">
+                    ⚙️
+                </div>
+
+                <strong>
+                    Configurações
+                </strong>
+
+                <span>
+                    As opções avançadas serão adicionadas
+                    na segunda parte.
+                </span>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<!-- =============================================================
+     TOASTS
+     ============================================================= -->
+
+<div
+    class="toast-container"
+    id="toastContainer">
+</div>
+
+
+<!-- =============================================================
+     NAVEGAÇÃO INFERIOR
+     ============================================================= -->
+
+<nav class="bottom-nav">
 
     <button
-      id="btn-iniciar"
-      onclick="enviarConfiguracao()"
-    >
-      <i class="fa-solid fa-rocket"></i>
-      INICIAR POSTAGENS AUTO
+        class="nav-item active"
+        data-target="home"
+        onclick="navigateTo('home')">
+
+        <span class="nav-icon">
+            🏠
+        </span>
+
+        <span class="nav-label">
+            Início
+        </span>
+
     </button>
 
-    <div id="mensagem"></div>
 
-    <div class="info">
-      🦊 Cole um link do Mercado Livre ou Natura e a Raposa
-      tentará processar a oferta automaticamente.
-    </div>
+    <button
+        class="nav-item"
+        data-target="automation"
+        onclick="navigateTo('automation')">
 
-  </div>
+        <span class="nav-icon">
+            🚀
+        </span>
 
-  <script>
+        <span class="nav-label">
+            Automação
+        </span>
 
-    // ============================================================
-    // TELEGRAM WEB APP
-    // ============================================================
+    </button>
 
-    const tg = window.Telegram?.WebApp;
 
-    if (tg) {
-      tg.ready();
-      tg.expand();
+    <button
+        class="nav-item"
+        data-target="history"
+        onclick="navigateTo('history')">
+
+        <span class="nav-icon">
+            📊
+        </span>
+
+        <span class="nav-label">
+            Histórico
+        </span>
+
+    </button>
+
+
+    <button
+        class="nav-item"
+        data-target="settings"
+        onclick="navigateTo('settings')">
+
+        <span class="nav-icon">
+            ⚙️
+        </span>
+
+        <span class="nav-label">
+            Config.
+        </span>
+
+    </button>
+
+</nav>
+
+
+<script>
+/* ===============================================================
+   RAPOSA CAÇADORA
+   PARTE 1 — JAVASCRIPT
+   =============================================================== */
+
+
+/* ===============================================================
+   CONFIGURAÇÃO
+   =============================================================== */
+
+const CONFIG = {
+
+    API_BASE:
+        "https://bot-raposa-cacadora.onrender.com",
+
+    ENDPOINT_CONFIGURAR:
+        "/api/configurar",
+
+    MAX_PRODUCTS:
+        20,
+
+    MIN_QUANTITY:
+        1,
+
+    MAX_QUANTITY:
+        20
+
+};
+
+
+/* ===============================================================
+   ESTADO DA APLICAÇÃO
+   =============================================================== */
+
+const state = {
+
+    initData:
+        "",
+
+    products:
+        [],
+
+    interval:
+        60,
+
+    quantity:
+        1,
+
+    automation:
+        null,
+
+    serverOnline:
+        true
+
+};
+
+
+/* ===============================================================
+   TELEGRAM WEB APP
+   =============================================================== */
+
+const tg =
+    window.Telegram &&
+    window.Telegram.WebApp
+        ? window.Telegram.WebApp
+        : null;
+
+
+function initTelegram() {
+
+    if (!tg) {
+        console.warn(
+            "Telegram WebApp não detectado."
+        );
+
+        return;
+    }
+
+    try {
+
+        tg.ready();
+
+        tg.expand();
+
+        state.initData =
+            tg.initData || "";
+
+        /*
+         * Mantemos initData exatamente como
+         * fornecido pelo Telegram.
+         */
+
+        if (tg.colorScheme) {
+            document.documentElement.dataset.telegramTheme =
+                tg.colorScheme;
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Erro ao inicializar Telegram WebApp:",
+            error
+        );
+
+    }
+
+}
+
+
+/* ===============================================================
+   NAVEGAÇÃO SPA
+   =============================================================== */
+
+function navigateTo(screenName) {
+
+    document
+        .querySelectorAll(".screen")
+        .forEach(screen => {
+
+            screen.classList.toggle(
+                "active",
+                screen.dataset.screen === screenName
+            );
+
+        });
+
+
+    document
+        .querySelectorAll(".nav-item")
+        .forEach(button => {
+
+            button.classList.toggle(
+                "active",
+                button.dataset.target === screenName
+            );
+
+        });
+
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+
+}
+
+
+/* ===============================================================
+   PRODUTOS
+   =============================================================== */
+
+function addProduct(initialValue = "") {
+
+    if (
+        state.products.length >=
+        CONFIG.MAX_PRODUCTS
+    ) {
+
+        showToast(
+            "Limite de 20 produtos atingido.",
+            "error"
+        );
+
+        updateProductsUI();
+
+        return;
+
     }
 
 
-    // ============================================================
-    // MENSAGENS
-    // ============================================================
+    state.products.push({
 
-    function mostrarMensagem(texto, tipo) {
+        id:
+            crypto.randomUUID
+            ? crypto.randomUUID()
+            : Date.now() + Math.random(),
 
-      const msgBox = document.getElementById("mensagem");
+        link:
+            initialValue.trim(),
 
-      msgBox.style.display = "block";
+        status:
+            "aguardando",
 
-      if (tipo === "sucesso") {
-        msgBox.className = "msg-sucesso";
-      } else {
-        msgBox.className = "msg-erro";
-      }
+        valid:
+            initialValue.trim()
+                ? isShopeeLink(initialValue.trim())
+                : false,
 
-      msgBox.innerText = texto;
+        createdAt:
+            new Date().toISOString()
+
+    });
+
+
+    updateProductsUI();
+
+}
+
+
+function removeProduct(id) {
+
+    state.products =
+        state.products.filter(
+            product => product.id !== id
+        );
+
+    normalizeQuantity();
+
+    updateProductsUI();
+
+}
+
+
+function updateProductLink(id, value) {
+
+    const product =
+        state.products.find(
+            item => item.id === id
+        );
+
+    if (!product) {
+        return;
     }
 
 
-    // ============================================================
-    // ENVIA CONFIGURAÇÃO PARA O RENDER
-    // ============================================================
+    product.link =
+        value.trim();
 
-    async function enviarConfiguracao() {
+    product.valid =
+        product.link.length > 0 &&
+        isShopeeLink(product.link);
 
-      const btn = document.getElementById("btn-iniciar");
+    updateProductsUI(false);
 
-      const link = document
-        .getElementById("linkCanal")
-        .value
-        .trim();
-
-      const intervalo = document
-        .getElementById("intervalo")
-        .value;
-
-      const quantidade = document
-        .getElementById("quantidade")
-        .value;
+}
 
 
-      // ----------------------------------------------------------
-      // VALIDAÇÕES
-      // ----------------------------------------------------------
+/* ===============================================================
+   RENDER DOS PRODUTOS
+   =============================================================== */
 
-      if (!link) {
-        mostrarMensagem(
-          "❌ Informe o link da vitrine ou produto.",
-          "erro"
-        );
-        return;
-      }
+function updateProductsUI(rebuild = true) {
 
-      if (!intervalo || Number(intervalo) < 1) {
-        mostrarMensagem(
-          "❌ O intervalo deve ser de pelo menos 1 minuto.",
-          "erro"
-        );
-        return;
-      }
-
-      if (!quantidade || Number(quantidade) < 1) {
-        mostrarMensagem(
-          "❌ Informe uma quantidade válida de ofertas.",
-          "erro"
-        );
-        return;
-      }
-
-
-      // ----------------------------------------------------------
-      // BOTÃO
-      // ----------------------------------------------------------
-
-      btn.disabled = true;
-
-      btn.innerHTML =
-        '<i class="fa-solid fa-spinner fa-spin"></i> ENVIANDO...';
-
-
-      // ----------------------------------------------------------
-      // DADOS
-      // ----------------------------------------------------------
-
-      const dadosParaEnviar = {
-
-        // Dados oficiais do Telegram WebApp
-        initData: tg ? tg.initData : "",
-
-        // IMPORTANTE:
-        // O Flask espera "link", não "linkCanal".
-        link: link,
-
-        // O backend trabalha internamente em segundos.
-        // O usuário informa minutos.
-        intervalo: Number(intervalo),
-
-        quantidade: Number(quantidade)
-      };
-
-
-      console.log(
-        "Enviando configuração:",
-        dadosParaEnviar
-      );
-
-
-      try {
-
-        const resposta = await fetch(
-          "https://bot-raposa-cacadora.onrender.com/api/configurar",
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type": "application/json"
-            },
-
-            body: JSON.stringify(dadosParaEnviar)
-          }
+    const list =
+        document.getElementById(
+            "productsList"
         );
 
+    if (rebuild) {
 
-        // --------------------------------------------------------
-        // TENTA LER JSON
-        // --------------------------------------------------------
+        list.innerHTML = "";
 
-        const resultado =
-          await resposta.json().catch(() => ({}));
+        state.products.forEach(
+            (product, index) => {
+
+                const item =
+                    document.createElement("div");
+
+                item.className =
+                    "product-item";
+
+                if (product.valid) {
+                    item.classList.add("valid");
+                }
+
+                if (
+                    product.link &&
+                    !product.valid
+                ) {
+                    item.classList.add("invalid");
+                }
 
 
-        // --------------------------------------------------------
-        // ERRO HTTP
-        // --------------------------------------------------------
+                item.innerHTML = `
 
-        if (!resposta.ok) {
+                    <div class="product-top">
 
-          let mensagemErro =
-            `Erro HTTP ${resposta.status}`;
+                        <div class="product-number">
+                            ${String(index + 1).padStart(2, "0")}
+                        </div>
+
+                        <div class="product-name">
+                            Produto Shopee
+                        </div>
+
+                        <button
+                            class="remove-product"
+                            onclick="removeProduct('${product.id}')"
+                            aria-label="Remover produto">
+
+                            ×
+
+                        </button>
+
+                    </div>
 
 
-          if (resultado) {
+                    <input
+                        class="input product-input"
+                        type="url"
+                        inputmode="url"
+                        autocomplete="off"
+                        placeholder="https://shopee.com.br/..."
+                        value="${escapeHtml(product.link)}"
+                        oninput="updateProductLink('${product.id}', this.value)"
+                    >
 
-            if (
-              typeof resultado.erro === "string"
-            ) {
-              mensagemErro = resultado.erro;
+
+                    <div class="product-footer">
+
+                        <div class="product-status">
+
+                            <span class="status-indicator"></span>
+
+                            <span>
+                                ${
+                                    !product.link
+                                    ? "AGUARDANDO LINK"
+                                    : product.valid
+                                        ? "LINK VÁLIDO"
+                                        : "LINK INVÁLIDO"
+                                }
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                `;
+
+
+                list.appendChild(item);
+
             }
+        );
 
-            else if (
-              typeof resultado.error === "string"
-            ) {
-              mensagemErro = resultado.error;
+    }
+
+
+    const count =
+        state.products.length;
+
+
+    const counter =
+        document.getElementById(
+            "productsCounter"
+        );
+
+    counter.textContent =
+        `${count} / ${CONFIG.MAX_PRODUCTS}`;
+
+
+    counter.classList.toggle(
+        "limit",
+        count >= CONFIG.MAX_PRODUCTS
+    );
+
+
+    const addButton =
+        document.getElementById(
+            "addProductButton"
+        );
+
+    addButton.disabled =
+        count >= CONFIG.MAX_PRODUCTS;
+
+
+    if (
+        count >= CONFIG.MAX_PRODUCTS
+    ) {
+
+        addButton.textContent =
+            "LIMITE DE 20 PRODUTOS";
+
+    } else {
+
+        addButton.textContent =
+            "+ ADICIONAR PRODUTO";
+
+    }
+
+
+    updateSummaryUI();
+
+}
+
+
+/* ===============================================================
+   COLAGEM DE VÁRIOS LINKS
+   =============================================================== */
+
+function extractLinks(text) {
+
+    if (!text) {
+        return [];
+    }
+
+
+    /*
+     * Identifica URLs mesmo quando o usuário
+     * cola separadas por:
+     *
+     * quebra de linha
+     * espaço
+     * vírgula
+     */
+
+    const matches =
+        text.match(
+            /https?:\/\/[^\s,]+/gi
+        );
+
+
+    if (!matches) {
+        return [];
+    }
+
+
+    return [
+        ...new Set(
+            matches.map(
+                link =>
+                    link
+                        .trim()
+                        .replace(
+                            /[),.;]+$/g,
+                            ""
+                        )
+            )
+        )
+    ];
+
+}
+
+
+function addMultipleLinks(text) {
+
+    const links =
+        extractLinks(text);
+
+
+    if (!links.length) {
+        return;
+    }
+
+
+    const available =
+        CONFIG.MAX_PRODUCTS -
+        state.products.length;
+
+
+    const accepted =
+        links.slice(
+            0,
+            available
+        );
+
+
+    accepted.forEach(
+        link => addProduct(link)
+    );
+
+
+    if (
+        links.length >
+        available
+    ) {
+
+        showToast(
+            `Apenas ${available} links puderam ser adicionados. Limite de 20 produtos.`,
+            "error"
+        );
+
+    }
+
+}
+
+
+/* ===============================================================
+   VALIDAÇÃO SHOPEE
+   =============================================================== */
+
+function isShopeeLink(value) {
+
+    if (!value) {
+        return false;
+    }
+
+
+    try {
+
+        const url =
+            new URL(value);
+
+
+        const hostname =
+            url.hostname
+                .toLowerCase()
+                .replace(/^www\./, "");
+
+
+        /*
+         * Aceitamos somente domínios Shopee.
+         */
+
+        return (
+            hostname === "shopee.com.br" ||
+            hostname.endsWith(".shopee.com.br")
+        );
+
+    } catch {
+
+        return false;
+
+    }
+
+}
+
+
+/* ===============================================================
+   INTERVALOS
+   =============================================================== */
+
+function selectInterval(seconds, element) {
+
+    state.interval =
+        Number(seconds);
+
+
+    document
+        .querySelectorAll(
+            ".interval-option"
+        )
+        .forEach(option => {
+
+            option.classList.remove(
+                "selected"
+            );
+
+        });
+
+
+    if (element) {
+
+        element.classList.add(
+            "selected"
+        );
+
+    }
+
+
+    updateSummaryUI();
+
+}
+
+
+/* ===============================================================
+   QUANTIDADE
+   =============================================================== */
+
+function changeQuantity(delta) {
+
+    const available =
+        state.products.length;
+
+
+    let next =
+        state.quantity + delta;
+
+
+    next =
+        Math.max(
+            CONFIG.MIN_QUANTITY,
+            next
+        );
+
+
+    next =
+        Math.min(
+            CONFIG.MAX_QUANTITY,
+            next
+        );
+
+
+    if (available > 0) {
+
+        next =
+            Math.min(
+                next,
+                available
+            );
+
+    }
+
+
+    state.quantity =
+        next;
+
+
+    updateQuantityUI();
+
+}
+
+
+function normalizeQuantity() {
+
+    const available =
+        state.products.length;
+
+
+    if (available <= 0) {
+
+        state.quantity = 1;
+
+        return;
+
+    }
+
+
+    state.quantity =
+        Math.min(
+            Math.max(
+                CONFIG.MIN_QUANTITY,
+                state.quantity
+            ),
+            available,
+            CONFIG.MAX_QUANTITY
+        );
+
+}
+
+
+function updateQuantityUI() {
+
+    normalizeQuantity();
+
+
+    document.getElementById(
+        "quantityValue"
+    ).textContent =
+        state.quantity;
+
+
+    updateSummaryUI();
+
+}
+
+
+/* ===============================================================
+   RESUMO
+   =============================================================== */
+
+function formatInterval(seconds) {
+
+    if (seconds < 60) {
+        return `${seconds}s`;
+    }
+
+
+    return `${seconds / 60} min`;
+
+}
+
+
+function updateSummaryUI() {
+
+    const products =
+        state.products.length;
+
+
+    const intervalText =
+        formatInterval(
+            state.interval
+        );
+
+
+    const quantity =
+        state.quantity;
+
+
+    const summaryProducts =
+        document.getElementById(
+            "summaryProducts"
+        );
+
+    const summaryInterval =
+        document.getElementById(
+            "summaryInterval"
+        );
+
+    const summaryQuantity =
+        document.getElementById(
+            "summaryQuantity"
+        );
+
+
+    if (summaryProducts) {
+        summaryProducts.textContent =
+            products;
+    }
+
+    if (summaryInterval) {
+        summaryInterval.textContent =
+            intervalText;
+    }
+
+    if (summaryQuantity) {
+        summaryQuantity.textContent =
+            quantity;
+    }
+
+
+    const homeProducts =
+        document.getElementById(
+            "homeProducts"
+        );
+
+    const homeInterval =
+        document.getElementById(
+            "homeInterval"
+        );
+
+    const homeQuantity =
+        document.getElementById(
+            "homeQuantity"
+        );
+
+
+    if (homeProducts) {
+        homeProducts.textContent =
+            products;
+    }
+
+    if (homeInterval) {
+        homeInterval.textContent =
+            intervalText;
+    }
+
+    if (homeQuantity) {
+        homeQuantity.textContent =
+            quantity;
+    }
+
+}
+
+
+/* ===============================================================
+   API
+   =============================================================== */
+
+async function configurarAutomacao(payload) {
+
+    const url =
+        CONFIG.API_BASE +
+        CONFIG.ENDPOINT_CONFIGURAR;
+
+
+    const response =
+        await fetch(
+            url,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body:
+                    JSON.stringify(payload)
             }
-
-            else if (
-              typeof resultado.mensagem === "string"
-            ) {
-              mensagemErro = resultado.mensagem;
-            }
-          }
+        );
 
 
-          mostrarMensagem(
-            "❌ " + mensagemErro,
-            "erro"
-          );
+    let data = null;
 
-          return;
+
+    try {
+
+        data =
+            await response.json();
+
+    } catch {
+
+        data = null;
+
+    }
+
+
+    if (!response.ok) {
+
+        const message =
+            data?.message ||
+            data?.erro ||
+            "Não foi possível iniciar a automação.";
+
+        throw new Error(message);
+
+    }
+
+
+    return data;
+
+}
+
+
+/* ===============================================================
+   INICIAR AUTOMAÇÃO
+   =============================================================== */
+
+async function startAutomation() {
+
+    const validProducts =
+        state.products.filter(
+            product =>
+                product.valid &&
+                product.link
+        );
+
+
+    if (
+        validProducts.length === 0
+    ) {
+
+        showToast(
+            "Adicione pelo menos um link válido da Shopee.",
+            "error"
+        );
+
+        navigateTo("automation");
+
+        return;
+
+    }
+
+
+    if (
+        validProducts.length !==
+        state.products.length
+    ) {
+
+        showToast(
+            "Corrija os links inválidos antes de iniciar.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    normalizeQuantity();
+
+
+    if (
+        state.quantity >
+        validProducts.length
+    ) {
+
+        state.quantity =
+            validProducts.length;
+
+        updateQuantityUI();
+
+    }
+
+
+    /*
+     * Compatibilidade com o backend atual.
+     *
+     * links = todos os produtos
+     * link  = primeiro link
+     * intervalo = segundos
+     * quantidade = quantidade solicitada
+     * initData = Telegram WebApp initData
+     */
+
+    const payload = {
+
+        initData:
+            state.initData,
+
+        links:
+            validProducts.map(
+                product =>
+                    product.link
+            ),
+
+        link:
+            validProducts[0].link,
+
+        intervalo:
+            Number(state.interval),
+
+        quantidade:
+            Number(state.quantity)
+
+    };
+
+
+    const button =
+        document.getElementById(
+            "startAutomationButton"
+        );
+
+
+    button.disabled =
+        true;
+
+    button.textContent =
+        "CONECTANDO AO SERVIDOR...";
+
+
+    try {
+
+        const result =
+            await configurarAutomacao(
+                payload
+            );
+
+
+        /*
+         * NÃO marcamos produtos como
+         * POSTADOS aqui.
+         *
+         * O backend precisa confirmar
+         * cada postagem.
+         */
+
+        state.automation = {
+
+            startedAt:
+                new Date().toISOString(),
+
+            products:
+                validProducts.map(
+                    product => ({
+                        ...product,
+                        status:
+                            "aguardando"
+                    })
+                ),
+
+            interval:
+                state.interval,
+
+            quantity:
+                state.quantity,
+
+            backendResponse:
+                result
+
+        };
+
+
+        setServerStatus(
+            true
+        );
+
+
+        showToast(
+            "Automação iniciada com sucesso.",
+            "success"
+        );
+
+
+        /*
+         * A segunda parte adicionará
+         * o painel de progresso.
+         */
+
+        navigateTo("automation");
+
+
+        console.log(
+            "Resposta do backend:",
+            result
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Erro ao configurar automação:",
+            error
+        );
+
+
+        setServerStatus(
+            false
+        );
+
+
+        showToast(
+            "Não foi possível conectar ao servidor. Tente novamente em alguns instantes.",
+            "error"
+        );
+
+    } finally {
+
+        button.disabled =
+            false;
+
+        button.textContent =
+            "🚀 INICIAR AUTOMAÇÃO";
+
+    }
+
+}
+
+
+/* ===============================================================
+   STATUS DO SERVIDOR
+   =============================================================== */
+
+function setServerStatus(online) {
+
+    state.serverOnline =
+        Boolean(online);
+
+
+    const status =
+        document.getElementById(
+            "serverStatus"
+        );
+
+    const text =
+        document.getElementById(
+            "serverStatusText"
+        );
+
+
+    if (!status || !text) {
+        return;
+    }
+
+
+    status.classList.toggle(
+        "offline",
+        !online
+    );
+
+
+    text.textContent =
+        online
+            ? "BOT ONLINE"
+            : "SERVIDOR OFFLINE";
+
+}
+
+
+/* ===============================================================
+   FUNÇÃO PREPARADA PARA STATUS EM TEMPO REAL
+   =============================================================== */
+
+function atualizarStatusServidor(dados) {
+
+    if (!dados) {
+        return;
+    }
+
+
+    /*
+     * Esta função já está preparada
+     * para receber futuramente:
+     *
+     * {
+     *   produto: 3,
+     *   status: "processando"
+     * }
+     *
+     * {
+     *   produto: 3,
+     *   status: "postado"
+     * }
+     *
+     * {
+     *   produto: 3,
+     *   status: "erro"
+     * }
+     */
+
+
+    const productNumber =
+        Number(dados.produto);
+
+
+    const status =
+        String(
+            dados.status || ""
+        ).toLowerCase();
+
+
+    if (
+        !productNumber ||
+        !status
+    ) {
+        return;
+    }
+
+
+    const index =
+        productNumber - 1;
+
+
+    if (
+        !state.products[index]
+    ) {
+        return;
+    }
+
+
+    const product =
+        state.products[index];
+
+
+    const allowedStatuses = [
+        "aguardando",
+        "processando",
+        "postado",
+        "erro"
+    ];
+
+
+    if (
+        !allowedStatuses.includes(
+            status
+        )
+    ) {
+        return;
+    }
+
+
+    product.status =
+        status;
+
+
+    /*
+     * A UI detalhada de progresso,
+     * percentual e countdown será
+     * adicionada na segunda parte.
+     */
+
+    console.log(
+        "Status recebido:",
+        productNumber,
+        status
+    );
+
+}
+
+
+/* ===============================================================
+   TOAST
+   =============================================================== */
+
+function showToast(
+    message,
+    type = "success"
+) {
+
+    const container =
+        document.getElementById(
+            "toastContainer"
+        );
+
+
+    const toast =
+        document.createElement(
+            "div"
+        );
+
+
+    toast.className =
+        `toast ${type}`;
+
+
+    toast.textContent =
+        message;
+
+
+    container.appendChild(
+        toast
+    );
+
+
+    setTimeout(
+        () => {
+
+            toast.style.opacity =
+                "0";
+
+            toast.style.transform =
+                "translateY(8px)";
+
+            setTimeout(
+                () => toast.remove(),
+                250
+            );
+
+        },
+        3200
+    );
+
+}
+
+
+/* ===============================================================
+   SEGURANÇA — ESCAPE PARA HTML
+   =============================================================== */
+
+function escapeHtml(value) {
+
+    return String(value)
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+/* ===============================================================
+   INTERCEPTAR COLAGEM DE VÁRIOS LINKS
+   =============================================================== */
+
+document.addEventListener(
+    "paste",
+    event => {
+
+        const target =
+            event.target;
+
+
+        /*
+         * Só interceptamos colagens
+         * que parecem conter múltiplos links.
+         */
+
+        if (
+            !target.classList.contains(
+                "product-input"
+            )
+        ) {
+            return;
         }
 
 
-        // --------------------------------------------------------
-        // SUCESSO
-        // --------------------------------------------------------
-
-        mostrarMensagem(
-          "✅ " +
-          (
-            resultado.mensagem ||
-            "Automação iniciada com sucesso!"
-          ),
-          "sucesso"
-        );
-
-      }
+        const text =
+            event.clipboardData
+                ?.getData("text");
 
 
-      // ----------------------------------------------------------
-      // ERRO DE REDE / CORS / RENDER
-      // ----------------------------------------------------------
-
-      catch (err) {
-
-        console.error(
-          "Erro na requisição:",
-          err
-        );
-
-        mostrarMensagem(
-          "❌ Falha de conexão com o servidor. " +
-          "Verifique o Render e o CORS.",
-          "erro"
-        );
-      }
+        if (!text) {
+            return;
+        }
 
 
-      // ----------------------------------------------------------
-      // RESTAURA BOTÃO
-      // ----------------------------------------------------------
+        const links =
+            extractLinks(text);
 
-      finally {
 
-        btn.disabled = false;
+        if (links.length <= 1) {
+            return;
+        }
 
-        btn.innerHTML =
-          '<i class="fa-solid fa-rocket"></i> ' +
-          'INICIAR POSTAGENS AUTO';
-      }
+
+        event.preventDefault();
+
+
+        /*
+         * O campo atual recebe
+         * o primeiro link.
+         */
+
+        const currentId =
+            target
+                .closest(".product-item")
+                ?.querySelector(
+                    ".remove-product"
+                )
+                ?.getAttribute(
+                    "onclick"
+                );
+
+
+        /*
+         * Encontramos o produto
+         * pela posição do elemento.
+         */
+
+        const productElements =
+            [
+                ...document.querySelectorAll(
+                    ".product-item"
+                )
+            ];
+
+
+        const currentElement =
+            target.closest(
+                ".product-item"
+            );
+
+
+        const index =
+            productElements.indexOf(
+                currentElement
+            );
+
+
+        if (
+            index >= 0 &&
+            state.products[index]
+        ) {
+
+            state.products[index].link =
+                links[0];
+
+            state.products[index].valid =
+                isShopeeLink(
+                    links[0]
+                );
+
+        }
+
+
+        /*
+         * Adicionamos os demais
+         * respeitando o limite de 20.
+         */
+
+        links
+            .slice(1)
+            .forEach(
+                link =>
+                    addProduct(link)
+            );
+
+
+        normalizeQuantity();
+
+        updateProductsUI();
+
     }
+);
 
-  </script>
+
+/* ===============================================================
+   INICIALIZAÇÃO
+   =============================================================== */
+
+function initializeApp() {
+
+    initTelegram();
+
+
+    /*
+     * Começamos sem produtos.
+     *
+     * O usuário adiciona manualmente
+     * ou cola múltiplos links.
+     */
+
+    updateProductsUI();
+
+    updateQuantityUI();
+
+    updateSummaryUI();
+
+
+    /*
+     * Endpoint atual disponível.
+     *
+     * Ainda não fazemos polling agressivo
+     * porque o backend pode não possuir
+     * endpoint de status.
+     */
+
+    setServerStatus(
+        true
+    );
+
+}
+
+
+document.addEventListener(
+    "DOMContentLoaded",
+    initializeApp
+);
+</script>
 
 </body>
 </html>

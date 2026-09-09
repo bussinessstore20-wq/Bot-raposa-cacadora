@@ -6,9 +6,9 @@ import threading
 import time
 import uuid
 import re
-import html
+import html as html_lib
 
-from urllib.parse import parse_qsl, urlparse
+from urllib.parse import parse_qsl, urljoin
 
 import requests
 
@@ -66,6 +66,30 @@ tarefas_lock = threading.Lock()
 
 
 # ============================================================
+# SESSÃO HTTP
+# ============================================================
+
+session = requests.Session()
+
+session.headers.update({
+    "User-Agent": (
+        "Mozilla/5.0 (Linux; Android 15) "
+        "AppleWebKit/537.36 "
+        "(KHTML, like Gecko) "
+        "Chrome/151.0.0.0 Mobile Safari/537.36"
+    ),
+    "Accept": (
+        "text/html,application/xhtml+xml,"
+        "application/xml;q=0.9,image/avif,"
+        "image/webp,*/*;q=0.8"
+    ),
+    "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
+    "Cache-Control": "no-cache",
+    "Pragma": "no-cache"
+})
+
+
+# ============================================================
 # TELEGRAM API
 # ============================================================
 
@@ -89,7 +113,6 @@ def telegram_get_me():
     ).strip()
 
     if not token:
-
         return {
             "ok": False,
             "erro": "BOT_TOKEN não configurado."
@@ -112,69 +135,15 @@ def telegram_get_me():
         }
 
 
-def telegram_enviar_mensagem(
-    texto,
-    canal
-):
-
-    token = os.environ.get(
-        "BOT_TOKEN",
-        ""
-    ).strip()
-
-    if not token:
-
-        return {
-            "ok": False,
-            "erro": "BOT_TOKEN não está disponível."
-        }
-
-    if not canal:
-
-        return {
-            "ok": False,
-            "erro": "CHANNEL_USERNAME não configurado."
-        }
-
-    try:
-
-        resposta = requests.post(
-            telegram_api_url("sendMessage"),
-            json={
-                "chat_id": canal,
-                "text": texto,
-                "disable_web_page_preview": False
-            },
-            timeout=30
-        )
-
-        try:
-
-            resultado = resposta.json()
-
-        except Exception:
-
-            return {
-                "ok": False,
-                "erro":
-                    f"Telegram retornou HTTP {resposta.status_code}"
-            }
-
-        return resultado
-
-    except requests.RequestException as erro:
-
-        return {
-            "ok": False,
-            "erro":
-                f"Erro de conexão com Telegram: {erro}"
-        }
-
+# ============================================================
+# TELEGRAM - ENVIAR FOTO
+# ============================================================
 
 def telegram_enviar_foto(
-    foto,
+    imagem_url,
     legenda,
-    canal
+    canal,
+    link_compra
 ):
 
     token = os.environ.get(
@@ -186,32 +155,49 @@ def telegram_enviar_foto(
 
         return {
             "ok": False,
-            "erro": "BOT_TOKEN não está disponível."
+            "description":
+                "BOT_TOKEN não está disponível."
         }
 
     if not canal:
 
         return {
             "ok": False,
-            "erro": "CHANNEL_USERNAME não configurado."
+            "description":
+                "CHANNEL_USERNAME não configurado."
         }
+
+    if not imagem_url:
+
+        return telegram_enviar_mensagem(
+            legenda,
+            canal,
+            link_compra
+        )
 
     try:
 
         resposta = requests.post(
             telegram_api_url("sendPhoto"),
-            data={
+            json={
                 "chat_id": canal,
-                "caption": legenda
+                "photo": imagem_url,
+                "caption": legenda,
+                "parse_mode": "HTML",
+                "reply_markup": {
+                    "inline_keyboard": [
+                        [
+                            {
+                                "text":
+                                    "🛒 COMPRAR AGORA",
+                                "url":
+                                    link_compra
+                            }
+                        ]
+                    ]
+                }
             },
-            files={
-                "photo": (
-                    "produto.jpg",
-                    foto,
-                    "image/jpeg"
-                )
-            },
-            timeout=60
+            timeout=45
         )
 
         try:
@@ -222,7 +208,7 @@ def telegram_enviar_foto(
 
             return {
                 "ok": False,
-                "erro":
+                "description":
                     f"Telegram retornou HTTP {resposta.status_code}"
             }
 
@@ -230,158 +216,91 @@ def telegram_enviar_foto(
 
         return {
             "ok": False,
-            "erro":
-                f"Erro ao enviar imagem para Telegram: {erro}"
+            "description":
+                f"Erro de conexão com Telegram: {erro}"
         }
 
 
 # ============================================================
-# DEBUG TELEGRAM
+# TELEGRAM - ENVIAR TEXTO
 # ============================================================
 
-@app.route(
-    "/debug-telegram",
-    methods=["GET"]
-)
-def debug_telegram():
+def telegram_enviar_mensagem(
+    texto,
+    canal,
+    link_compra=None
+):
 
     token = os.environ.get(
         "BOT_TOKEN",
         ""
     ).strip()
 
-    canal = os.environ.get(
-        "CHANNEL_USERNAME",
-        ""
-    ).strip()
+    if not token:
 
-    resultado = telegram_get_me()
+        return {
+            "ok": False,
+            "description":
+                "BOT_TOKEN não está disponível."
+        }
 
-    bot = None
+    if not canal:
 
-    if resultado.get("ok"):
+        return {
+            "ok": False,
+            "description":
+                "CHANNEL_USERNAME não configurado."
+        }
 
-        bot = resultado.get(
-            "result"
+    try:
+
+        payload = {
+            "chat_id": canal,
+            "text": texto,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": False
+        }
+
+        if link_compra:
+
+            payload["reply_markup"] = {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text":
+                                "🛒 COMPRAR AGORA",
+                            "url":
+                                link_compra
+                        }
+                    ]
+                ]
+            }
+
+        resposta = requests.post(
+            telegram_api_url("sendMessage"),
+            json=payload,
+            timeout=30
         )
 
-    return jsonify({
+        try:
 
-        "BOT_TOKEN_existe":
-            bool(token),
+            return resposta.json()
 
-        "BOT_TOKEN_tamanho":
-            len(token),
+        except Exception:
 
-        "CHANNEL_USERNAME":
-            canal,
+            return {
+                "ok": False,
+                "description":
+                    f"Telegram retornou HTTP {resposta.status_code}"
+            }
 
-        "CHANNEL_USERNAME_existe":
-            bool(canal),
+    except requests.RequestException as erro:
 
-        "telegram_api_ok":
-            resultado.get(
-                "ok",
-                False
-            ),
-
-        "bot":
-            bot,
-
-        "erro":
-            resultado.get(
-                "erro"
-            ) or resultado.get(
-                "description"
-            )
-    })
-
-
-# ============================================================
-# DEBUG ENV
-# ============================================================
-
-@app.route(
-    "/debug-env",
-    methods=["GET"]
-)
-def debug_env():
-
-    token = os.environ.get(
-        "BOT_TOKEN",
-        ""
-    )
-
-    channel = os.environ.get(
-        "CHANNEL_USERNAME",
-        ""
-    )
-
-    return jsonify({
-
-        "BOT_TOKEN_existe":
-            bool(token),
-
-        "BOT_TOKEN_tamanho":
-            len(token),
-
-        "CHANNEL_USERNAME_existe":
-            bool(channel),
-
-        "CHANNEL_USERNAME":
-            channel,
-
-        "PORT":
-            os.environ.get(
-                "PORT",
-                ""
-            ),
-
-        "telegram_configurado":
-            bool(token),
-
-        "canal_configurado":
-            bool(channel)
-    })
-
-
-# ============================================================
-# HEALTH
-# ============================================================
-
-@app.route(
-    "/health",
-    methods=["GET"]
-)
-def health():
-
-    token = os.environ.get(
-        "BOT_TOKEN",
-        ""
-    ).strip()
-
-    channel = os.environ.get(
-        "CHANNEL_USERNAME",
-        ""
-    ).strip()
-
-    return jsonify({
-
-        "status":
-            "ok",
-
-        "service":
-            "raposa-cacadora",
-
-        "telegram_configurado":
-            bool(token),
-
-        "canal_configurado":
-            bool(channel),
-
-        "timestamp":
-            int(time.time())
-    })
+        return {
+            "ok": False,
+            "description":
+                f"Erro de conexão com Telegram: {erro}"
+        }
 
 
 # ============================================================
@@ -520,7 +439,7 @@ def link_shopee_valido(link):
 
 
 # ============================================================
-# UTILITÁRIOS DE EXTRAÇÃO
+# LIMPAR TEXTO
 # ============================================================
 
 def limpar_texto(valor):
@@ -528,8 +447,14 @@ def limpar_texto(valor):
     if not valor:
         return ""
 
-    valor = html.unescape(
+    valor = html_lib.unescape(
         str(valor)
+    )
+
+    valor = re.sub(
+        r"<[^>]+>",
+        " ",
+        valor
     )
 
     valor = re.sub(
@@ -541,24 +466,338 @@ def limpar_texto(valor):
     return valor.strip()
 
 
-def remover_html(valor):
+# ============================================================
+# PREÇO
+# ============================================================
+
+def normalizar_preco(valor):
+
+    if valor is None:
+        return ""
+
+    valor = limpar_texto(
+        valor
+    )
 
     if not valor:
         return ""
 
-    valor = re.sub(
-        r"<[^>]+>",
-        " ",
+    valor = valor.replace(
+        "R$",
+        ""
+    ).strip()
+
+    # Exemplo:
+    # 59.90
+    # 59,90
+    # 59.900
+    # 59 90
+
+    match = re.search(
+        r"\d{1,3}(?:[.,]\d{3})*[.,]\d{2}",
         valor
     )
 
-    return limpar_texto(
+    if match:
+
+        numero = match.group(0)
+
+        # 1.299,90
+        if (
+            "." in numero
+            and "," in numero
+        ):
+
+            numero = numero.replace(
+                ".",
+                ""
+            )
+
+            numero = numero.replace(
+                ",",
+                "."
+            )
+
+        elif "," in numero:
+
+            numero = numero.replace(
+                ",",
+                "."
+            )
+
+        return (
+            "R$ "
+            +
+            numero.replace(
+                ".",
+                ","
+            )
+        )
+
+    match = re.search(
+        r"\d+(?:[.,]\d+)?",
         valor
     )
 
+    if match:
+
+        numero = match.group(0)
+
+        numero = numero.replace(
+            ",",
+            "."
+        )
+
+        try:
+
+            numero_float = float(
+                numero
+            )
+
+            return (
+                "R$ "
+                +
+                f"{numero_float:.2f}".replace(
+                    ".",
+                    ","
+                )
+            )
+
+        except Exception:
+
+            pass
+
+    return ""
+
+
+# ============================================================
+# EXTRAIR JSON EMBUTIDO
+# ============================================================
+
+def extrair_jsons(html):
+
+    encontrados = []
+
+    # --------------------------------------------------------
+    # JSON-LD
+    # --------------------------------------------------------
+
+    blocos = re.findall(
+        r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
+        html,
+        flags=re.I | re.S
+    )
+
+    for bloco in blocos:
+
+        bloco = bloco.strip()
+
+        if not bloco:
+            continue
+
+        try:
+
+            dados = json.loads(
+                html_lib.unescape(
+                    bloco
+                )
+            )
+
+            encontrados.append(
+                dados
+            )
+
+        except Exception:
+
+            continue
+
+    # --------------------------------------------------------
+    # NEXT DATA
+    # --------------------------------------------------------
+
+    blocos_next = re.findall(
+        r'<script[^>]+id=["\']__NEXT_DATA__["\'][^>]*>(.*?)</script>',
+        html,
+        flags=re.I | re.S
+    )
+
+    for bloco in blocos_next:
+
+        try:
+
+            dados = json.loads(
+                html_lib.unescape(
+                    bloco
+                )
+            )
+
+            encontrados.append(
+                dados
+            )
+
+        except Exception:
+
+            continue
+
+    return encontrados
+
+
+# ============================================================
+# BUSCAR VALOR EM OBJETO JSON
+# ============================================================
+
+def procurar_chave(
+    objeto,
+    chaves
+):
+
+    if isinstance(
+        objeto,
+        dict
+    ):
+
+        for chave in chaves:
+
+            if chave in objeto:
+
+                valor = objeto[
+                    chave
+                ]
+
+                if isinstance(
+                    valor,
+                    (str, int, float)
+                ):
+
+                    texto = str(
+                        valor
+                    ).strip()
+
+                    if texto:
+
+                        return texto
+
+        for valor in objeto.values():
+
+            resultado = procurar_chave(
+                valor,
+                chaves
+            )
+
+            if resultado:
+
+                return resultado
+
+    elif isinstance(
+        objeto,
+        list
+    ):
+
+        for item in objeto:
+
+            resultado = procurar_chave(
+                item,
+                chaves
+            )
+
+            if resultado:
+
+                return resultado
+
+    return ""
+
+
+# ============================================================
+# BUSCAR IMAGEM
+# ============================================================
+
+def procurar_imagem(
+    objeto
+):
+
+    if isinstance(
+        objeto,
+        dict
+    ):
+
+        # Primeiro tenta chaves específicas
+        for chave in (
+            "image",
+            "imageUrl",
+            "image_url",
+            "thumbnail",
+            "thumbnailUrl",
+            "cover",
+            "coverImage",
+            "original",
+            "url"
+        ):
+
+            valor = objeto.get(
+                chave
+            )
+
+            if isinstance(
+                valor,
+                str
+            ):
+
+                if (
+                    valor.startswith(
+                        "http://"
+                    )
+                    or
+                    valor.startswith(
+                        "https://"
+                    )
+                ):
+
+                    if any(
+                        ext in valor.lower()
+                        for ext in (
+                            ".jpg",
+                            ".jpeg",
+                            ".png",
+                            ".webp"
+                        )
+                    ):
+
+                        return valor
+
+        for valor in objeto.values():
+
+            resultado = procurar_imagem(
+                valor
+            )
+
+            if resultado:
+
+                return resultado
+
+    elif isinstance(
+        objeto,
+        list
+    ):
+
+        for item in objeto:
+
+            resultado = procurar_imagem(
+                item
+            )
+
+            if resultado:
+
+                return resultado
+
+    return ""
+
+
+# ============================================================
+# EXTRAIR META TAG
+# ============================================================
 
 def extrair_meta(
-    conteudo,
+    html,
     propriedade
 ):
 
@@ -571,739 +810,487 @@ def extrair_meta(
         rf'<meta[^>]+name=["\']{re.escape(propriedade)}["\'][^>]+content=["\']([^"\']+)["\']',
 
         rf'<meta[^>]+content=["\']([^"\']+)["\'][^>]+name=["\']{re.escape(propriedade)}["\']'
+
     ]
 
     for padrao in padroes:
 
-        encontrado = re.search(
+        resultado = re.search(
             padrao,
-            conteudo,
+            html,
             flags=re.I
         )
 
-        if encontrado:
+        if resultado:
 
-            return limpar_texto(
-                encontrado.group(1)
-            )
-
-    return ""
-
-
-def extrair_json_ld(
-    conteudo
-):
-
-    resultados = []
-
-    padrao = re.compile(
-        r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
-        re.I | re.S
-    )
-
-    for bloco in padrao.findall(
-        conteudo
-    ):
-
-        bloco = bloco.strip()
-
-        try:
-
-            dados = json.loads(
-                bloco
-            )
-
-            if isinstance(
-                dados,
-                list
-            ):
-
-                resultados.extend(
-                    dados
-                )
-
-            else:
-
-                resultados.append(
-                    dados
-                )
-
-        except Exception:
-
-            continue
-
-    return resultados
-
-
-def procurar_produto_json(
-    dados
-):
-
-    if isinstance(
-        dados,
-        dict
-    ):
-
-        tipo = dados.get(
-            "@type",
-            ""
-        )
-
-        if (
-            tipo == "Product"
-            or
-            (
-                isinstance(
-                    tipo,
-                    list
-                )
-                and
-                "Product" in tipo
-            )
-        ):
-
-            return dados
-
-        if "product" in dados:
-
-            resultado = procurar_produto_json(
-                dados["product"]
-            )
-
-            if resultado:
-                return resultado
-
-        if "@graph" in dados:
-
-            resultado = procurar_produto_json(
-                dados["@graph"]
-            )
-
-            if resultado:
-                return resultado
-
-        for valor in dados.values():
-
-            if isinstance(
-                valor,
-                (dict, list)
-            ):
-
-                resultado = procurar_produto_json(
-                    valor
-                )
-
-                if resultado:
-                    return resultado
-
-    elif isinstance(
-        dados,
-        list
-    ):
-
-        for item in dados:
-
-            resultado = procurar_produto_json(
-                item
-            )
-
-            if resultado:
-                return resultado
-
-    return None
-
-
-def extrair_preco_texto(
-    conteudo
-):
-
-    padroes = [
-
-        r'R\$\s*[\d\.\,]+',
-
-        r'BRL\s*[\d\.\,]+',
-
-        r'"price"\s*:\s*"([\d\.\,]+)"',
-
-        r'"price"\s*:\s*([\d\.]+)',
-
-        r'"current_price"\s*:\s*"([\d\.\,]+)"',
-
-        r'"current_price"\s*:\s*([\d\.]+)'
-    ]
-
-    for padrao in padroes:
-
-        encontrados = re.findall(
-            padrao,
-            conteudo,
-            flags=re.I
-        )
-
-        if encontrados:
-
-            valor = encontrados[0]
-
-            if isinstance(
-                valor,
-                tuple
-            ):
-
-                valor = valor[0]
-
-            valor = limpar_texto(
-                valor
-            )
-
-            if valor.startswith(
-                "R$"
-            ):
-
-                return valor
-
-            try:
-
-                numero = float(
-                    valor.replace(
-                        ",",
-                        "."
-                    )
-                )
-
-                return formatar_preco(
-                    numero
-                )
-
-            except Exception:
-
-                continue
-
-    return ""
-
-
-def formatar_preco(
-    valor
-):
-
-    try:
-
-        if isinstance(
-            valor,
-            str
-        ):
-
-            valor = valor.replace(
-                "R$",
-                ""
+            return html_lib.unescape(
+                resultado.group(1)
             ).strip()
 
-            valor = valor.replace(
-                ".",
-                ""
-            ).replace(
-                ",",
-                "."
-            )
-
-        numero = float(
-            valor
-        )
-
-        return (
-            "R$ "
-            +
-            f"{numero:,.2f}"
-            .replace(
-                ",",
-                "X"
-            )
-            .replace(
-                ".",
-                ","
-            )
-            .replace(
-                "X",
-                "."
-            )
-        )
-
-    except Exception:
-
-        return ""
+    return ""
 
 
-def extrair_dados_produto(
+# ============================================================
+# EXTRAIR PRODUTO DA SHOPEE
+# ============================================================
+
+def extrair_produto_shopee(
     link
 ):
 
-    resultado = {
-
-        "nome":
-            "",
-
-        "preco_atual":
-            "",
-
-        "preco_antigo":
-            "",
-
-        "imagem":
-            "",
-
-        "descricao":
-            "",
-
-        "url":
-            link
-    }
-
-    headers = {
-
-        "User-Agent":
-            (
-                "Mozilla/5.0 "
-                "(Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 "
-                "(KHTML, like Gecko) "
-                "Chrome/131.0 Safari/537.36"
-            ),
-
-        "Accept-Language":
-            "pt-BR,pt;q=0.9,en;q=0.8",
-
-        "Accept":
-            (
-                "text/html,"
-                "application/xhtml+xml,"
-                "application/xml;q=0.9,"
-                "image/avif,image/webp,*/*;q=0.8"
-            )
-    }
+    print(
+        "[SHOPEE] Buscando dados do produto..."
+    )
 
     try:
 
-        resposta = requests.get(
+        resposta = session.get(
             link,
-            headers=headers,
-            timeout=25,
+            timeout=30,
             allow_redirects=True
         )
-
-        print(
-            "[SHOPEE] HTTP:",
-            resposta.status_code
-        )
-
-        print(
-            "[SHOPEE] URL final:",
-            resposta.url
-        )
-
-        if resposta.status_code >= 400:
-
-            return resultado
-
-        conteudo = resposta.text
 
     except Exception as erro:
 
         print(
-            "[SHOPEE] Erro ao acessar produto:",
+            "[SHOPEE] Erro ao acessar:",
             erro
         )
 
-        return resultado
+        return {
+            "titulo": "",
+            "preco": "",
+            "preco_antigo": "",
+            "imagem": "",
+            "link": link
+        }
 
-
-    # --------------------------------------------------------
-    # OPEN GRAPH
-    # --------------------------------------------------------
-
-    nome_og = extrair_meta(
-        conteudo,
-        "og:title"
+    print(
+        "[SHOPEE] HTTP:",
+        resposta.status_code
     )
 
-    imagem_og = extrair_meta(
-        conteudo,
-        "og:image"
-    )
+    html = resposta.text
 
-    descricao_og = extrair_meta(
-        conteudo,
-        "og:description"
-    )
+    url_final = resposta.url or link
 
+    # ========================================================
+    # TÍTULO
+    # ========================================================
 
-    if nome_og:
+    titulo = ""
 
-        resultado[
-            "nome"
-        ] = nome_og
+    for propriedade in (
+        "og:title",
+        "twitter:title"
+    ):
 
-
-    if imagem_og:
-
-        resultado[
-            "imagem"
-        ] = imagem_og
-
-
-    if descricao_og:
-
-        resultado[
-            "descricao"
-        ] = descricao_og
-
-
-    # --------------------------------------------------------
-    # JSON-LD
-    # --------------------------------------------------------
-
-    jsons = extrair_json_ld(
-        conteudo
-    )
-
-    produto = procurar_produto_json(
-        jsons
-    )
-
-
-    if produto:
-
-        nome = produto.get(
-            "name"
+        titulo = extrair_meta(
+            html,
+            propriedade
         )
 
-        if nome:
+        if titulo:
+            break
 
-            resultado[
-                "nome"
-            ] = limpar_texto(
-                nome
-            )
+    if not titulo:
 
-
-        imagem = produto.get(
-            "image"
+        resultado = re.search(
+            r"<title[^>]*>(.*?)</title>",
+            html,
+            flags=re.I | re.S
         )
 
-        if isinstance(
-            imagem,
-            list
-        ):
+        if resultado:
 
-            imagem = (
-                imagem[0]
-                if imagem
-                else ""
+            titulo = limpar_texto(
+                resultado.group(1)
             )
+
+    # ========================================================
+    # IMAGEM
+    # ========================================================
+
+    imagem = ""
+
+    for propriedade in (
+        "og:image",
+        "twitter:image"
+    ):
+
+        imagem = extrair_meta(
+            html,
+            propriedade
+        )
 
         if imagem:
+            break
 
-            resultado[
-                "imagem"
-            ] = str(
-                imagem
+    # ========================================================
+    # JSON
+    # ========================================================
+
+    jsons = extrair_jsons(
+        html
+    )
+
+    # ========================================================
+    # JSON-LD / DADOS ESTRUTURADOS
+    # ========================================================
+
+    for dados in jsons:
+
+        if not titulo:
+
+            titulo = procurar_chave(
+                dados,
+                (
+                    "name",
+                    "productName",
+                    "title"
+                )
             )
 
+        if not imagem:
 
-        descricao = produto.get(
-            "description"
+            imagem = procurar_imagem(
+                dados
+            )
+
+    # ========================================================
+    # PREÇO
+    # ========================================================
+
+    preco = ""
+
+    # JSON-LD
+    for dados in jsons:
+
+        preco_bruto = procurar_chave(
+            dados,
+            (
+                "lowPrice",
+                "price",
+                "salePrice",
+                "currentPrice",
+                "finalPrice"
+            )
         )
 
-        if descricao:
+        if preco_bruto:
 
-            resultado[
-                "descricao"
-            ] = remover_html(
-                descricao
+            preco_formatado = normalizar_preco(
+                preco_bruto
             )
 
+            if preco_formatado:
 
-        oferta = produto.get(
-            "offers"
-        )
+                preco = preco_formatado
+                break
 
-        if isinstance(
-            oferta,
-            list
+    # ========================================================
+    # PREÇO POR META
+    # ========================================================
+
+    if not preco:
+
+        for propriedade in (
+            "product:price:amount",
+            "og:price:amount"
         ):
 
-            oferta = (
-                oferta[0]
-                if oferta
-                else {}
+            valor = extrair_meta(
+                html,
+                propriedade
             )
 
-        if isinstance(
-            oferta,
-            dict
-        ):
+            if valor:
 
-            preco = oferta.get(
-                "price"
-            )
-
-            if preco:
-
-                resultado[
-                    "preco_atual"
-                ] = formatar_preco(
-                    preco
+                preco = normalizar_preco(
+                    valor
                 )
 
-            preco_antigo = (
-                oferta.get(
-                    "highPrice"
-                )
-                or
-                oferta.get(
-                    "priceSpecification",
-                    {}
-                ).get(
-                    "price"
-                )
-                if isinstance(
-                    oferta.get(
-                        "priceSpecification"
-                    ),
-                    dict
-                )
-                else ""
-            )
+                if preco:
+                    break
 
-            if preco_antigo:
-
-                resultado[
-                    "preco_antigo"
-                ] = formatar_preco(
-                    preco_antigo
-                )
-
-
-    # --------------------------------------------------------
+    # ========================================================
     # PREÇO POR TEXTO
-    # --------------------------------------------------------
+    # ========================================================
 
-    if not resultado[
-        "preco_atual"
-    ]:
+    if not preco:
 
-        resultado[
-            "preco_atual"
-        ] = extrair_preco_texto(
-            conteudo
+        padroes_preco = [
+
+            r'"price"\s*:\s*"?(?:BRL)?\s*([\d.,]+)',
+
+            r'"salePrice"\s*:\s*"?(?:BRL)?\s*([\d.,]+)',
+
+            r'"currentPrice"\s*:\s*"?(?:BRL)?\s*([\d.,]+)',
+
+            r'"finalPrice"\s*:\s*"?(?:BRL)?\s*([\d.,]+)',
+
+            r'R\$\s*([\d.]+,\d{2})'
+
+        ]
+
+        for padrao in padroes_preco:
+
+            resultado = re.search(
+                padrao,
+                html,
+                flags=re.I
+            )
+
+            if resultado:
+
+                preco = normalizar_preco(
+                    resultado.group(1)
+                )
+
+                if preco:
+                    break
+
+    # ========================================================
+    # PREÇO ANTIGO
+    # ========================================================
+
+    preco_antigo = ""
+
+    for dados in jsons:
+
+        valor_antigo = procurar_chave(
+            dados,
+            (
+                "originalPrice",
+                "oldPrice",
+                "listPrice",
+                "priceBeforeDiscount",
+                "discountedPrice"
+            )
         )
 
+        if valor_antigo:
 
-    # --------------------------------------------------------
-    # LIMPEZA DO NOME
-    # --------------------------------------------------------
+            possivel = normalizar_preco(
+                valor_antigo
+            )
 
-    nome = limpar_texto(
-        resultado[
-            "nome"
-        ]
+            if possivel:
+
+                if possivel != preco:
+
+                    preco_antigo = possivel
+
+                    break
+
+    # ========================================================
+    # PREÇO ANTIGO POR META
+    # ========================================================
+
+    if not preco_antigo:
+
+        for propriedade in (
+            "product:original_price",
+            "og:price:original"
+        ):
+
+            valor = extrair_meta(
+                html,
+                propriedade
+            )
+
+            if valor:
+
+                possivel = normalizar_preco(
+                    valor
+                )
+
+                if (
+                    possivel
+                    and
+                    possivel != preco
+                ):
+
+                    preco_antigo = possivel
+                    break
+
+    # ========================================================
+    # LIMPEZA
+    # ========================================================
+
+    titulo = limpar_texto(
+        titulo
     )
 
-    nome = re.sub(
-        r"\s*\|\s*Shopee.*$",
-        "",
-        nome,
-        flags=re.I
+    imagem = limpar_texto(
+        imagem
     )
 
-    nome = re.sub(
-        r"\s*-\s*Shopee.*$",
-        "",
-        nome,
-        flags=re.I
+    # Remove título genérico da Shopee
+    titulos_genericos = (
+        "shopee brasil",
+        "shopee",
+        "ofertas incríveis",
+        "ofertas incriveis"
     )
 
-    resultado[
-        "nome"
-    ] = nome.strip()
+    if titulo.lower() in titulos_genericos:
 
+        titulo = ""
 
-    # --------------------------------------------------------
-    # FALLBACK
-    # --------------------------------------------------------
-
-    if not resultado[
-        "nome"
-    ]:
-
-        resultado[
-            "nome"
-        ] = "Oferta especial Shopee"
-
+    # ========================================================
+    # LOG
+    # ========================================================
 
     print(
-        "[SHOPEE] Produto:",
-        resultado["nome"]
+        "[SHOPEE] Título:",
+        titulo or "(não encontrado)"
     )
 
     print(
-        "[SHOPEE] Preço atual:",
-        resultado["preco_atual"]
+        "[SHOPEE] Preço:",
+        preco or "(não encontrado)"
     )
 
     print(
         "[SHOPEE] Preço antigo:",
-        resultado["preco_antigo"]
+        preco_antigo or "(não encontrado)"
     )
 
     print(
         "[SHOPEE] Imagem:",
-        bool(resultado["imagem"])
+        imagem or "(não encontrada)"
     )
 
-    return resultado
+    print(
+        "[SHOPEE] Link final:",
+        url_final
+    )
+
+    return {
+
+        "titulo":
+            titulo,
+
+        "preco":
+            preco,
+
+        "preco_antigo":
+            preco_antigo,
+
+        "imagem":
+            imagem,
+
+        "link":
+            url_final
+    }
 
 
 # ============================================================
-# MONTAR MENSAGEM
+# ESCAPAR HTML
 # ============================================================
 
-def montar_mensagem(
+def escapar_html(
+    texto
+):
+
+    return html_lib.escape(
+        str(texto or "")
+    )
+
+
+# ============================================================
+# CRIAR LEGENDA
+# ============================================================
+
+def criar_mensagem_oferta(
     produto
 ):
 
-    nome = produto.get(
-        "nome"
-    ) or "Oferta especial"
+    titulo = produto.get(
+        "titulo",
+        ""
+    ).strip()
 
-
-    preco_atual = produto.get(
-        "preco_atual"
-    )
-
+    preco = produto.get(
+        "preco",
+        ""
+    ).strip()
 
     preco_antigo = produto.get(
-        "preco_antigo"
-    )
+        "preco_antigo",
+        ""
+    ).strip()
 
+    # --------------------------------------------------------
+    # TÍTULO FALLBACK
+    # --------------------------------------------------------
 
-    if preco_atual:
+    if not titulo:
+
+        titulo = "Oferta especial selecionada"
+
+    # --------------------------------------------------------
+    # PREÇO
+    # --------------------------------------------------------
+
+    if preco:
 
         if preco_antigo:
 
-            preco_texto = (
-                f"💰 DE {preco_antigo} "
-                f"POR APENAS {preco_atual}!"
+            bloco_preco = (
+                f"💰 <s>{escapar_html(preco_antigo)}</s> "
+                f"<b>POR APENAS {escapar_html(preco)}!</b>"
             )
 
         else:
 
-            preco_texto = (
-                f"💰 POR APENAS: "
-                f"{preco_atual}!"
+            bloco_preco = (
+                f"💰 <b>POR APENAS "
+                f"{escapar_html(preco)}!</b>"
             )
 
     else:
 
-        preco_texto = (
-            "💰 Confira o preço especial "
-            "dessa oferta!"
+        bloco_preco = (
+            "💰 <b>Confira o preço especial da oferta!</b>"
         )
 
-
-    descricao = produto.get(
-        "descricao"
-    ) or ""
-
-
     # --------------------------------------------------------
-    # DESCRIÇÃO CURTA
+    # MENSAGEM
     # --------------------------------------------------------
-
-    descricao = limpar_texto(
-        descricao
-    )
-
-    descricao = re.sub(
-        r"\bShopee\b.*",
-        "",
-        descricao,
-        flags=re.I
-    )
-
-    descricao = descricao.strip()
-
-
-    if len(descricao) > 180:
-
-        descricao = (
-            descricao[:177]
-            + "..."
-        )
-
-
-    # --------------------------------------------------------
-    # BENEFÍCIOS
-    # --------------------------------------------------------
-
-    beneficios = [
-        "Produto prático para facilitar seu dia a dia",
-        "Excelente opção para sua rotina",
-        "Ótimo custo-benefício",
-        "Uma escolha prática para o dia a dia"
-    ]
-
 
     texto = (
-        "🔥 OFERTA IMPERDÍVEL DO DIA! 🔥\n\n"
-        f"📦 {nome}\n"
-    )
 
+        "🔥 <b>OFERTA IMPERDÍVEL DO DIA!</b> 🔥\n\n"
 
-    if descricao:
+        f"📦 <b>{escapar_html(titulo)}</b>\n\n"
 
-        texto += (
-            f"✨ {descricao}\n"
-        )
+        f"{bloco_preco}\n\n"
 
-    else:
+        "✨ Uma ótima oportunidade para aproveitar!\n\n"
 
-        texto += (
-            "✨ Aproveite essa oportunidade "
-            "antes que o preço mude.\n"
-        )
+        "🚨 <b>CORRE QUE PODE ACABAR A QUALQUER MOMENTO!</b>\n\n"
 
+        "🛒 <b>QUERO APROVEITAR ESSA OFERTA</b>\n"
 
-    texto += (
-        "\n"
-        f"{preco_texto}\n\n"
-    )
+        "👇 Clique no botão abaixo para comprar:\n\n"
 
-
-    for beneficio in beneficios:
-
-        texto += (
-            f"✅ {beneficio}\n"
-        )
-
-
-    texto += (
-        "\n"
-        "🚨 CORRE QUE PODE ACABAR "
-        "A QUALQUER MOMENTO!\n\n"
-        "🛒 QUERO APROVEITAR ESSA OFERTA\n"
-        "👇 Clique abaixo para comprar:\n\n"
-        f"👉 {produto['url']}\n\n"
         "━━━━━━━━━━━━━━━━━━━━\n"
-        "🦊 Raposa Caçadora\n"
-        "📌 Ofertas selecionadas todos os dias\n"
-        "━━━━━━━━━━━━━━━━━━━━"
-    )
 
+        "🦊 <b>Raposa Caçadora</b>\n"
+
+        "📌 Ofertas selecionadas todos os dias\n"
+
+        "━━━━━━━━━━━━━━━━━━━━"
+
+    )
 
     return texto
 
 
 # ============================================================
-# PUBLICAÇÃO REAL
+# PUBLICAR PRODUTO
 # ============================================================
 
 def publicar_produto(
@@ -1316,7 +1303,6 @@ def publicar_produto(
         ""
     ).strip()
 
-
     if not canal:
 
         return {
@@ -1324,7 +1310,6 @@ def publicar_produto(
             "mensagem":
                 "CHANNEL_USERNAME não configurado."
         }
-
 
     print(
         "----------------------------------------"
@@ -1353,210 +1338,108 @@ def publicar_produto(
         "----------------------------------------"
     )
 
+    # ========================================================
+    # BUSCA DADOS
+    # ========================================================
 
-    # --------------------------------------------------------
-    # OBTÉM DADOS DA SHOPEE
-    # --------------------------------------------------------
-
-    produto = extrair_dados_produto(
+    produto = extrair_produto_shopee(
         link
     )
 
+    produto["link"] = (
+        produto.get("link")
+        or
+        link
+    )
 
-    # --------------------------------------------------------
-    # MONTA MENSAGEM
-    # --------------------------------------------------------
+    # ========================================================
+    # CRIA MENSAGEM
+    # ========================================================
 
-    texto = montar_mensagem(
+    texto = criar_mensagem_oferta(
         produto
     )
 
+    imagem = produto.get(
+        "imagem",
+        ""
+    )
 
-    print(
-        "[TELEGRAM] Mensagem preparada:"
+    link_compra = produto.get(
+        "link"
     )
 
     print(
-        texto
+        "[TELEGRAM] Enviando oferta..."
     )
 
+    # ========================================================
+    # COM IMAGEM
+    # ========================================================
 
-    # --------------------------------------------------------
-    # IMAGEM
-    # --------------------------------------------------------
+    if imagem:
 
-    imagem_url = produto.get(
-        "imagem"
-    )
+        resultado = telegram_enviar_foto(
+            imagem_url=imagem,
+            legenda=texto,
+            canal=canal,
+            link_compra=link_compra
+        )
 
+    else:
 
-    if imagem_url:
+        print(
+            "[TELEGRAM] Imagem não encontrada. "
+            "Enviando somente texto."
+        )
 
-        try:
+        resultado = telegram_enviar_mensagem(
+            texto=texto,
+            canal=canal,
+            link_compra=link_compra
+        )
 
-            print(
-                "[TELEGRAM] Baixando imagem..."
-            )
+    # ========================================================
+    # ERRO
+    # ========================================================
 
-
-            imagem_resposta = requests.get(
-                imagem_url,
-                headers={
-                    "User-Agent":
-                        "Mozilla/5.0"
-                },
-                timeout=30
-            )
-
-
-            if (
-                imagem_resposta.ok
-                and
-                imagem_resposta.content
-            ):
-
-                print(
-                    "[TELEGRAM] Enviando imagem..."
-                )
-
-
-                resultado = telegram_enviar_foto(
-                    imagem_resposta.content,
-                    texto,
-                    canal
-                )
-
-
-                if resultado.get(
-                    "ok"
-                ):
-
-                    mensagem_telegram = (
-                        resultado.get(
-                            "result",
-                            {}
-                        )
-                    )
-
-
-                    message_id = (
-                        mensagem_telegram.get(
-                            "message_id"
-                        )
-                    )
-
-
-                    print(
-                        "[TELEGRAM] "
-                        "Imagem publicada:",
-                        message_id
-                    )
-
-
-                    return {
-
-                        "sucesso":
-                            True,
-
-                        "mensagem":
-                            "Produto publicado no canal.",
-
-                        "message_id":
-                            message_id,
-
-                        "imagem":
-                            True
-                    }
-
-
-                else:
-
-                    print(
-                        "[TELEGRAM] "
-                        "Falha ao enviar imagem:",
-                        resultado.get(
-                            "description"
-                        )
-                    )
-
-
-        except Exception as erro:
-
-            print(
-                "[TELEGRAM] "
-                "Erro ao processar imagem:",
-                erro
-            )
-
-
-    # --------------------------------------------------------
-    # FALLBACK: SOMENTE TEXTO
-    # --------------------------------------------------------
-
-    print(
-        "[TELEGRAM] Publicando somente texto."
-    )
-
-
-    resultado = telegram_enviar_mensagem(
-        texto,
-        canal
-    )
-
-
-    if not resultado.get(
-        "ok"
-    ):
+    if not resultado.get("ok"):
 
         erro = (
-            resultado.get(
-                "description"
-            )
+            resultado.get("description")
             or
-            resultado.get(
-                "erro"
-            )
+            resultado.get("erro")
             or
             "Erro desconhecido do Telegram."
         )
-
 
         print(
             "[TELEGRAM] ERRO:",
             erro
         )
 
-
         return {
-
-            "sucesso":
-                False,
-
-            "mensagem":
-                erro
+            "sucesso": False,
+            "mensagem": erro
         }
 
+    # ========================================================
+    # SUCESSO
+    # ========================================================
 
-    mensagem_telegram = (
-        resultado.get(
-            "result",
-            {}
-        )
+    mensagem_telegram = resultado.get(
+        "result",
+        {}
     )
 
-
-    message_id = (
-        mensagem_telegram.get(
-            "message_id"
-        )
+    message_id = mensagem_telegram.get(
+        "message_id"
     )
-
 
     print(
         "[TELEGRAM] Mensagem publicada:",
         message_id
     )
-
 
     return {
 
@@ -1569,8 +1452,8 @@ def publicar_produto(
         "message_id":
             message_id,
 
-        "imagem":
-            False
+        "produto":
+            produto
     }
 
 
@@ -1588,7 +1471,6 @@ def criar_tarefa(
     task_id = str(
         uuid.uuid4()
     )
-
 
     tarefa = {
 
@@ -1629,13 +1511,11 @@ def criar_tarefa(
             time.time()
     }
 
-
     with tarefas_lock:
 
         tarefas[
             task_id
         ] = tarefa
-
 
     return task_id
 
@@ -1652,7 +1532,6 @@ def executar_tarefa(
         f"[TASK] Iniciando {task_id}"
     )
 
-
     while True:
 
         with tarefas_lock:
@@ -1661,11 +1540,8 @@ def executar_tarefa(
                 task_id
             )
 
-
             if not tarefa:
-
                 return
-
 
             if tarefa[
                 "cancelada"
@@ -1677,11 +1553,9 @@ def executar_tarefa(
 
                 return
 
-
             indice = tarefa[
                 "produto_atual"
             ]
-
 
             links = list(
                 tarefa[
@@ -1689,25 +1563,21 @@ def executar_tarefa(
                 ]
             )
 
-
             quantidade = tarefa[
                 "quantidade"
             ]
-
 
             usuario = tarefa[
                 "usuario"
             ]
 
-
             intervalo = tarefa[
                 "intervalo"
             ]
 
-
-        # ----------------------------------------------------
+        # ====================================================
         # FINALIZAÇÃO
-        # ----------------------------------------------------
+        # ====================================================
 
         if indice >= quantidade:
 
@@ -1716,7 +1586,6 @@ def executar_tarefa(
                 tarefa = tarefas.get(
                     task_id
                 )
-
 
                 if tarefa:
 
@@ -1736,23 +1605,23 @@ def executar_tarefa(
                         "produto_link"
                     ] = ""
 
+            print(
+                f"[TASK] Finalizada {task_id}"
+            )
 
             return
 
-
-        # ----------------------------------------------------
+        # ====================================================
         # PRODUTO
-        # ----------------------------------------------------
+        # ====================================================
 
         link = links[
             indice
         ]
 
-
         numero_produto = (
             indice + 1
         )
-
 
         with tarefas_lock:
 
@@ -1760,21 +1629,16 @@ def executar_tarefa(
                 task_id
             )
 
-
             if not tarefa:
-
                 return
-
 
             tarefa[
                 "status"
             ] = "processando"
 
-
             tarefa[
                 "produto_link"
             ] = link
-
 
             tarefa[
                 "progresso"
@@ -1785,10 +1649,9 @@ def executar_tarefa(
                 ) * 100
             )
 
-
-        # ----------------------------------------------------
+        # ====================================================
         # PUBLICAÇÃO
-        # ----------------------------------------------------
+        # ====================================================
 
         try:
 
@@ -1797,12 +1660,10 @@ def executar_tarefa(
                 usuario
             )
 
-
             sucesso = resultado.get(
                 "sucesso",
                 False
             )
-
 
         except Exception as erro:
 
@@ -1811,20 +1672,16 @@ def executar_tarefa(
                 erro
             )
 
-
             sucesso = False
 
-
             resultado = {
-
                 "mensagem":
                     str(erro)
             }
 
-
-        # ----------------------------------------------------
+        # ====================================================
         # SALVA RESULTADO
-        # ----------------------------------------------------
+        # ====================================================
 
         with tarefas_lock:
 
@@ -1832,11 +1689,8 @@ def executar_tarefa(
                 task_id
             )
 
-
             if not tarefa:
-
                 return
-
 
             if tarefa[
                 "cancelada"
@@ -1847,7 +1701,6 @@ def executar_tarefa(
                 ] = "cancelada"
 
                 return
-
 
             if sucesso:
 
@@ -1869,18 +1722,16 @@ def executar_tarefa(
                             "message_id"
                         ),
 
-                    "imagem":
+                    "dados":
                         resultado.get(
-                            "imagem",
-                            False
+                            "produto",
+                            {}
                         )
                 })
-
 
                 tarefa[
                     "produto_atual"
                 ] = numero_produto
-
 
                 tarefa[
                     "progresso"
@@ -1891,11 +1742,9 @@ def executar_tarefa(
                     ) * 100
                 )
 
-
                 tarefa[
                     "status"
                 ] = "aguardando"
-
 
             else:
 
@@ -1919,11 +1768,9 @@ def executar_tarefa(
                         )
                 })
 
-
                 tarefa[
                     "produto_atual"
                 ] = numero_produto
-
 
                 tarefa[
                     "progresso"
@@ -1934,28 +1781,23 @@ def executar_tarefa(
                     ) * 100
                 )
 
-
                 tarefa[
                     "status"
                 ] = "erro"
 
-
-        # ----------------------------------------------------
+        # ====================================================
         # ERRO
-        # ----------------------------------------------------
+        # ====================================================
 
         if not sucesso:
 
-            time.sleep(
-                1
-            )
+            time.sleep(2)
 
             continue
 
-
-        # ----------------------------------------------------
+        # ====================================================
         # ÚLTIMO
-        # ----------------------------------------------------
+        # ====================================================
 
         if numero_produto >= quantidade:
 
@@ -1965,35 +1807,29 @@ def executar_tarefa(
                     task_id
                 )
 
-
                 if tarefa:
 
                     tarefa[
                         "status"
                     ] = "concluida"
 
-
                     tarefa[
                         "progresso"
                     ] = 100
-
 
                     tarefa[
                         "produto_link"
                     ] = ""
 
-
             print(
                 f"[TASK] Finalizada {task_id}"
             )
 
-
             return
 
-
-        # ----------------------------------------------------
+        # ====================================================
         # INTERVALO
-        # ----------------------------------------------------
+        # ====================================================
 
         with tarefas_lock:
 
@@ -2001,16 +1837,13 @@ def executar_tarefa(
                 task_id
             )
 
-
             if tarefa:
 
                 tarefa[
                     "status"
                 ] = "aguardando"
 
-
         segundos_restantes = intervalo
-
 
         while segundos_restantes > 0:
 
@@ -2020,11 +1853,8 @@ def executar_tarefa(
                     task_id
                 )
 
-
                 if not tarefa:
-
                     return
-
 
                 if tarefa[
                     "cancelada"
@@ -2036,11 +1866,7 @@ def executar_tarefa(
 
                     return
 
-
-            time.sleep(
-                1
-            )
-
+            time.sleep(1)
 
             segundos_restantes -= 1
 
@@ -2073,14 +1899,12 @@ def configurar():
             silent=True
         )
 
-
         if not dados:
 
             return jsonify({
                 "erro":
                     "JSON inválido."
             }), 400
-
 
         # ----------------------------------------------------
         # TOKEN
@@ -2091,14 +1915,12 @@ def configurar():
             ""
         ).strip()
 
-
         if not token:
 
             return jsonify({
                 "erro":
                     "BOT_TOKEN não está disponível para o processo do Render."
             }), 500
-
 
         # ----------------------------------------------------
         # CANAL
@@ -2109,14 +1931,12 @@ def configurar():
             ""
         ).strip()
 
-
         if not canal:
 
             return jsonify({
                 "erro":
                     "CHANNEL_USERNAME não está disponível para o processo do Render."
             }), 500
-
 
         # ----------------------------------------------------
         # INIT DATA
@@ -2127,12 +1947,10 @@ def configurar():
             ""
         )
 
-
         exigir_init_data = os.environ.get(
             "TELEGRAM_INIT_DATA_REQUIRED",
             "false"
         ).strip().lower()
-
 
         if exigir_init_data in (
             "1",
@@ -2150,18 +1968,15 @@ def configurar():
                         "Sessão do Telegram inválida."
                 }), 401
 
-
         usuario = obter_usuario(
             init_data
         )
-
 
         if not usuario:
 
             usuario = dados.get(
                 "user"
             )
-
 
         # ----------------------------------------------------
         # LINKS
@@ -2171,7 +1986,6 @@ def configurar():
             "links",
             []
         )
-
 
         if not isinstance(
             links,
@@ -2183,17 +1997,11 @@ def configurar():
                     "A lista de produtos é inválida."
             }), 400
 
-
         links = [
-
             str(link).strip()
-
             for link in links
-
             if str(link).strip()
-
         ]
-
 
         if not links:
 
@@ -2202,7 +2010,6 @@ def configurar():
                     "Adicione pelo menos um produto."
             }), 400
 
-
         if len(links) > MAX_LINKS:
 
             return jsonify({
@@ -2210,23 +2017,17 @@ def configurar():
                     "Máximo de 20 produtos."
             }), 400
 
-
         # ----------------------------------------------------
         # VALIDAÇÃO
         # ----------------------------------------------------
 
         invalidos = [
-
             link
-
             for link in links
-
             if not link_shopee_valido(
                 link
             )
-
         ]
-
 
         if invalidos:
 
@@ -2234,7 +2035,6 @@ def configurar():
                 "erro":
                     "Um ou mais links não são válidos."
             }), 400
-
 
         # ----------------------------------------------------
         # QUANTIDADE
@@ -2256,14 +2056,12 @@ def configurar():
                     "Quantidade inválida."
             }), 400
 
-
         if quantidade < 1:
 
             return jsonify({
                 "erro":
                     "A quantidade mínima é 1."
             }), 400
-
 
         if quantidade > len(links):
 
@@ -2272,14 +2070,12 @@ def configurar():
                     "A quantidade não pode ser maior que os produtos."
             }), 400
 
-
         if quantidade > MAX_LINKS:
 
             return jsonify({
                 "erro":
                     "Máximo de 20 postagens."
             }), 400
-
 
         # ----------------------------------------------------
         # INTERVALO
@@ -2301,14 +2097,12 @@ def configurar():
                     "Intervalo inválido."
             }), 400
 
-
         if intervalo not in INTERVALOS_PERMITIDOS:
 
             return jsonify({
                 "erro":
                     "Intervalo selecionado é inválido."
             }), 400
-
 
         # ----------------------------------------------------
         # LIMITA LINKS
@@ -2317,7 +2111,6 @@ def configurar():
         links = links[
             :quantidade
         ]
-
 
         # ----------------------------------------------------
         # CRIA TAREFA
@@ -2330,7 +2123,6 @@ def configurar():
             usuario=usuario
         )
 
-
         # ----------------------------------------------------
         # THREAD
         # ----------------------------------------------------
@@ -2341,9 +2133,7 @@ def configurar():
             daemon=True
         )
 
-
         thread.start()
-
 
         # ----------------------------------------------------
         # RESPOSTA
@@ -2370,14 +2160,12 @@ def configurar():
                 canal
         })
 
-
     except Exception as erro:
 
         print(
             "Erro /api/configurar:",
             erro
         )
-
 
         return jsonify({
 
@@ -2406,14 +2194,12 @@ def status(task_id):
             task_id
         )
 
-
         if not tarefa:
 
             return jsonify({
                 "erro":
                     "Tarefa não encontrada."
             }), 404
-
 
         return jsonify({
 
@@ -2456,7 +2242,6 @@ def parar(task_id):
             task_id
         )
 
-
         if not tarefa:
 
             return jsonify({
@@ -2464,16 +2249,13 @@ def parar(task_id):
                     "Tarefa não encontrada."
             }), 404
 
-
         tarefa[
             "cancelada"
         ] = True
 
-
         tarefa[
             "status"
         ] = "cancelada"
-
 
     return jsonify({
 
@@ -2482,6 +2264,85 @@ def parar(task_id):
 
         "mensagem":
             "Automação interrompida."
+    })
+
+
+# ============================================================
+# HEALTH
+# ============================================================
+
+@app.route(
+    "/health",
+    methods=["GET"]
+)
+def health():
+
+    token = os.environ.get(
+        "BOT_TOKEN",
+        ""
+    ).strip()
+
+    channel = os.environ.get(
+        "CHANNEL_USERNAME",
+        ""
+    ).strip()
+
+    return jsonify({
+
+        "status":
+            "ok",
+
+        "service":
+            "raposa-cacadora",
+
+        "telegram_configurado":
+            bool(token),
+
+        "canal_configurado":
+            bool(channel),
+
+        "timestamp":
+            int(time.time())
+    })
+
+
+# ============================================================
+# DEBUG TELEGRAM
+# ============================================================
+
+@app.route(
+    "/debug-telegram",
+    methods=["GET"]
+)
+def debug_telegram():
+
+    resultado = telegram_get_me()
+
+    bot = None
+
+    if resultado.get("ok"):
+
+        bot = resultado.get(
+            "result"
+        )
+
+    return jsonify({
+
+        "telegram_api_ok":
+            resultado.get(
+                "ok",
+                False
+            ),
+
+        "bot":
+            bot,
+
+        "erro":
+            resultado.get(
+                "erro"
+            ) or resultado.get(
+                "description"
+            )
     })
 
 
@@ -2497,7 +2358,6 @@ if __name__ == "__main__":
             10000
         )
     )
-
 
     app.run(
         host="0.0.0.0",

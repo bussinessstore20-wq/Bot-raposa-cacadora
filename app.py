@@ -8,6 +8,8 @@ import uuid
 
 from urllib.parse import parse_qsl
 
+import requests
+
 from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
 
@@ -32,8 +34,15 @@ CORS(
 # CONFIGURAÇÃO
 # ============================================================
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "").strip()
-CHANNEL_USERNAME = os.environ.get("CHANNEL_USERNAME", "").strip()
+BOT_TOKEN = os.environ.get(
+    "BOT_TOKEN",
+    ""
+).strip()
+
+CHANNEL_USERNAME = os.environ.get(
+    "CHANNEL_USERNAME",
+    ""
+).strip()
 
 MAX_LINKS = 20
 
@@ -50,27 +59,222 @@ INTERVALOS_PERMITIDOS = {
 # ============================================================
 
 tarefas = {}
+
 tarefas_lock = threading.Lock()
 
 
 # ============================================================
-# DEBUG DO RENDER
+# TELEGRAM API
 # ============================================================
 
-@app.route("/debug-env", methods=["GET"])
-def debug_env():
+def telegram_api_url(metodo):
 
-    token = os.environ.get("BOT_TOKEN", "")
-    channel = os.environ.get("CHANNEL_USERNAME", "")
+    token = os.environ.get(
+        "BOT_TOKEN",
+        ""
+    ).strip()
+
+    return (
+        f"https://api.telegram.org/bot{token}/{metodo}"
+    )
+
+
+def telegram_get_me():
+
+    token = os.environ.get(
+        "BOT_TOKEN",
+        ""
+    ).strip()
+
+    if not token:
+        return {
+            "ok": False,
+            "erro": "BOT_TOKEN não configurado."
+        }
+
+    try:
+
+        resposta = requests.get(
+            telegram_api_url("getMe"),
+            timeout=20
+        )
+
+        return resposta.json()
+
+    except Exception as erro:
+
+        return {
+            "ok": False,
+            "erro": str(erro)
+        }
+
+
+def telegram_enviar_mensagem(
+    texto,
+    canal
+):
+
+    token = os.environ.get(
+        "BOT_TOKEN",
+        ""
+    ).strip()
+
+    if not token:
+
+        return {
+            "ok": False,
+            "erro":
+                "BOT_TOKEN não está disponível."
+        }
+
+    if not canal:
+
+        return {
+            "ok": False,
+            "erro":
+                "CHANNEL_USERNAME não configurado."
+        }
+
+    try:
+
+        resposta = requests.post(
+            telegram_api_url("sendMessage"),
+            json={
+                "chat_id": canal,
+                "text": texto,
+                "disable_web_page_preview": False
+            },
+            timeout=30
+        )
+
+        try:
+            resultado = resposta.json()
+        except Exception:
+
+            return {
+                "ok": False,
+                "erro":
+                    f"Telegram retornou HTTP {resposta.status_code}"
+            }
+
+        return resultado
+
+    except requests.RequestException as erro:
+
+        return {
+            "ok": False,
+            "erro":
+                f"Erro de conexão com Telegram: {erro}"
+        }
+
+
+# ============================================================
+# DEBUG TELEGRAM
+# ============================================================
+
+@app.route(
+    "/debug-telegram",
+    methods=["GET"]
+)
+def debug_telegram():
+
+    token = os.environ.get(
+        "BOT_TOKEN",
+        ""
+    ).strip()
+
+    canal = os.environ.get(
+        "CHANNEL_USERNAME",
+        ""
+    ).strip()
+
+    resultado = telegram_get_me()
+
+    bot = None
+
+    if resultado.get("ok"):
+
+        bot = resultado.get(
+            "result"
+        )
 
     return jsonify({
-        "BOT_TOKEN_existe": bool(token),
-        "BOT_TOKEN_tamanho": len(token),
-        "CHANNEL_USERNAME_existe": bool(channel),
-        "CHANNEL_USERNAME": channel,
-        "PORT": os.environ.get("PORT", ""),
-        "telegram_configurado": bool(token),
-        "canal_configurado": bool(channel)
+
+        "BOT_TOKEN_existe":
+            bool(token),
+
+        "BOT_TOKEN_tamanho":
+            len(token),
+
+        "CHANNEL_USERNAME":
+            canal,
+
+        "CHANNEL_USERNAME_existe":
+            bool(canal),
+
+        "telegram_api_ok":
+            resultado.get(
+                "ok",
+                False
+            ),
+
+        "bot":
+            bot,
+
+        "erro":
+            resultado.get(
+                "erro"
+            ) or resultado.get(
+                "description"
+            )
+    })
+
+
+# ============================================================
+# DEBUG ENV
+# ============================================================
+
+@app.route(
+    "/debug-env",
+    methods=["GET"]
+)
+def debug_env():
+
+    token = os.environ.get(
+        "BOT_TOKEN",
+        ""
+    )
+
+    channel = os.environ.get(
+        "CHANNEL_USERNAME",
+        ""
+    )
+
+    return jsonify({
+
+        "BOT_TOKEN_existe":
+            bool(token),
+
+        "BOT_TOKEN_tamanho":
+            len(token),
+
+        "CHANNEL_USERNAME_existe":
+            bool(channel),
+
+        "CHANNEL_USERNAME":
+            channel,
+
+        "PORT":
+            os.environ.get(
+                "PORT",
+                ""
+            ),
+
+        "telegram_configurado":
+            bool(token),
+
+        "canal_configurado":
+            bool(channel)
     })
 
 
@@ -78,18 +282,38 @@ def debug_env():
 # HEALTH
 # ============================================================
 
-@app.route("/health", methods=["GET"])
+@app.route(
+    "/health",
+    methods=["GET"]
+)
 def health():
 
-    token = os.environ.get("BOT_TOKEN", "")
-    channel = os.environ.get("CHANNEL_USERNAME", "")
+    token = os.environ.get(
+        "BOT_TOKEN",
+        ""
+    ).strip()
+
+    channel = os.environ.get(
+        "CHANNEL_USERNAME",
+        ""
+    ).strip()
 
     return jsonify({
-        "status": "ok",
-        "service": "raposa-cacadora",
-        "telegram_configurado": bool(token),
-        "canal_configurado": bool(channel),
-        "timestamp": int(time.time())
+
+        "status":
+            "ok",
+
+        "service":
+            "raposa-cacadora",
+
+        "telegram_configurado":
+            bool(token),
+
+        "canal_configurado":
+            bool(channel),
+
+        "timestamp":
+            int(time.time())
     })
 
 
@@ -99,7 +323,10 @@ def health():
 
 def validar_init_data(init_data):
 
-    token = os.environ.get("BOT_TOKEN", "").strip()
+    token = os.environ.get(
+        "BOT_TOKEN",
+        ""
+    ).strip()
 
     if not token:
         return False
@@ -116,14 +343,18 @@ def validar_init_data(init_data):
             )
         )
 
-        hash_recebido = dados.pop("hash", None)
+        hash_recebido = dados.pop(
+            "hash",
+            None
+        )
 
         if not hash_recebido:
             return False
 
         data_check_string = "\n".join(
             f"{chave}={valor}"
-            for chave, valor in sorted(dados.items())
+            for chave, valor
+            in sorted(dados.items())
         )
 
         secret_key = hmac.new(
@@ -146,7 +377,7 @@ def validar_init_data(init_data):
     except Exception as erro:
 
         print(
-            "[TELEGRAM] Erro validando initData:",
+            "[TELEGRAM] Erro initData:",
             erro
         )
 
@@ -167,17 +398,21 @@ def obter_usuario(init_data):
             )
         )
 
-        usuario = dados.get("user")
+        usuario = dados.get(
+            "user"
+        )
 
         if not usuario:
             return None
 
-        return json.loads(usuario)
+        return json.loads(
+            usuario
+        )
 
     except Exception as erro:
 
         print(
-            "[TELEGRAM] Erro obtendo usuário:",
+            "[TELEGRAM] Erro usuário:",
             erro
         )
 
@@ -190,7 +425,10 @@ def obter_usuario(init_data):
 
 def link_shopee_valido(link):
 
-    if not isinstance(link, str):
+    if not isinstance(
+        link,
+        str
+    ):
         return False
 
     link = link.strip()
@@ -207,11 +445,15 @@ def link_shopee_valido(link):
     ):
         return False
 
-    return "shopee." in link_lower or "shopee" in link_lower
+    return (
+        "shopee." in link_lower
+        or
+        "shopee" in link_lower
+    )
 
 
 # ============================================================
-# CRIAR TAREFA
+# TAREFAS
 # ============================================================
 
 def criar_tarefa(
@@ -221,51 +463,171 @@ def criar_tarefa(
     usuario
 ):
 
-    task_id = str(uuid.uuid4())
+    task_id = str(
+        uuid.uuid4()
+    )
 
     tarefa = {
-        "id": task_id,
-        "usuario": usuario,
-        "links": links,
-        "intervalo": intervalo,
-        "quantidade": quantidade,
-        "produto_atual": 0,
-        "produto_link": "",
-        "progresso": 0,
-        "status": "iniciando",
-        "cancelada": False,
-        "resultados": [],
-        "criada_em": time.time()
+
+        "id":
+            task_id,
+
+        "usuario":
+            usuario,
+
+        "links":
+            links,
+
+        "intervalo":
+            intervalo,
+
+        "quantidade":
+            quantidade,
+
+        "produto_atual":
+            0,
+
+        "produto_link":
+            "",
+
+        "progresso":
+            0,
+
+        "status":
+            "iniciando",
+
+        "cancelada":
+            False,
+
+        "resultados":
+            [],
+
+        "criada_em":
+            time.time()
     }
 
     with tarefas_lock:
-        tarefas[task_id] = tarefa
+
+        tarefas[
+            task_id
+        ] = tarefa
 
     return task_id
 
 
 # ============================================================
-# PUBLICAR PRODUTO
+# PUBLICAÇÃO REAL NO TELEGRAM
 # ============================================================
 
-def publicar_produto(link, usuario):
+def publicar_produto(
+    link,
+    usuario
+):
 
-    print("----------------------------------------")
-    print("[PUBLICAÇÃO]")
-    print("Usuário:", usuario)
-    print("Canal:", CHANNEL_USERNAME)
-    print("Link:", link)
-    print("----------------------------------------")
+    canal = os.environ.get(
+        "CHANNEL_USERNAME",
+        ""
+    ).strip()
+
+    if not canal:
+
+        return {
+            "sucesso": False,
+            "mensagem":
+                "CHANNEL_USERNAME não configurado."
+        }
+
+    print(
+        "----------------------------------------"
+    )
+
+    print(
+        "[TELEGRAM] Publicando produto"
+    )
+
+    print(
+        "Usuário:",
+        usuario
+    )
+
+    print(
+        "Canal:",
+        canal
+    )
+
+    print(
+        "Link:",
+        link
+    )
+
+    print(
+        "----------------------------------------"
+    )
 
     # --------------------------------------------------------
-    # SIMULAÇÃO TEMPORÁRIA
+    # MENSAGEM
     # --------------------------------------------------------
 
-    time.sleep(3)
+    texto = (
+        "🦊 RAPOSA CAÇADORA\n\n"
+        "🔥 Oferta encontrada!\n\n"
+        f"🛒 {link}\n\n"
+        "👉 Confira a oferta no link acima."
+    )
+
+    # --------------------------------------------------------
+    # ENVIA PARA O TELEGRAM
+    # --------------------------------------------------------
+
+    resultado = telegram_enviar_mensagem(
+        texto,
+        canal
+    )
+
+    if not resultado.get("ok"):
+
+        erro = (
+            resultado.get("description")
+            or
+            resultado.get("erro")
+            or
+            "Erro desconhecido do Telegram."
+        )
+
+        print(
+            "[TELEGRAM] ERRO:",
+            erro
+        )
+
+        return {
+            "sucesso": False,
+            "mensagem": erro
+        }
+
+    mensagem_telegram = resultado.get(
+        "result",
+        {}
+    )
+
+    print(
+        "[TELEGRAM] Mensagem publicada:",
+        mensagem_telegram.get(
+            "message_id"
+        )
+    )
 
     return {
-        "sucesso": True,
-        "mensagem": "Produto processado."
+
+        "sucesso":
+            True,
+
+        "mensagem":
+            "Produto publicado no canal.",
+
+        "message_id":
+            mensagem_telegram.get(
+                "message_id"
+            )
     }
 
 
@@ -273,30 +635,56 @@ def publicar_produto(link, usuario):
 # WORKER
 # ============================================================
 
-def executar_tarefa(task_id):
+def executar_tarefa(
+    task_id
+):
 
-    print(f"[TASK] Iniciando {task_id}")
+    print(
+        f"[TASK] Iniciando {task_id}"
+    )
 
     while True:
 
         with tarefas_lock:
 
-            tarefa = tarefas.get(task_id)
+            tarefa = tarefas.get(
+                task_id
+            )
 
             if not tarefa:
                 return
 
-            if tarefa["cancelada"]:
+            if tarefa[
+                "cancelada"
+            ]:
 
-                tarefa["status"] = "cancelada"
+                tarefa[
+                    "status"
+                ] = "cancelada"
 
                 return
 
-            indice = tarefa["produto_atual"]
-            links = list(tarefa["links"])
-            quantidade = tarefa["quantidade"]
-            usuario = tarefa["usuario"]
-            intervalo = tarefa["intervalo"]
+            indice = tarefa[
+                "produto_atual"
+            ]
+
+            links = list(
+                tarefa[
+                    "links"
+                ]
+            )
+
+            quantidade = tarefa[
+                "quantidade"
+            ]
+
+            usuario = tarefa[
+                "usuario"
+            ]
+
+            intervalo = tarefa[
+                "intervalo"
+            ]
 
         # ----------------------------------------------------
         # FINALIZAÇÃO
@@ -306,16 +694,27 @@ def executar_tarefa(task_id):
 
             with tarefas_lock:
 
-                tarefa = tarefas.get(task_id)
+                tarefa = tarefas.get(
+                    task_id
+                )
 
                 if tarefa:
 
-                    tarefa["status"] = "concluida"
-                    tarefa["progresso"] = 100
-                    tarefa["produto_atual"] = quantidade
-                    tarefa["produto_link"] = ""
+                    tarefa[
+                        "status"
+                    ] = "concluida"
 
-            print(f"[TASK] Concluída {task_id}")
+                    tarefa[
+                        "progresso"
+                    ] = 100
+
+                    tarefa[
+                        "produto_atual"
+                    ] = quantidade
+
+                    tarefa[
+                        "produto_link"
+                    ] = ""
 
             return
 
@@ -323,20 +722,38 @@ def executar_tarefa(task_id):
         # PRODUTO
         # ----------------------------------------------------
 
-        link = links[indice]
-        numero_produto = indice + 1
+        link = links[
+            indice
+        ]
+
+        numero_produto = (
+            indice + 1
+        )
 
         with tarefas_lock:
 
-            tarefa = tarefas.get(task_id)
+            tarefa = tarefas.get(
+                task_id
+            )
 
             if not tarefa:
                 return
 
-            tarefa["status"] = "processando"
-            tarefa["produto_link"] = link
-            tarefa["progresso"] = round(
-                (indice / quantidade) * 100
+            tarefa[
+                "status"
+            ] = "processando"
+
+            tarefa[
+                "produto_link"
+            ] = link
+
+            tarefa[
+                "progresso"
+            ] = round(
+                (
+                    indice
+                    / quantidade
+                ) * 100
             )
 
         # ----------------------------------------------------
@@ -365,61 +782,109 @@ def executar_tarefa(task_id):
             sucesso = False
 
             resultado = {
-                "mensagem": str(erro)
+                "mensagem":
+                    str(erro)
             }
 
         # ----------------------------------------------------
-        # RESULTADO
+        # SALVA RESULTADO
         # ----------------------------------------------------
 
         with tarefas_lock:
 
-            tarefa = tarefas.get(task_id)
+            tarefa = tarefas.get(
+                task_id
+            )
 
             if not tarefa:
                 return
 
-            if tarefa["cancelada"]:
+            if tarefa[
+                "cancelada"
+            ]:
 
-                tarefa["status"] = "cancelada"
+                tarefa[
+                    "status"
+                ] = "cancelada"
 
                 return
 
             if sucesso:
 
-                tarefa["resultados"].append({
-                    "produto": numero_produto,
-                    "link": link,
-                    "status": "postado"
+                tarefa[
+                    "resultados"
+                ].append({
+
+                    "produto":
+                        numero_produto,
+
+                    "link":
+                        link,
+
+                    "status":
+                        "postado",
+
+                    "message_id":
+                        resultado.get(
+                            "message_id"
+                        )
                 })
 
-                tarefa["produto_atual"] = numero_produto
+                tarefa[
+                    "produto_atual"
+                ] = numero_produto
 
-                tarefa["progresso"] = round(
-                    (numero_produto / quantidade) * 100
+                tarefa[
+                    "progresso"
+                ] = round(
+                    (
+                        numero_produto
+                        / quantidade
+                    ) * 100
                 )
 
-                tarefa["status"] = "aguardando"
+                tarefa[
+                    "status"
+                ] = "aguardando"
 
             else:
 
-                tarefa["resultados"].append({
-                    "produto": numero_produto,
-                    "link": link,
-                    "status": "erro",
-                    "mensagem": resultado.get(
-                        "mensagem",
-                        "Erro desconhecido."
-                    )
+                tarefa[
+                    "resultados"
+                ].append({
+
+                    "produto":
+                        numero_produto,
+
+                    "link":
+                        link,
+
+                    "status":
+                        "erro",
+
+                    "mensagem":
+                        resultado.get(
+                            "mensagem",
+                            "Erro desconhecido."
+                        )
                 })
 
-                tarefa["produto_atual"] = numero_produto
+                tarefa[
+                    "produto_atual"
+                ] = numero_produto
 
-                tarefa["progresso"] = round(
-                    (numero_produto / quantidade) * 100
+                tarefa[
+                    "progresso"
+                ] = round(
+                    (
+                        numero_produto
+                        / quantidade
+                    ) * 100
                 )
 
-                tarefa["status"] = "erro"
+                tarefa[
+                    "status"
+                ] = "erro"
 
         # ----------------------------------------------------
         # ERRO
@@ -432,19 +897,30 @@ def executar_tarefa(task_id):
             continue
 
         # ----------------------------------------------------
-        # ÚLTIMO PRODUTO
+        # ÚLTIMO
         # ----------------------------------------------------
 
         if numero_produto >= quantidade:
 
             with tarefas_lock:
 
-                tarefa = tarefas.get(task_id)
+                tarefa = tarefas.get(
+                    task_id
+                )
 
                 if tarefa:
 
-                    tarefa["status"] = "concluida"
-                    tarefa["progresso"] = 100
+                    tarefa[
+                        "status"
+                    ] = "concluida"
+
+                    tarefa[
+                        "progresso"
+                    ] = 100
+
+                    tarefa[
+                        "produto_link"
+                    ] = ""
 
             print(
                 f"[TASK] Finalizada {task_id}"
@@ -458,10 +934,15 @@ def executar_tarefa(task_id):
 
         with tarefas_lock:
 
-            tarefa = tarefas.get(task_id)
+            tarefa = tarefas.get(
+                task_id
+            )
 
             if tarefa:
-                tarefa["status"] = "aguardando"
+
+                tarefa[
+                    "status"
+                ] = "aguardando"
 
         segundos_restantes = intervalo
 
@@ -469,14 +950,20 @@ def executar_tarefa(task_id):
 
             with tarefas_lock:
 
-                tarefa = tarefas.get(task_id)
+                tarefa = tarefas.get(
+                    task_id
+                )
 
                 if not tarefa:
                     return
 
-                if tarefa["cancelada"]:
+                if tarefa[
+                    "cancelada"
+                ]:
 
-                    tarefa["status"] = "cancelada"
+                    tarefa[
+                        "status"
+                    ] = "cancelada"
 
                     return
 
@@ -486,30 +973,38 @@ def executar_tarefa(task_id):
 
 
 # ============================================================
-# PÁGINA PRINCIPAL
+# PÁGINA
 # ============================================================
 
-@app.route("/", methods=["GET"])
+@app.route("/")
 def index():
 
-    return render_template("index.html")
+    return render_template(
+        "index.html"
+    )
 
 
 # ============================================================
 # CONFIGURAR
 # ============================================================
 
-@app.route("/api/configurar", methods=["POST"])
+@app.route(
+    "/api/configurar",
+    methods=["POST"]
+)
 def configurar():
 
     try:
 
-        dados = request.get_json(silent=True)
+        dados = request.get_json(
+            silent=True
+        )
 
         if not dados:
 
             return jsonify({
-                "erro": "JSON inválido."
+                "erro":
+                    "JSON inválido."
             }), 400
 
         # ----------------------------------------------------
@@ -524,28 +1019,24 @@ def configurar():
         if not token:
 
             return jsonify({
-                "erro": (
-                    "BOT_TOKEN não está disponível "
-                    "para o processo do Render."
-                )
+                "erro":
+                    "BOT_TOKEN não está disponível para o processo do Render."
             }), 500
 
         # ----------------------------------------------------
         # CANAL
         # ----------------------------------------------------
 
-        channel = os.environ.get(
+        canal = os.environ.get(
             "CHANNEL_USERNAME",
             ""
         ).strip()
 
-        if not channel:
+        if not canal:
 
             return jsonify({
-                "erro": (
-                    "CHANNEL_USERNAME não está disponível "
-                    "para o processo do Render."
-                )
+                "erro":
+                    "CHANNEL_USERNAME não está disponível para o processo do Render."
             }), 500
 
         # ----------------------------------------------------
@@ -556,10 +1047,6 @@ def configurar():
             "initData",
             ""
         )
-
-        # ----------------------------------------------------
-        # POR PADRÃO NÃO BLOQUEAMOS O TESTE
-        # ----------------------------------------------------
 
         exigir_init_data = os.environ.get(
             "TELEGRAM_INIT_DATA_REQUIRED",
@@ -573,17 +1060,18 @@ def configurar():
             "sim"
         ):
 
-            if not validar_init_data(init_data):
+            if not validar_init_data(
+                init_data
+            ):
 
                 return jsonify({
                     "erro":
                         "Sessão do Telegram inválida."
                 }), 401
 
-        usuario = obter_usuario(init_data)
-
-        # Se estiver fora do Telegram,
-        # usamos o user enviado pelo frontend.
+        usuario = obter_usuario(
+            init_data
+        )
 
         if not usuario:
 
@@ -600,7 +1088,10 @@ def configurar():
             []
         )
 
-        if not isinstance(links, list):
+        if not isinstance(
+            links,
+            list
+        ):
 
             return jsonify({
                 "erro":
@@ -613,7 +1104,7 @@ def configurar():
             if str(link).strip()
         ]
 
-        if len(links) == 0:
+        if not links:
 
             return jsonify({
                 "erro":
@@ -628,13 +1119,15 @@ def configurar():
             }), 400
 
         # ----------------------------------------------------
-        # VALIDA LINKS
+        # VALIDAÇÃO
         # ----------------------------------------------------
 
         invalidos = [
             link
             for link in links
-            if not link_shopee_valido(link)
+            if not link_shopee_valido(
+                link
+            )
         ]
 
         if invalidos:
@@ -716,7 +1209,9 @@ def configurar():
         # LIMITA LINKS
         # ----------------------------------------------------
 
-        links = links[:quantidade]
+        links = links[
+            :quantidade
+        ]
 
         # ----------------------------------------------------
         # CRIA TAREFA
@@ -747,7 +1242,8 @@ def configurar():
 
         return jsonify({
 
-            "sucesso": True,
+            "sucesso":
+                True,
 
             "mensagem":
                 "Automação iniciada com sucesso.",
@@ -762,8 +1258,7 @@ def configurar():
                 intervalo,
 
             "canal":
-                channel
-
+                canal
         })
 
     except Exception as erro:
@@ -796,7 +1291,9 @@ def status(task_id):
 
     with tarefas_lock:
 
-        tarefa = tarefas.get(task_id)
+        tarefa = tarefas.get(
+            task_id
+        )
 
         if not tarefa:
 
@@ -842,7 +1339,9 @@ def parar(task_id):
 
     with tarefas_lock:
 
-        tarefa = tarefas.get(task_id)
+        tarefa = tarefas.get(
+            task_id
+        )
 
         if not tarefa:
 
@@ -851,8 +1350,13 @@ def parar(task_id):
                     "Tarefa não encontrada."
             }), 404
 
-        tarefa["cancelada"] = True
-        tarefa["status"] = "cancelada"
+        tarefa[
+            "cancelada"
+        ] = True
+
+        tarefa[
+            "status"
+        ] = "cancelada"
 
     return jsonify({
 
@@ -865,7 +1369,7 @@ def parar(task_id):
 
 
 # ============================================================
-# START
+# EXECUÇÃO LOCAL
 # ============================================================
 
 if __name__ == "__main__":

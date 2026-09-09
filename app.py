@@ -5,8 +5,10 @@ import json
 import threading
 import time
 import uuid
+import re
+import html
 
-from urllib.parse import parse_qsl
+from urllib.parse import parse_qsl, unquote
 
 import requests
 
@@ -87,6 +89,7 @@ def telegram_get_me():
     ).strip()
 
     if not token:
+
         return {
             "ok": False,
             "erro": "BOT_TOKEN não configurado."
@@ -111,7 +114,8 @@ def telegram_get_me():
 
 def telegram_enviar_mensagem(
     texto,
-    canal
+    canal,
+    botao_url=None
 ):
 
     token = os.environ.get(
@@ -123,32 +127,48 @@ def telegram_enviar_mensagem(
 
         return {
             "ok": False,
-            "erro":
-                "BOT_TOKEN não está disponível."
+            "erro": "BOT_TOKEN não está disponível."
         }
 
     if not canal:
 
         return {
             "ok": False,
-            "erro":
-                "CHANNEL_USERNAME não configurado."
+            "erro": "CHANNEL_USERNAME não configurado."
         }
 
     try:
 
+        dados = {
+            "chat_id": canal,
+            "text": texto,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True
+        }
+
+        if botao_url:
+
+            dados["reply_markup"] = json.dumps({
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "🛒 CLIQUE AQUI PARA COMPRAR",
+                            "url": botao_url
+                        }
+                    ]
+                ]
+            })
+
         resposta = requests.post(
             telegram_api_url("sendMessage"),
-            json={
-                "chat_id": canal,
-                "text": texto,
-                "disable_web_page_preview": False
-            },
+            json=dados,
             timeout=30
         )
 
         try:
+
             resultado = resposta.json()
+
         except Exception:
 
             return {
@@ -453,6 +473,665 @@ def link_shopee_valido(link):
 
 
 # ============================================================
+# LIMPEZA DE TEXTO
+# ============================================================
+
+def limpar_texto(texto):
+
+    if not texto:
+        return ""
+
+    texto = html.unescape(
+        texto
+    )
+
+    texto = re.sub(
+        r"<[^>]+>",
+        " ",
+        texto
+    )
+
+    texto = re.sub(
+        r"\s+",
+        " ",
+        texto
+    )
+
+    return texto.strip()
+
+
+# ============================================================
+# EXTRAIR META TAG
+# ============================================================
+
+def extrair_meta(
+    pagina,
+    propriedade
+):
+
+    padroes = [
+
+        rf'<meta[^>]+property=["\']{re.escape(propriedade)}["\'][^>]+content=["\']([^"\']*)["\']',
+
+        rf'<meta[^>]+content=["\']([^"\']*)["\'][^>]+property=["\']{re.escape(propriedade)}["\']',
+
+        rf'<meta[^>]+name=["\']{re.escape(propriedade)}["\'][^>]+content=["\']([^"\']*)["\']',
+
+        rf'<meta[^>]+content=["\']([^"\']*)["\'][^>]+name=["\']{re.escape(propriedade)}["\']'
+    ]
+
+    for padrao in padroes:
+
+        resultado = re.search(
+            padrao,
+            pagina,
+            re.IGNORECASE
+        )
+
+        if resultado:
+
+            return limpar_texto(
+                resultado.group(1)
+            )
+
+    return ""
+
+
+# ============================================================
+# EXTRAIR PREÇO
+# ============================================================
+
+def extrair_preco(
+    pagina
+):
+
+    candidatos = []
+
+    propriedades = [
+        "product:price:amount",
+        "og:price:amount",
+        "price",
+        "product_price",
+        "current_price"
+    ]
+
+    for propriedade in propriedades:
+
+        valor = extrair_meta(
+            pagina,
+            propriedade
+        )
+
+        if valor:
+            candidatos.append(
+                valor
+            )
+
+    padroes = [
+
+        r'"price"\s*:\s*"([^"]+)"',
+
+        r'"price"\s*:\s*([0-9]+(?:\.[0-9]+)?)',
+
+        r'"current_price"\s*:\s*"([^"]+)"',
+
+        r'"current_price"\s*:\s*([0-9]+(?:\.[0-9]+)?)',
+
+        r'"priceMin"\s*:\s*"([^"]+)"',
+
+        r'"priceMin"\s*:\s*([0-9]+(?:\.[0-9]+)?)',
+
+        r'R\$\s*([0-9]+[.,][0-9]{2})'
+    ]
+
+    for padrao in padroes:
+
+        encontrados = re.findall(
+            padrao,
+            pagina,
+            re.IGNORECASE
+        )
+
+        candidatos.extend(
+            encontrados
+        )
+
+    for valor in candidatos:
+
+        if valor is None:
+            continue
+
+        valor = str(valor).strip()
+
+        if not valor:
+            continue
+
+        valor = valor.replace(
+            ",",
+            "."
+        )
+
+        try:
+
+            numero = float(
+                valor
+            )
+
+            if numero <= 0:
+                continue
+
+            return (
+                f"R$ {numero:,.2f}"
+                .replace(",", "X")
+                .replace(".", ",")
+                .replace("X", ".")
+            )
+
+        except Exception:
+            pass
+
+    return ""
+
+
+# ============================================================
+# EXTRAIR PRODUTO DA SHOPEE
+# ============================================================
+
+def obter_dados_produto(
+    link
+):
+
+    print(
+        "[SHOPEE] Buscando informações do produto..."
+    )
+
+    headers = {
+
+        "User-Agent":
+            (
+                "Mozilla/5.0 "
+                "(Linux; Android 15) "
+                "AppleWebKit/537.36 "
+                "(KHTML, like Gecko) "
+                "Chrome/151.0.0.0 "
+                "Mobile Safari/537.36"
+            ),
+
+        "Accept-Language":
+            "pt-BR,pt;q=0.9,en;q=0.8",
+
+        "Accept":
+            "text/html,application/xhtml+xml,"
+            "application/xml;q=0.9,*/*;q=0.8"
+    }
+
+    try:
+
+        resposta = requests.get(
+            link,
+            headers=headers,
+            timeout=30,
+            allow_redirects=True
+        )
+
+        print(
+            "[SHOPEE] HTTP:",
+            resposta.status_code
+        )
+
+        print(
+            "[SHOPEE] URL final:",
+            resposta.url
+        )
+
+        pagina = resposta.text
+
+        titulo = ""
+
+        # ----------------------------------------------------
+        # TÍTULO
+        # ----------------------------------------------------
+
+        titulo = extrair_meta(
+            pagina,
+            "og:title"
+        )
+
+        if not titulo:
+
+            titulo = extrair_meta(
+                pagina,
+                "twitter:title"
+            )
+
+        if not titulo:
+
+            resultado = re.search(
+                r"<title[^>]*>(.*?)</title>",
+                pagina,
+                re.IGNORECASE |
+                re.DOTALL
+            )
+
+            if resultado:
+
+                titulo = limpar_texto(
+                    resultado.group(1)
+                )
+
+        # ----------------------------------------------------
+        # DESCRIÇÃO
+        # ----------------------------------------------------
+
+        descricao = extrair_meta(
+            pagina,
+            "og:description"
+        )
+
+        if not descricao:
+
+            descricao = extrair_meta(
+                pagina,
+                "description"
+            )
+
+        # ----------------------------------------------------
+        # PREÇO
+        # ----------------------------------------------------
+
+        preco = extrair_preco(
+            pagina
+        )
+
+        # ----------------------------------------------------
+        # LIMPA TÍTULO
+        # ----------------------------------------------------
+
+        titulo = limpar_texto(
+            titulo
+        )
+
+        descricao = limpar_texto(
+            descricao
+        )
+
+        # Remove sufixos comuns da Shopee
+        titulo = re.sub(
+            r"\s*\|\s*Shopee.*$",
+            "",
+            titulo,
+            flags=re.IGNORECASE
+        )
+
+        titulo = re.sub(
+            r"\s*-\s*Shopee.*$",
+            "",
+            titulo,
+            flags=re.IGNORECASE
+        )
+
+        titulo = titulo.strip()
+
+        # ----------------------------------------------------
+        # LIMITA TAMANHO
+        # ----------------------------------------------------
+
+        if len(titulo) > 180:
+
+            titulo = (
+                titulo[:177].rstrip()
+                + "..."
+            )
+
+        if len(descricao) > 220:
+
+            descricao = (
+                descricao[:217].rstrip()
+                + "..."
+            )
+
+        print(
+            "[SHOPEE] Nome:",
+            titulo or "(não encontrado)"
+        )
+
+        print(
+            "[SHOPEE] Preço:",
+            preco or "(não encontrado)"
+        )
+
+        print(
+            "[SHOPEE] Descrição:",
+            descricao or "(não encontrada)"
+        )
+
+        return {
+
+            "nome":
+                titulo,
+
+            "preco":
+                preco,
+
+            "descricao":
+                descricao,
+
+            "url_final":
+                resposta.url
+
+        }
+
+    except Exception as erro:
+
+        print(
+            "[SHOPEE] Erro ao obter produto:",
+            erro
+        )
+
+        return {
+
+            "nome": "",
+
+            "preco": "",
+
+            "descricao": "",
+
+            "url_final":
+                link
+        }
+
+
+# ============================================================
+# GERAR BENEFÍCIOS
+# ============================================================
+
+def gerar_beneficios(
+    nome,
+    descricao
+):
+
+    texto = (
+        f"{nome} {descricao}"
+    ).lower()
+
+    beneficios = []
+
+    # --------------------------------------------------------
+    # REGRAS DE BENEFÍCIOS
+    # --------------------------------------------------------
+
+    regras = [
+
+        (
+            [
+                "pote",
+                "organizador",
+                "organização",
+                "mantimento"
+            ],
+            "Ideal para organizar e armazenar seus produtos"
+        ),
+
+        (
+            [
+                "cozinha",
+                "cozinha"
+            ],
+            "Perfeito para deixar sua cozinha mais organizada"
+        ),
+
+        (
+            [
+                "plástico",
+                "plastico"
+            ],
+            "Prático e fácil de usar no dia a dia"
+        ),
+
+        (
+            [
+                "tampa",
+                "trava"
+            ],
+            "Praticidade e segurança para armazenar seus produtos"
+        ),
+
+        (
+            [
+                "geladeira",
+                "freezer"
+            ],
+            "Ótimo para organizar alimentos na geladeira ou freezer"
+        ),
+
+        (
+            [
+                "kit",
+                "conjunto"
+            ],
+            "Excelente opção para quem busca praticidade e economia"
+        ),
+
+        (
+            [
+                "casa",
+                "lar"
+            ],
+            "Uma solução prática para facilitar sua rotina"
+        )
+    ]
+
+    for palavras, beneficio in regras:
+
+        if any(
+            palavra in texto
+            for palavra in palavras
+        ):
+
+            if beneficio not in beneficios:
+
+                beneficios.append(
+                    beneficio
+                )
+
+    # --------------------------------------------------------
+    # BENEFÍCIOS GENÉRICOS
+    # --------------------------------------------------------
+
+    if not beneficios:
+
+        beneficios = [
+            "Produto prático para facilitar seu dia a dia",
+            "Excelente opção para sua rotina",
+            "Ótimo custo-benefício",
+            "Uma escolha prática para o dia a dia"
+        ]
+
+    return beneficios[:4]
+
+
+# ============================================================
+# GERAR MENSAGEM DA OFERTA
+# ============================================================
+
+def gerar_mensagem_oferta(
+    produto,
+    link
+):
+
+    nome = (
+        produto.get("nome")
+        or
+        "Oferta especial encontrada"
+    )
+
+    preco = (
+        produto.get("preco")
+        or
+        ""
+    )
+
+    descricao = (
+        produto.get("descricao")
+        or
+        ""
+    )
+
+    beneficios = gerar_beneficios(
+        nome,
+        descricao
+    )
+
+    # --------------------------------------------------------
+    # ESCAPA HTML PARA TELEGRAM
+    # --------------------------------------------------------
+
+    def esc(texto):
+
+        return html.escape(
+            str(texto)
+        )
+
+    nome_html = esc(
+        nome
+    )
+
+    preco_html = esc(
+        preco
+    )
+
+    descricao_limpa = (
+        descricao
+        if descricao
+        and descricao.lower() != nome.lower()
+        else ""
+    )
+
+    # --------------------------------------------------------
+    # DESCRIÇÃO
+    # --------------------------------------------------------
+
+    if descricao_limpa:
+
+        descricao_limpa = re.sub(
+            r"\s+",
+            " ",
+            descricao_limpa
+        ).strip()
+
+        if len(descricao_limpa) > 220:
+
+            descricao_limpa = (
+                descricao_limpa[:217].rstrip()
+                + "..."
+            )
+
+    # --------------------------------------------------------
+    # MONTA TEXTO
+    # --------------------------------------------------------
+
+    partes = []
+
+    partes.append(
+        "🔥 <b>OFERTA IMPERDÍVEL DO DIA!</b> 🔥"
+    )
+
+    partes.append(
+        ""
+    )
+
+    partes.append(
+        f"📦 <b>{nome_html}</b>"
+    )
+
+    if descricao_limpa:
+
+        partes.append(
+            f"✨ {esc(descricao_limpa)}"
+        )
+
+    else:
+
+        partes.append(
+            "✨ Uma oportunidade especial para aproveitar agora."
+        )
+
+    partes.append(
+        ""
+    )
+
+    if preco_html:
+
+        partes.append(
+            f"💰 <b>POR APENAS: {preco_html}!</b>"
+        )
+
+    else:
+
+        partes.append(
+            "💰 <b>Confira o preço especial da oferta!</b>"
+        )
+
+    partes.append(
+        ""
+    )
+
+    # --------------------------------------------------------
+    # BENEFÍCIOS
+    # --------------------------------------------------------
+
+    for beneficio in beneficios:
+
+        partes.append(
+            f"✅ {esc(beneficio)}"
+        )
+
+    partes.append(
+        ""
+    )
+
+    partes.append(
+        "🚨 <b>CORRE QUE PODE ACABAR A QUALQUER MOMENTO!</b>"
+    )
+
+    partes.append(
+        ""
+    )
+
+    partes.append(
+        "🛒 <b>QUERO APROVEITAR ESSA OFERTA</b>"
+    )
+
+    partes.append(
+        "👇 Clique no botão abaixo para comprar:"
+    )
+
+    partes.append(
+        ""
+    )
+
+    partes.append(
+        "━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    partes.append(
+        "🦊 <b>Raposa Caçadora</b>"
+    )
+
+    partes.append(
+        "📌 Ofertas selecionadas todos os dias"
+    )
+
+    partes.append(
+        "━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    return "\n".join(
+        partes
+    )
+
+
+# ============================================================
 # TAREFAS
 # ============================================================
 
@@ -565,23 +1244,44 @@ def publicar_produto(
     )
 
     # --------------------------------------------------------
-    # MENSAGEM
+    # OBTÉM DADOS DO PRODUTO
     # --------------------------------------------------------
 
-    texto = (
-        "🦊 RAPOSA CAÇADORA\n\n"
-        "🔥 Oferta encontrada!\n\n"
-        f"🛒 {link}\n\n"
-        "👉 Confira a oferta no link acima."
+    produto = obter_dados_produto(
+        link
+    )
+
+    url_compra = (
+        produto.get("url_final")
+        or
+        link
     )
 
     # --------------------------------------------------------
-    # ENVIA PARA O TELEGRAM
+    # GERA MENSAGEM
+    # --------------------------------------------------------
+
+    texto = gerar_mensagem_oferta(
+        produto,
+        url_compra
+    )
+
+    print(
+        "[TELEGRAM] Mensagem gerada:"
+    )
+
+    print(
+        texto
+    )
+
+    # --------------------------------------------------------
+    # ENVIA
     # --------------------------------------------------------
 
     resultado = telegram_enviar_mensagem(
         texto,
-        canal
+        canal,
+        url_compra
     )
 
     if not resultado.get("ok"):
@@ -627,7 +1327,13 @@ def publicar_produto(
         "message_id":
             mensagem_telegram.get(
                 "message_id"
-            )
+            ),
+
+        "produto":
+            produto,
+
+        "url_compra":
+            url_compra
     }
 
 
@@ -827,6 +1533,12 @@ def executar_tarefa(
                     "message_id":
                         resultado.get(
                             "message_id"
+                        ),
+
+                    "dados_produto":
+                        resultado.get(
+                            "produto",
+                            {}
                         )
                 })
 

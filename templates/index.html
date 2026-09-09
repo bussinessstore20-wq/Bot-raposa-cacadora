@@ -24,1413 +24,685 @@
 <style>
 
 :root {
-
   --orange:#ff6b00;
   --orange-light:#ff934d;
   --bg:#070707;
   --card:#111113;
   --card2:#171719;
   --input:#1b1b1e;
-
   --white:#fff;
   --text:#e8e8eb;
   --muted:#85858c;
   --dim:#4f4f55;
-
   --green:#32d583;
   --red:#ff5c5c;
   --yellow:#ffca3a;
-
   --border:rgba(255,255,255,.07);
-
 }
-
 
 * {
-
   box-sizing:border-box;
-
   -webkit-tap-highlight-color:transparent;
-
 }
-
 
 body {
-
   margin:0;
-
   min-height:100vh;
-
   padding:12px 10px 30px;
-
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
-    Arial,
-    sans-serif;
-
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
   color:var(--white);
-
   background:
-
-    radial-gradient(
-      circle at 50% -10%,
-      rgba(255,107,0,.20),
-      transparent 34%
-    ),
-
+    radial-gradient(circle at 50% -10%,rgba(255,107,0,.20),transparent 34%),
     #070707;
-
 }
 
+button,
+input {
+  font-family:inherit;
+}
 
 .app {
-
   width:100%;
-
   max-width:440px;
-
   margin:auto;
-
 }
-
-
-/* =========================================================
-   HEADER
-========================================================= */
 
 .header {
-
   text-align:center;
-
   padding:7px 0 17px;
-
 }
-
 
 .logo {
-
   width:70px;
-
   height:70px;
-
   margin:auto;
-
   display:flex;
-
   align-items:center;
-
   justify-content:center;
-
   border-radius:22px;
-
-  background:
-    linear-gradient(
-      145deg,
-      rgba(255,138,61,.20),
-      rgba(255,107,0,.035)
-    );
-
-  border:
-    1px solid
-    rgba(255,107,0,.25);
-
-  box-shadow:
-    0 0 45px
-    rgba(255,107,0,.13);
-
+  background:linear-gradient(145deg,rgba(255,138,61,.20),rgba(255,107,0,.035));
+  border:1px solid rgba(255,107,0,.25);
+  box-shadow:0 0 45px rgba(255,107,0,.13);
   font-size:36px;
-
 }
-
 
 .header h1 {
-
   margin:11px 0 0;
-
   font-size:24px;
-
   font-weight:900;
-
   letter-spacing:-.7px;
-
 }
-
 
 .header p {
-
   margin:5px 0 0;
-
   color:var(--muted);
-
   font-size:10px;
-
 }
-
-
-/* =========================================================
-   CARD
-========================================================= */
 
 .card {
-
   padding:16px;
-
   border-radius:20px;
-
-  background:
-    linear-gradient(
-      145deg,
-      rgba(25,25,28,.98),
-      rgba(11,11,12,.98)
-    );
-
+  background:linear-gradient(145deg,rgba(25,25,28,.98),rgba(11,11,12,.98));
   border:1px solid var(--border);
-
-  box-shadow:
-    0 25px 80px
-    rgba(0,0,0,.55);
-
+  box-shadow:0 25px 80px rgba(0,0,0,.55);
 }
-
-
-/* =========================================================
-   PLATFORM
-========================================================= */
 
 .platform {
-
   display:flex;
-
   align-items:center;
-
   justify-content:space-between;
-
   padding:10px;
-
   margin-bottom:17px;
-
   border-radius:12px;
-
-  background:
-    rgba(255,107,0,.05);
-
-  border:
-    1px solid
-    rgba(255,107,0,.12);
-
+  background:rgba(255,107,0,.05);
+  border:1px solid rgba(255,107,0,.12);
 }
-
 
 .platform-left {
-
   display:flex;
-
   align-items:center;
-
   gap:9px;
-
 }
-
 
 .platform-icon {
-
   width:34px;
-
   height:34px;
-
   display:flex;
-
   align-items:center;
-
   justify-content:center;
-
   border-radius:9px;
-
   color:var(--orange);
-
-  background:
-    rgba(255,107,0,.12);
-
+  background:rgba(255,107,0,.12);
 }
-
 
 .platform strong {
-
   display:block;
-
   font-size:11px;
-
 }
-
 
 .platform span {
-
   display:block;
-
   margin-top:2px;
-
   color:var(--muted);
-
   font-size:8px;
-
 }
-
 
 .badge {
-
   padding:5px 8px;
-
   border-radius:7px;
-
   color:#ff995a;
-
-  background:
-    rgba(255,107,0,.08);
-
-  border:
-    1px solid
-    rgba(255,107,0,.16);
-
+  background:rgba(255,107,0,.08);
+  border:1px solid rgba(255,107,0,.16);
   font-size:8px;
-
   font-weight:900;
-
   letter-spacing:.6px;
-
 }
-
-
-/* =========================================================
-   SECTION
-========================================================= */
 
 .section-head {
-
   display:flex;
-
   justify-content:space-between;
-
   align-items:center;
-
   margin-bottom:8px;
-
 }
-
 
 .section-title {
-
   display:flex;
-
   align-items:center;
-
   gap:7px;
-
   color:#ddd;
-
   font-size:11px;
-
   font-weight:800;
-
 }
-
 
 .section-title i {
-
   color:var(--orange);
-
 }
-
 
 .counter {
-
   padding:4px 8px;
-
   border-radius:7px;
-
   color:#ff995a;
-
-  background:
-    rgba(255,107,0,.07);
-
+  background:rgba(255,107,0,.07);
   font-size:8px;
-
   font-weight:900;
-
 }
-
-
-/* =========================================================
-   LINKS
-========================================================= */
 
 .links-list {
-
   display:flex;
-
   flex-direction:column;
-
   gap:7px;
-
 }
-
 
 .link-row {
-
   display:flex;
-
   align-items:center;
-
   gap:7px;
-
 }
-
 
 .link-number {
-
   width:29px;
-
   height:43px;
-
   flex-shrink:0;
-
   display:flex;
-
   align-items:center;
-
   justify-content:center;
-
   border-radius:8px;
-
   color:#55555b;
-
-  background:
-    rgba(255,255,255,.035);
-
+  background:rgba(255,255,255,.035);
   font-size:8px;
-
   font-weight:900;
-
 }
-
 
 .link-row.valid .link-number {
-
   color:var(--orange);
-
 }
-
 
 .link-wrapper {
-
   position:relative;
-
   flex:1;
-
 }
-
 
 .link-input {
-
   width:100%;
-
   height:43px;
-
-  padding:
-    0 35px
-    0 35px;
-
+  padding:0 35px;
   border-radius:9px;
-
-  border:
-    1px solid
-    rgba(255,255,255,.06);
-
+  border:1px solid rgba(255,255,255,.06);
   outline:none;
-
   color:#fff;
-
-  background:
-    rgba(255,255,255,.035);
-
+  background:rgba(255,255,255,.035);
   font-size:10px;
-
 }
-
 
 .link-input:focus {
-
-  border-color:
-    rgba(255,107,0,.55);
-
-  box-shadow:
-    0 0 0 3px
-    rgba(255,107,0,.05);
-
+  border-color:rgba(255,107,0,.55);
+  box-shadow:0 0 0 3px rgba(255,107,0,.05);
 }
-
 
 .link-icon {
-
   position:absolute;
-
   left:12px;
-
   top:50%;
-
   transform:translateY(-50%);
-
   color:#606067;
-
   font-size:10px;
-
 }
-
 
 .link-status {
-
   position:absolute;
-
   right:10px;
-
   top:50%;
-
   transform:translateY(-50%);
-
   font-size:9px;
-
 }
-
 
 .remove-link {
-
   width:30px;
-
   height:30px;
-
   flex-shrink:0;
-
   border:0;
-
   border-radius:8px;
-
   color:#555;
-
-  background:
-    rgba(255,255,255,.025);
-
+  background:rgba(255,255,255,.025);
   cursor:pointer;
-
 }
-
 
 .remove-link:hover {
-
   color:var(--red);
-
 }
-
 
 .add-btn {
-
   width:100%;
-
   height:40px;
-
   margin-top:8px;
-
   border-radius:9px;
-
-  border:
-    1px dashed
-    rgba(255,107,0,.28);
-
+  border:1px dashed rgba(255,107,0,.28);
   color:#ff914f;
-
-  background:
-    rgba(255,107,0,.025);
-
+  background:rgba(255,107,0,.025);
   font-size:9px;
-
   font-weight:900;
-
   cursor:pointer;
-
 }
-
 
 .add-btn:disabled {
-
   opacity:.35;
-
 }
-
-
-/* =========================================================
-   INTERVAL
-========================================================= */
 
 .settings {
-
   margin-top:18px;
-
 }
-
 
 .intervals {
-
   display:grid;
-
-  grid-template-columns:
-    repeat(4,1fr);
-
+  grid-template-columns:repeat(4,1fr);
   gap:5px;
-
   margin-top:8px;
-
 }
-
 
 .interval {
-
   height:47px;
-
   border-radius:9px;
-
-  border:
-    1px solid
-    rgba(255,255,255,.06);
-
-  background:
-    rgba(255,255,255,.035);
-
+  border:1px solid rgba(255,255,255,.06);
+  background:rgba(255,255,255,.035);
   color:#77777e;
-
   cursor:pointer;
-
 }
-
 
 .interval strong {
-
   display:block;
-
   font-size:10px;
-
 }
-
 
 .interval small {
-
   display:block;
-
   margin-top:2px;
-
   font-size:7px;
-
   color:#4f4f55;
-
 }
-
 
 .interval.active {
-
   color:#fff;
-
-  border-color:
-    rgba(255,107,0,.55);
-
-  background:
-    rgba(255,107,0,.11);
-
+  border-color:rgba(255,107,0,.55);
+  background:rgba(255,107,0,.11);
 }
-
 
 .interval.active small {
-
   color:#ff9453;
-
 }
-
-
-/* =========================================================
-   QUANTITY
-========================================================= */
 
 .quantity {
-
   display:flex;
-
   justify-content:space-between;
-
   align-items:center;
-
   margin-top:11px;
-
   padding:10px 11px;
-
   border-radius:10px;
-
-  background:
-    rgba(255,255,255,.03);
-
-  border:
-    1px solid
-    rgba(255,255,255,.05);
-
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.05);
 }
-
 
 .quantity strong {
-
   display:block;
-
   font-size:10px;
-
 }
-
 
 .quantity span {
-
   display:block;
-
   margin-top:2px;
-
   color:var(--muted);
-
   font-size:7px;
-
 }
-
 
 .quantity-control {
-
   display:flex;
-
   align-items:center;
-
   gap:6px;
-
 }
-
 
 .quantity-button {
-
   width:28px;
-
   height:28px;
-
   border:0;
-
   border-radius:7px;
-
   color:#aaa;
-
-  background:
-    rgba(255,255,255,.06);
-
+  background:rgba(255,255,255,.06);
   cursor:pointer;
-
 }
-
 
 .quantity-number {
-
   width:25px;
-
   text-align:center;
-
   font-size:12px;
-
   font-weight:900;
-
 }
-
-
-/* =========================================================
-   SUMMARY
-========================================================= */
 
 .summary {
-
   margin-top:13px;
-
   padding:12px;
-
   border-radius:12px;
-
-  background:
-    rgba(255,255,255,.025);
-
-  border:
-    1px solid
-    rgba(255,255,255,.05);
-
+  background:rgba(255,255,255,.025);
+  border:1px solid rgba(255,255,255,.05);
 }
-
 
 .summary-title {
-
   margin-bottom:9px;
-
   color:#77777e;
-
   font-size:8px;
-
   font-weight:900;
-
   letter-spacing:.7px;
-
   text-transform:uppercase;
-
 }
-
 
 .summary-grid {
-
   display:grid;
-
-  grid-template-columns:
-    repeat(3,1fr);
-
+  grid-template-columns:repeat(3,1fr);
   gap:5px;
-
 }
-
 
 .summary-item {
-
   padding:8px 4px;
-
   text-align:center;
-
   border-radius:8px;
-
-  background:
-    rgba(255,255,255,.025);
-
+  background:rgba(255,255,255,.025);
 }
-
 
 .summary-item i {
-
   margin-bottom:4px;
-
   color:var(--orange);
-
   font-size:10px;
-
 }
-
 
 .summary-item strong {
-
   display:block;
-
   font-size:10px;
-
 }
-
 
 .summary-item span {
-
   display:block;
-
   margin-top:2px;
-
   color:#55555b;
-
   font-size:6px;
-
 }
-
-
-/* =========================================================
-   START
-========================================================= */
 
 .start-btn {
-
   width:100%;
-
   height:53px;
-
   margin-top:12px;
-
   border:0;
-
   border-radius:12px;
-
   color:#fff;
-
-  background:
-    linear-gradient(
-      135deg,
-      #ff8a36,
-      #ff5b00
-    );
-
+  background:linear-gradient(135deg,#ff8a36,#ff5b00);
   font-size:12px;
-
   font-weight:900;
-
   cursor:pointer;
-
-  box-shadow:
-    0 12px 30px
-    rgba(255,107,0,.22);
-
+  box-shadow:0 12px 30px rgba(255,107,0,.22);
 }
-
 
 .start-btn:disabled {
-
   background:#363638;
-
   color:#777;
-
   box-shadow:none;
-
 }
-
-
-/* =========================================================
-   PROGRESS PANEL
-========================================================= */
 
 .progress-panel {
-
   display:none;
-
   margin-top:14px;
-
   padding:13px;
-
   border-radius:14px;
-
-  background:
-    linear-gradient(
-      145deg,
-      rgba(255,107,0,.07),
-      rgba(255,255,255,.025)
-    );
-
-  border:
-    1px solid
-    rgba(255,107,0,.12);
-
+  background:linear-gradient(145deg,rgba(255,107,0,.07),rgba(255,255,255,.025));
+  border:1px solid rgba(255,107,0,.12);
 }
-
 
 .progress-top {
-
   display:flex;
-
   justify-content:space-between;
-
   align-items:center;
-
 }
-
 
 .progress-status {
-
   display:flex;
-
   align-items:center;
-
   gap:7px;
-
   font-size:10px;
-
   font-weight:800;
-
 }
-
 
 .status-dot {
-
   width:7px;
-
   height:7px;
-
   border-radius:50%;
-
   background:var(--orange);
-
-  box-shadow:
-    0 0 10px
-    rgba(255,107,0,.7);
-
-  animation:
-    pulse 1.3s infinite;
-
+  box-shadow:0 0 10px rgba(255,107,0,.7);
+  animation:pulse 1.3s infinite;
 }
 
-
 @keyframes pulse {
-
   0%,100% {
     opacity:1;
     transform:scale(1);
   }
-
   50% {
     opacity:.4;
     transform:scale(.7);
   }
-
 }
-
 
 .progress-percent {
-
   color:#ff914f;
-
   font-size:11px;
-
   font-weight:900;
-
 }
-
 
 .progress-bar {
-
   height:7px;
-
   margin-top:11px;
-
   overflow:hidden;
-
   border-radius:99px;
-
-  background:
-    rgba(255,255,255,.06);
-
+  background:rgba(255,255,255,.06);
 }
-
 
 .progress-fill {
-
   width:0%;
-
   height:100%;
-
   border-radius:99px;
-
-  background:
-    linear-gradient(
-      90deg,
-      #ff5b00,
-      #ff9a57
-    );
-
-  box-shadow:
-    0 0 15px
-    rgba(255,107,0,.35);
-
-  transition:
-    width .4s ease;
-
+  background:linear-gradient(90deg,#ff5b00,#ff9a57);
+  box-shadow:0 0 15px rgba(255,107,0,.35);
+  transition:width .4s ease;
 }
-
 
 .current-product {
-
   margin-top:11px;
-
   padding:10px;
-
   border-radius:9px;
-
-  background:
-    rgba(0,0,0,.18);
-
+  background:rgba(0,0,0,.18);
 }
-
 
 .current-label {
-
   color:#5f5f65;
-
   font-size:7px;
-
   text-transform:uppercase;
-
   letter-spacing:.5px;
-
 }
-
 
 .current-link {
-
   margin-top:4px;
-
   overflow:hidden;
-
   color:#bbb;
-
   font-size:9px;
-
   white-space:nowrap;
-
   text-overflow:ellipsis;
-
 }
-
-
-/* =========================================================
-   PRODUCT STATUS LIST
-========================================================= */
 
 .product-status-list {
-
   display:flex;
-
   flex-direction:column;
-
   gap:5px;
-
   margin-top:10px;
-
   max-height:230px;
-
   overflow-y:auto;
-
 }
-
 
 .product-status {
-
   display:flex;
-
   align-items:center;
-
   gap:8px;
-
   padding:8px;
-
   border-radius:8px;
-
-  background:
-    rgba(255,255,255,.025);
-
+  background:rgba(255,255,255,.025);
 }
 
-
 .product-status-icon {
-
   width:24px;
-
   height:24px;
-
   flex-shrink:0;
-
   display:flex;
-
   align-items:center;
-
   justify-content:center;
-
   border-radius:7px;
-
-  background:
-    rgba(255,255,255,.05);
-
+  background:rgba(255,255,255,.05);
   color:#555;
-
   font-size:8px;
-
 }
 
-
-.product-status.processing
-.product-status-icon {
-
+.product-status.processing .product-status-icon {
   color:var(--orange);
-
 }
 
-
-.product-status.done
-.product-status-icon {
-
+.product-status.done .product-status-icon {
   color:var(--green);
-
-  background:
-    rgba(50,213,131,.08);
-
+  background:rgba(50,213,131,.08);
 }
 
-
-.product-status.error
-.product-status-icon {
-
+.product-status.error .product-status-icon {
   color:var(--red);
-
-  background:
-    rgba(255,92,92,.08);
-
+  background:rgba(255,92,92,.08);
 }
-
 
 .product-status-text {
-
   flex:1;
-
   min-width:0;
-
 }
-
 
 .product-status-text strong {
-
   display:block;
-
   overflow:hidden;
-
   color:#bbb;
-
   font-size:8px;
-
   white-space:nowrap;
-
   text-overflow:ellipsis;
-
 }
-
 
 .product-status-text span {
-
   display:block;
-
   margin-top:2px;
-
   color:#555;
-
   font-size:7px;
-
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
 }
-
 
 .product-status-state {
-
   color:#555;
-
   font-size:7px;
-
   font-weight:800;
-
 }
-
-
-/* =========================================================
-   NEXT POST
-========================================================= */
 
 .next-post {
-
   display:flex;
-
   justify-content:space-between;
-
   align-items:center;
-
   margin-top:9px;
-
   padding-top:9px;
-
-  border-top:
-    1px solid
-    rgba(255,255,255,.05);
-
+  border-top:1px solid rgba(255,255,255,.05);
 }
-
 
 .next-post span {
-
   color:#555;
-
   font-size:7px;
-
 }
-
 
 .next-post strong {
-
   color:#999;
-
   font-size:8px;
-
 }
-
-
-/* =========================================================
-   STOP
-========================================================= */
 
 .stop-btn {
-
   width:100%;
-
   height:40px;
-
   margin-top:8px;
-
-  border:
-    1px solid
-    rgba(255,92,92,.15);
-
+  border:1px solid rgba(255,92,92,.15);
   border-radius:9px;
-
   color:#ff7070;
-
-  background:
-    rgba(255,92,92,.045);
-
+  background:rgba(255,92,92,.045);
   font-size:9px;
-
   font-weight:900;
-
   cursor:pointer;
-
 }
-
-
-/* =========================================================
-   MESSAGE
-========================================================= */
 
 #mensagem {
-
   display:none;
-
   margin-top:10px;
-
   padding:11px;
-
   border-radius:10px;
-
   font-size:9px;
-
   line-height:1.5;
-
 }
-
 
 .msg-sucesso {
-
   color:#65df93;
-
-  background:
-    rgba(50,213,131,.06);
-
-  border:
-    1px solid
-    rgba(50,213,131,.17);
-
+  background:rgba(50,213,131,.06);
+  border:1px solid rgba(50,213,131,.17);
 }
-
 
 .msg-erro {
-
   color:#ff7474;
-
-  background:
-    rgba(255,92,92,.06);
-
-  border:
-    1px solid
-    rgba(255,92,92,.17);
-
+  background:rgba(255,92,92,.06);
+  border:1px solid rgba(255,92,92,.17);
 }
-
-
-/* =========================================================
-   INFO
-========================================================= */
 
 .info {
-
   display:flex;
-
   gap:8px;
-
   margin-top:10px;
-
   padding:10px;
-
   border-radius:10px;
-
   color:#69696f;
-
-  background:
-    rgba(255,255,255,.02);
-
+  background:rgba(255,255,255,.02);
   font-size:8px;
-
   line-height:1.5;
-
 }
-
 
 .info i {
-
   color:var(--orange);
-
 }
 
-
-/* =========================================================
-   FOOTER
-========================================================= */
-
 .footer {
-
   text-align:center;
-
   margin-top:12px;
-
   color:#3d3d42;
-
   font-size:7px;
-
 }
 
 </style>
 
 </head>
 
-
 <body>
-
 
 <div class="app">
 
-
 <header class="header">
 
-  <div class="logo">
-    🦊
-  </div>
+  <div class="logo">🦊</div>
 
-  <h1>
-    Raposa Caçadora
-  </h1>
+  <h1>Raposa Caçadora</h1>
 
-  <p>
-    Automação inteligente de ofertas Shopee
-  </p>
+  <p>Automação inteligente de ofertas Shopee</p>
 
 </header>
 
-
 <main class="card">
-
-
-  <!-- PLATAFORMA -->
 
   <div class="platform">
 
@@ -1441,42 +713,25 @@ body {
       </div>
 
       <div>
-
-        <strong>
-          SHOPEE
-        </strong>
-
-        <span>
-          Central de automação
-        </span>
-
+        <strong>SHOPEE</strong>
+        <span>Central de automação</span>
       </div>
 
     </div>
 
-    <div class="badge">
-      PRO
-    </div>
+    <div class="badge">PRO</div>
 
   </div>
 
 
-  <!-- LINKS -->
-
   <div class="section-head">
 
     <div class="section-title">
-
       <i class="fa-solid fa-link"></i>
-
       Produtos
-
     </div>
 
-    <div
-      class="counter"
-      id="linkCounter"
-    >
+    <div class="counter" id="linkCounter">
       0 / 20
     </div>
 
@@ -1495,101 +750,65 @@ body {
     type="button"
     onclick="adicionarLink()"
   >
-
     <i class="fa-solid fa-plus"></i>
-
     ADICIONAR PRODUTO
-
   </button>
 
-
-  <!-- INTERVALO -->
 
   <div class="settings">
 
     <div class="section-title">
-
       <i class="fa-solid fa-clock"></i>
-
       Intervalo entre postagens
-
     </div>
 
-
     <div class="intervals">
-
 
       <button
         type="button"
         class="interval active"
         data-segundos="10"
       >
-
         <strong>10s</strong>
-
         <small>rápido</small>
-
       </button>
-
 
       <button
         type="button"
         class="interval"
         data-segundos="60"
       >
-
         <strong>1 min</strong>
-
         <small>normal</small>
-
       </button>
-
 
       <button
         type="button"
         class="interval"
         data-segundos="300"
       >
-
         <strong>5 min</strong>
-
         <small>moderado</small>
-
       </button>
-
 
       <button
         type="button"
         class="interval"
         data-segundos="600"
       >
-
         <strong>10 min</strong>
-
         <small>lento</small>
-
       </button>
-
 
     </div>
 
 
-    <!-- QUANTIDADE -->
-
     <div class="quantity">
 
       <div>
-
-        <strong>
-          Quantidade de postagens
-        </strong>
-
-        <span>
-          Mínimo 1 • máximo 20
-        </span>
-
+        <strong>Quantidade de postagens</strong>
+        <span>Mínimo 1 • máximo 20</span>
       </div>
-
 
       <div class="quantity-control">
 
@@ -1598,11 +817,8 @@ body {
           class="quantity-button"
           onclick="alterarQuantidade(-1)"
         >
-
           <i class="fa-solid fa-minus"></i>
-
         </button>
-
 
         <div
           class="quantity-number"
@@ -1611,15 +827,12 @@ body {
           1
         </div>
 
-
         <button
           type="button"
           class="quantity-button"
           onclick="alterarQuantidade(1)"
         >
-
           <i class="fa-solid fa-plus"></i>
-
         </button>
 
       </div>
@@ -1629,69 +842,36 @@ body {
   </div>
 
 
-  <!-- RESUMO -->
-
   <div class="summary">
 
     <div class="summary-title">
       Resumo da automação
     </div>
 
-
     <div class="summary-grid">
 
-
       <div class="summary-item">
-
         <i class="fa-solid fa-link"></i>
-
-        <strong id="summaryLinks">
-          0
-        </strong>
-
-        <span>
-          PRODUTOS
-        </span>
-
+        <strong id="summaryLinks">0</strong>
+        <span>PRODUTOS</span>
       </div>
 
-
       <div class="summary-item">
-
         <i class="fa-solid fa-clock"></i>
-
-        <strong id="summaryInterval">
-          10s
-        </strong>
-
-        <span>
-          INTERVALO
-        </span>
-
+        <strong id="summaryInterval">10s</strong>
+        <span>INTERVALO</span>
       </div>
-
 
       <div class="summary-item">
-
         <i class="fa-solid fa-paper-plane"></i>
-
-        <strong id="summaryPosts">
-          1
-        </strong>
-
-        <span>
-          POSTAGENS
-        </span>
-
+        <strong id="summaryPosts">1</strong>
+        <span>POSTAGENS</span>
       </div>
-
 
     </div>
 
   </div>
 
-
-  <!-- INICIAR -->
 
   <button
     class="start-btn"
@@ -1699,23 +879,15 @@ body {
     type="button"
     onclick="enviarConfiguracao()"
   >
-
     <i class="fa-solid fa-rocket"></i>
-
     INICIAR AUTOMAÇÃO
-
   </button>
 
-
-  <!-- =======================================================
-       PAINEL DE PROGRESSO
-  ======================================================== -->
 
   <div
     class="progress-panel"
     id="progressPanel"
   >
-
 
     <div class="progress-top">
 
@@ -1731,7 +903,6 @@ body {
         </span>
 
       </div>
-
 
       <div
         class="progress-percent"
@@ -1793,87 +964,45 @@ body {
       class="stop-btn"
       onclick="pararAutomacao()"
     >
-
       <i class="fa-solid fa-stop"></i>
-
       PARAR AUTOMAÇÃO
-
     </button>
-
 
   </div>
 
 
-  <!-- MENSAGEM -->
-
   <div id="mensagem"></div>
 
-
-  <!-- INFO -->
 
   <div class="info">
 
     <i class="fa-solid fa-shield-halved"></i>
 
     <div>
-
       Adicione até <strong>20 produtos da Shopee</strong>.
       Escolha o intervalo e a quantidade de postagens.
       O painel acompanha o andamento da automação.
-
     </div>
 
   </div>
-
 
 </main>
 
 
 <div class="footer">
-
   🦊 Raposa Caçadora PRO
-
 </div>
-
 
 </div>
 
 
 <script>
 
-
-/* ============================================================
-   TELEGRAM
-============================================================ */
-
-const tg =
-  window.Telegram?.WebApp;
-
-
-if (tg) {
-
-  tg.ready();
-
-  tg.expand();
-
-  if (tg.setHeaderColor) {
-
-    tg.setHeaderColor("#070707");
-
-  }
-
-  if (tg.setBackgroundColor) {
-
-    tg.setBackgroundColor("#070707");
-
-  }
-
-}
-
-
 /* ============================================================
    CONFIGURAÇÃO
 ============================================================ */
+
+const API_URL = window.location.origin;
 
 const MAX_LINKS = 20;
 
@@ -1883,11 +1012,33 @@ let quantidade = 1;
 
 let automacaoAtiva = false;
 
-let progressoAtual = 0;
+let taskIdAtual = null;
 
-let linksDaAutomacao = [];
+let monitoramento = null;
 
-let timerSimulado = null;
+
+/* ============================================================
+   TELEGRAM
+============================================================ */
+
+const tg =
+  window.Telegram?.WebApp;
+
+if (tg) {
+
+  tg.ready();
+
+  tg.expand();
+
+  if (tg.setHeaderColor) {
+    tg.setHeaderColor("#070707");
+  }
+
+  if (tg.setBackgroundColor) {
+    tg.setBackgroundColor("#070707");
+  }
+
+}
 
 
 /* ============================================================
@@ -1895,84 +1046,55 @@ let timerSimulado = null;
 ============================================================ */
 
 const linksContainer =
-  document.getElementById(
-    "linksContainer"
-  );
+  document.getElementById("linksContainer");
 
 const addLinkBtn =
-  document.getElementById(
-    "addLinkBtn"
-  );
+  document.getElementById("addLinkBtn");
 
 const linkCounter =
-  document.getElementById(
-    "linkCounter"
-  );
+  document.getElementById("linkCounter");
 
 const summaryLinks =
-  document.getElementById(
-    "summaryLinks"
-  );
+  document.getElementById("summaryLinks");
 
 const summaryInterval =
-  document.getElementById(
-    "summaryInterval"
-  );
+  document.getElementById("summaryInterval");
 
 const summaryPosts =
-  document.getElementById(
-    "summaryPosts"
-  );
+  document.getElementById("summaryPosts");
 
 const quantidadeEl =
-  document.getElementById(
-    "quantidade"
-  );
+  document.getElementById("quantidade");
 
 const progressPanel =
-  document.getElementById(
-    "progressPanel"
-  );
+  document.getElementById("progressPanel");
 
 const progressFill =
-  document.getElementById(
-    "progressFill"
-  );
+  document.getElementById("progressFill");
 
 const progressPercent =
-  document.getElementById(
-    "progressPercent"
-  );
+  document.getElementById("progressPercent");
 
 const automationStatus =
-  document.getElementById(
-    "automationStatus"
-  );
+  document.getElementById("automationStatus");
 
 const currentProduct =
-  document.getElementById(
-    "currentProduct"
-  );
+  document.getElementById("currentProduct");
 
 const nextPost =
-  document.getElementById(
-    "nextPost"
-  );
+  document.getElementById("nextPost");
 
 const productStatusList =
-  document.getElementById(
-    "productStatusList"
-  );
+  document.getElementById("productStatusList");
 
 const btn =
-  document.getElementById(
-    "btn-iniciar"
-  );
+  document.getElementById("btn-iniciar");
 
 const msgBox =
-  document.getElementById(
-    "mensagem"
-  );
+  document.getElementById("mensagem");
+
+const statusDot =
+  document.getElementById("statusDot");
 
 
 /* ============================================================
@@ -1989,14 +1111,9 @@ adicionarLink();
 function adicionarLink() {
 
   const total =
-    document.querySelectorAll(
-      ".link-row"
-    ).length;
+    document.querySelectorAll(".link-row").length;
 
-
-  if (
-    total >= MAX_LINKS
-  ) {
+  if (total >= MAX_LINKS) {
 
     mostrarMensagem(
       "❌ Limite máximo de 20 produtos.",
@@ -2004,23 +1121,14 @@ function adicionarLink() {
     );
 
     return;
-
   }
 
-
-  const numero =
-    total + 1;
-
+  const numero = total + 1;
 
   const row =
-    document.createElement(
-      "div"
-    );
+    document.createElement("div");
 
-
-  row.className =
-    "link-row";
-
+  row.className = "link-row";
 
   row.innerHTML = `
 
@@ -2048,28 +1156,18 @@ function adicionarLink() {
       type="button"
       class="remove-link"
     >
-
       <i class="fa-solid fa-xmark"></i>
-
     </button>
 
   `;
 
-
   linksContainer.appendChild(row);
 
-
   const input =
-    row.querySelector(
-      ".link-input"
-    );
-
+    row.querySelector(".link-input");
 
   const status =
-    row.querySelector(
-      ".link-status"
-    );
-
+    row.querySelector(".link-status");
 
   input.addEventListener(
     "input",
@@ -2086,11 +1184,8 @@ function adicionarLink() {
     }
   );
 
-
   row
-    .querySelector(
-      ".remove-link"
-    )
+    .querySelector(".remove-link")
     .addEventListener(
       "click",
       () => {
@@ -2104,11 +1199,9 @@ function adicionarLink() {
       }
     );
 
-
   input.focus();
 
   atualizarInterface();
-
 }
 
 
@@ -2120,19 +1213,14 @@ function validarLinkShopee(link) {
 
   try {
 
-    const url =
-      new URL(link);
-
+    const url = new URL(link);
 
     if (
       url.protocol !== "http:" &&
       url.protocol !== "https:"
     ) {
-
       return false;
-
     }
-
 
     return url.hostname
       .toLowerCase()
@@ -2156,32 +1244,17 @@ function validarInput(
   const valor =
     input.value.trim();
 
-
-  row.classList.remove(
-    "valid"
-  );
-
+  row.classList.remove("valid");
 
   status.innerHTML = "";
 
-
   if (!valor) {
-
     return;
-
   }
 
+  if (validarLinkShopee(valor)) {
 
-  if (
-    validarLinkShopee(
-      valor
-    )
-  ) {
-
-    row.classList.add(
-      "valid"
-    );
-
+    row.classList.add("valid");
 
     status.innerHTML =
       '<i class="fa-solid fa-circle-check" style="color:#32d583"></i>';
@@ -2203,17 +1276,14 @@ function validarInput(
 function renumerar() {
 
   document
-    .querySelectorAll(
-      ".link-row"
-    )
+    .querySelectorAll(".link-row")
     .forEach(
       (row,index) => {
 
         row.querySelector(
           ".link-number"
         ).innerText =
-          String(index + 1)
-            .padStart(2,"0");
+          String(index + 1).padStart(2,"0");
 
       }
     );
@@ -2222,25 +1292,21 @@ function renumerar() {
 
 
 /* ============================================================
-   PEGAR LINKS
+   OBTER LINKS
 ============================================================ */
 
 function obterLinks() {
 
   return [
-    ...document.querySelectorAll(
-      ".link-input"
-    )
+    ...document.querySelectorAll(".link-input")
   ]
 
   .map(
-    input =>
-      input.value.trim()
+    input => input.value.trim()
   )
 
   .filter(
-    link =>
-      link.length > 0
+    link => link.length > 0
   );
 
 }
@@ -2250,17 +1316,12 @@ function obterLinks() {
    QUANTIDADE
 ============================================================ */
 
-function alterarQuantidade(
-  valor
-) {
+function alterarQuantidade(valor) {
 
   const total =
     obterLinks().length;
 
-
-  if (
-    total === 0
-  ) {
+  if (total === 0) {
 
     mostrarMensagem(
       "❌ Adicione pelo menos um produto.",
@@ -2268,29 +1329,18 @@ function alterarQuantidade(
     );
 
     return;
-
   }
 
-
   quantidade += valor;
-
-
-  const limite =
-    Math.min(
-      total,
-      MAX_LINKS
-    );
-
 
   quantidade =
     Math.max(
       1,
       Math.min(
         quantidade,
-        limite
+        Math.min(total,MAX_LINKS)
       )
     );
-
 
   atualizarInterface();
 
@@ -2302,65 +1352,41 @@ function alterarQuantidade(
 ============================================================ */
 
 document
-  .querySelectorAll(
-    ".interval"
-  )
-  .forEach(
-    button => {
+  .querySelectorAll(".interval")
+  .forEach(button => {
 
-      button.addEventListener(
-        "click",
-        () => {
+    button.addEventListener(
+      "click",
+      () => {
 
-          document
-            .querySelectorAll(
-              ".interval"
-            )
-            .forEach(
-              item =>
-                item.classList
-                  .remove(
-                    "active"
-                  )
-            );
-
-
-          button.classList.add(
-            "active"
+        document
+          .querySelectorAll(".interval")
+          .forEach(item =>
+            item.classList.remove("active")
           );
 
+        button.classList.add("active");
 
-          intervaloSelecionado =
-            Number(
-              button.dataset.segundos
-            );
+        intervaloSelecionado =
+          Number(button.dataset.segundos);
 
+        atualizarInterface();
 
-          atualizarInterface();
+      }
+    );
 
-        }
-      );
-
-    }
-  );
+  });
 
 
 /* ============================================================
-   FORMATAR INTERVALO
+   FORMATAR
 ============================================================ */
 
-function formatarIntervalo(
-  segundos
-) {
+function formatarIntervalo(segundos) {
 
-  if (
-    segundos < 60
-  ) {
-
+  if (segundos < 60) {
     return `${segundos}s`;
-
   }
-
 
   return `${segundos / 60}min`;
 
@@ -2368,7 +1394,7 @@ function formatarIntervalo(
 
 
 /* ============================================================
-   ATUALIZAR INTERFACE
+   INTERFACE
 ============================================================ */
 
 function atualizarInterface() {
@@ -2376,31 +1402,23 @@ function atualizarInterface() {
   const links =
     obterLinks();
 
-
   summaryLinks.innerText =
     links.length;
 
-
   linkCounter.innerText =
     `${links.length} / ${MAX_LINKS}`;
-
 
   summaryInterval.innerText =
     formatarIntervalo(
       intervaloSelecionado
     );
 
-
   if (
     links.length > 0 &&
     quantidade > links.length
   ) {
-
-    quantidade =
-      links.length;
-
+    quantidade = links.length;
   }
-
 
   quantidade =
     Math.max(
@@ -2411,25 +1429,17 @@ function atualizarInterface() {
       )
     );
 
-
   quantidadeEl.innerText =
     quantidade;
-
 
   summaryPosts.innerText =
     quantidade;
 
-
   addLinkBtn.disabled =
-    linksContainer
-      .querySelectorAll(
-        ".link-row"
-      ).length >= MAX_LINKS;
+    document.querySelectorAll(".link-row").length
+    >= MAX_LINKS;
 
-
-  if (
-    addLinkBtn.disabled
-  ) {
+  if (addLinkBtn.disabled) {
 
     addLinkBtn.innerHTML =
       '<i class="fa-solid fa-check"></i> LIMITE DE 20';
@@ -2456,12 +1466,10 @@ function mostrarMensagem(
   msgBox.style.display =
     "block";
 
-
   msgBox.className =
     tipo === "sucesso"
       ? "msg-sucesso"
       : "msg-erro";
-
 
   msgBox.innerText =
     texto;
@@ -2470,77 +1478,59 @@ function mostrarMensagem(
 
 
 /* ============================================================
-   PREPARAR LISTA DE STATUS
+   STATUS DOS PRODUTOS
 ============================================================ */
 
-function prepararStatusProdutos(
-  links
-) {
+function prepararStatusProdutos(links) {
 
-  productStatusList.innerHTML =
-    "";
+  productStatusList.innerHTML = "";
 
+  links.forEach(
+    (link,index) => {
 
-  links
-    .slice(
-      0,
-      quantidade
-    )
-    .forEach(
-      (link,index) => {
+      const item =
+        document.createElement("div");
 
-        const item =
-          document.createElement(
-            "div"
-          );
+      item.className =
+        "product-status";
 
+      item.id =
+        `produto-status-${index}`;
 
-        item.className =
-          "product-status";
+      item.innerHTML = `
 
+        <div
+          class="product-status-icon"
+          id="status-icon-${index}"
+        >
+          <i class="fa-solid fa-clock"></i>
+        </div>
 
-        item.id =
-          `produto-status-${index}`;
+        <div class="product-status-text">
 
+          <strong>
+            Produto ${index + 1}
+          </strong>
 
-        item.innerHTML = `
+          <span>
+            ${escaparHTML(link)}
+          </span>
 
-          <div
-            class="product-status-icon"
-            id="status-icon-${index}"
-          >
-            <i class="fa-solid fa-clock"></i>
-          </div>
+        </div>
 
-          <div class="product-status-text">
+        <div
+          class="product-status-state"
+          id="status-text-${index}"
+        >
+          AGUARDANDO
+        </div>
 
-            <strong>
-              Produto ${index + 1}
-            </strong>
+      `;
 
-            <span>
-              ${escaparHTML(link)}
-            </span>
+      productStatusList.appendChild(item);
 
-          </div>
-
-          <div
-            class="product-status-state"
-            id="status-text-${index}"
-          >
-            AGUARDANDO
-          </div>
-
-        `;
-
-
-        productStatusList
-          .appendChild(
-            item
-          );
-
-      }
-    );
+    }
+  );
 
 }
 
@@ -2549,14 +1539,10 @@ function prepararStatusProdutos(
    ESCAPAR HTML
 ============================================================ */
 
-function escaparHTML(
-  texto
-) {
+function escaparHTML(texto) {
 
   const div =
-    document.createElement(
-      "div"
-    );
+    document.createElement("div");
 
   div.textContent =
     texto;
@@ -2567,152 +1553,32 @@ function escaparHTML(
 
 
 /* ============================================================
-   ATUALIZAR PROGRESSO
+   PROCESSANDO
 ============================================================ */
 
-function atualizarProgresso(
-  numero,
-  total,
-  status,
-  link
-) {
-
-  const percentual =
-    total > 0
-      ? Math.round(
-          (numero / total) * 100
-        )
-      : 0;
-
-
-  progressoAtual =
-    percentual;
-
-
-  progressFill.style.width =
-    `${percentual}%`;
-
-
-  progressPercent.innerText =
-    `${percentual}%`;
-
-
-  automationStatus.innerText =
-    status;
-
-
-  currentProduct.innerText =
-    link || "Concluído";
-
-
-  if (
-    numero > 0
-  ) {
-
-    const index =
-      numero - 1;
-
-
-    const item =
-      document.getElementById(
-        `produto-status-${index}`
-      );
-
-
-    const icon =
-      document.getElementById(
-        `status-icon-${index}`
-      );
-
-
-    const state =
-      document.getElementById(
-        `status-text-${index}`
-      );
-
-
-    if (item) {
-
-      item.classList.add(
-        "done"
-      );
-
-    }
-
-
-    if (icon) {
-
-      icon.innerHTML =
-        '<i class="fa-solid fa-check"></i>';
-
-    }
-
-
-    if (state) {
-
-      state.innerText =
-        "POSTADO";
-
-    }
-
-  }
-
-
-  if (
-    numero < total
-  ) {
-
-    nextPost.innerText =
-      `Produto ${numero + 1}`;
-
-  } else {
-
-    nextPost.innerText =
-      "Concluído";
-
-  }
-
-}
-
-
-/* ============================================================
-   MARCAR PRODUTO COMO PROCESSANDO
-============================================================ */
-
-function marcarProcessando(
-  index
-) {
+function marcarProcessando(index) {
 
   const item =
     document.getElementById(
       `produto-status-${index}`
     );
 
-
   const icon =
     document.getElementById(
       `status-icon-${index}`
     );
-
 
   const state =
     document.getElementById(
       `status-text-${index}`
     );
 
-
   if (item) {
 
-    item.classList.remove(
-      "done"
-    );
-
-    item.classList.add(
-      "processing"
-    );
+    item.className =
+      "product-status processing";
 
   }
-
 
   if (icon) {
 
@@ -2720,7 +1586,6 @@ function marcarProcessando(
       '<i class="fa-solid fa-circle-notch fa-spin"></i>';
 
   }
-
 
   if (state) {
 
@@ -2733,61 +1598,52 @@ function marcarProcessando(
 
 
 /* ============================================================
-   PARAR
+   CONCLUÍDO
 ============================================================ */
 
-function pararAutomacao() {
+function marcarConcluido(index) {
 
-  automacaoAtiva =
-    false;
-
-
-  if (timerSimulado) {
-
-    clearInterval(
-      timerSimulado
+  const item =
+    document.getElementById(
+      `produto-status-${index}`
     );
 
-    timerSimulado =
-      null;
+  const icon =
+    document.getElementById(
+      `status-icon-${index}`
+    );
+
+  const state =
+    document.getElementById(
+      `status-text-${index}`
+    );
+
+  if (item) {
+
+    item.className =
+      "product-status done";
 
   }
 
+  if (icon) {
 
-  automationStatus.innerText =
-    "Automação interrompida";
+    icon.innerHTML =
+      '<i class="fa-solid fa-check"></i>';
 
+  }
 
-  nextPost.innerText =
-    "Parada pelo usuário";
+  if (state) {
 
+    state.innerText =
+      "POSTADO";
 
-  document
-    .querySelector(
-      ".status-dot"
-    )
-    .style.background =
-    "#ff5c5c";
-
-
-  btn.disabled =
-    false;
-
-
-  btn.innerHTML =
-    '<i class="fa-solid fa-rocket"></i> INICIAR AUTOMAÇÃO';
-
-
-  mostrarMensagem(
-    "⚠️ A automação foi interrompida.",
-    "erro"
-  );
+  }
 
 }
 
 
 /* ============================================================
-   ENVIAR CONFIGURAÇÃO
+   ENVIAR PARA O RENDER
 ============================================================ */
 
 async function enviarConfiguracao() {
@@ -2795,14 +1651,10 @@ async function enviarConfiguracao() {
   const links =
     obterLinks();
 
-
   msgBox.style.display =
     "none";
 
-
-  if (
-    links.length === 0
-  ) {
+  if (links.length === 0) {
 
     mostrarMensagem(
       "❌ Adicione pelo menos 1 produto da Shopee.",
@@ -2813,19 +1665,12 @@ async function enviarConfiguracao() {
 
   }
 
-
   const invalidos =
     links.filter(
-      link =>
-        !validarLinkShopee(
-          link
-        )
+      link => !validarLinkShopee(link)
     );
 
-
-  if (
-    invalidos.length > 0
-  ) {
+  if (invalidos.length > 0) {
 
     mostrarMensagem(
       "❌ Corrija os links inválidos antes de iniciar.",
@@ -2835,7 +1680,6 @@ async function enviarConfiguracao() {
     return;
 
   }
-
 
   if (
     quantidade < 1 ||
@@ -2851,66 +1695,40 @@ async function enviarConfiguracao() {
 
   }
 
-
-  /* ----------------------------------------------------------
-     PREPARA PAINEL
-  ---------------------------------------------------------- */
-
-  linksDaAutomacao =
-    links.slice(
-      0,
-      quantidade
-    );
-
+  const linksDaAutomacao =
+    links.slice(0,quantidade);
 
   prepararStatusProdutos(
     linksDaAutomacao
   );
 
-
   progressPanel.style.display =
     "block";
-
 
   progressFill.style.width =
     "0%";
 
-
   progressPercent.innerText =
     "0%";
 
-
   automationStatus.innerText =
-    "Conectando...";
-
+    "Conectando ao servidor...";
 
   currentProduct.innerText =
     "Enviando configuração...";
 
-
   nextPost.innerText =
     "Preparando";
 
-
-  document
-    .querySelector(
-      ".status-dot"
-    )
-    .style.background =
+  statusDot.style.background =
     "var(--orange)";
-
 
   btn.disabled =
     true;
 
-
   btn.innerHTML =
     '<i class="fa-solid fa-circle-notch fa-spin"></i> ENVIANDO...';
 
-
-  /* ----------------------------------------------------------
-     PAYLOAD
-  ---------------------------------------------------------- */
 
   const dadosParaEnviar = {
 
@@ -2919,9 +1737,6 @@ async function enviarConfiguracao() {
 
     links:
       linksDaAutomacao,
-
-    link:
-      linksDaAutomacao[0],
 
     intervalo:
       intervaloSelecionado,
@@ -2936,11 +1751,8 @@ async function enviarConfiguracao() {
 
     const resposta =
       await fetch(
-
-        "https://bot-raposa-cacadora.onrender.com/api/configurar",
-
+        `${API_URL}/api/configurar`,
         {
-
           method:"POST",
 
           headers:{
@@ -2952,158 +1764,82 @@ async function enviarConfiguracao() {
             JSON.stringify(
               dadosParaEnviar
             )
-
         }
-
       );
 
 
     const resultado =
       await resposta
         .json()
-        .catch(
-          () => ({})
-        );
+        .catch(() => ({}));
 
 
-    if (
-      !resposta.ok
-    ) {
-
-      let erro =
-        `Erro HTTP ${resposta.status}`;
-
-
-      if (
-        typeof resultado.erro ===
-        "string"
-      ) {
-
-        erro =
-          resultado.erro;
-
-      }
-
-      else if (
-        typeof resultado.error ===
-        "string"
-      ) {
-
-        erro =
-          resultado.error;
-
-      }
-
-      else if (
-        typeof resultado.mensagem ===
-        "string"
-      ) {
-
-        erro =
-          resultado.mensagem;
-
-      }
-
+    if (!resposta.ok) {
 
       throw new Error(
-        erro
+        resultado.erro ||
+        resultado.error ||
+        `Erro HTTP ${resposta.status}`
       );
 
     }
 
 
-    /* --------------------------------------------------------
-       SUCESSO DO SERVIDOR
-    -------------------------------------------------------- */
+    taskIdAtual =
+      resultado.task_id;
+
+    if (!taskIdAtual) {
+
+      throw new Error(
+        "O servidor não retornou o ID da tarefa."
+      );
+
+    }
+
 
     automacaoAtiva =
       true;
 
-
     btn.innerHTML =
       '<i class="fa-solid fa-circle-notch fa-spin"></i> AUTOMAÇÃO ATIVA';
 
-
     mostrarMensagem(
-
       "✓ " +
       (
         resultado.mensagem ||
-        "Automação iniciada com sucesso!"
+        "Automação iniciada!"
       ),
-
       "sucesso"
-
     );
 
-
     automationStatus.innerText =
-      "Automação ativa";
+      "Automação iniciada";
 
-
-    currentProduct.innerText =
-      linksDaAutomacao[0];
-
-
-    nextPost.innerText =
-      "Produto 1";
-
-
-    /*
-      IMPORTANTE:
-
-      Este bloco NÃO deve ser usado como fonte
-      real de progresso.
-
-      Ele apenas demonstra visualmente o painel
-      enquanto seu backend não envia atualizações
-      reais.
-
-      Quando seu Flask tiver endpoint de status,
-      WebSocket ou SSE, substitua esta função
-      pelo retorno real do servidor.
-    */
-
-    iniciarAcompanhamentoLocal();
+    iniciarMonitoramento(
+      taskIdAtual
+    );
 
 
   } catch (erro) {
 
-    console.error(
-      "Erro:",
-      erro
-    );
-
+    console.error(erro);
 
     automacaoAtiva =
       false;
 
-
-    progressPanel.style.display =
-      "block";
-
+    statusDot.style.background =
+      "var(--red)";
 
     automationStatus.innerText =
       "Falha na automação";
-
-
-    document
-      .querySelector(
-        ".status-dot"
-      )
-      .style.background =
-      "var(--red)";
-
 
     mostrarMensagem(
       "❌ " + erro.message,
       "erro"
     );
 
-
     btn.disabled =
       false;
-
 
     btn.innerHTML =
       '<i class="fa-solid fa-rocket"></i> TENTAR NOVAMENTE';
@@ -3114,135 +1850,170 @@ async function enviarConfiguracao() {
 
 
 /* ============================================================
-   ACOMPANHAMENTO VISUAL
-
-   ATENÇÃO:
-   É apenas fallback visual.
+   MONITORAMENTO
 ============================================================ */
 
-function iniciarAcompanhamentoLocal() {
+function iniciarMonitoramento(taskId) {
 
-  if (
-    timerSimulado
-  ) {
+  if (monitoramento) {
 
     clearInterval(
-      timerSimulado
+      monitoramento
     );
 
   }
 
+  consultarStatus(taskId);
 
-  let index = 0;
-
-
-  marcarProcessando(
-    index
-  );
-
-
-  automationStatus.innerText =
-    "Processando produto 1";
-
-
-  currentProduct.innerText =
-    linksDaAutomacao[0];
-
-
-  /*
-    Não usamos o intervalo real para
-    fingir que o produto foi postado.
-
-    O painel permanece em processamento
-    até receber uma atualização real.
-
-    O próximo bloco é propositalmente
-    desativado.
-
-    Para progresso real, conecte aqui
-    seu endpoint de status.
-  */
+  monitoramento =
+    setInterval(
+      () => consultarStatus(taskId),
+      2000
+    );
 
 }
 
 
 /* ============================================================
-   FUNÇÃO PARA O BACKEND ATUALIZAR O PAINEL
-
-   Você pode chamar:
-
-   atualizarStatusServidor({
-      produto: 1,
-      status: "postado"
-   });
-
+   CONSULTAR STATUS
 ============================================================ */
 
-function atualizarStatusServidor(
-  dados
-) {
+async function consultarStatus(taskId) {
 
-  if (
-    !dados
-  ) {
+  try {
 
-    return;
+    const resposta =
+      await fetch(
+        `${API_URL}/api/status/${taskId}`
+      );
+
+    const dados =
+      await resposta.json();
+
+    if (!resposta.ok) {
+
+      throw new Error(
+        dados.erro ||
+        "Erro ao consultar status."
+      );
+
+    }
+
+    atualizarPainel(dados);
+
+  } catch (erro) {
+
+    console.error(
+      "Status:",
+      erro
+    );
 
   }
 
+}
+
+
+/* ============================================================
+   ATUALIZAR PAINEL
+============================================================ */
+
+function atualizarPainel(dados) {
+
+  const progresso =
+    Number(dados.progresso || 0);
 
   const produto =
-    Number(
-      dados.produto
-    );
-
-
-  if (
-    !produto ||
-    produto < 1
-  ) {
-
-    return;
-
-  }
-
-
-  const index =
-    produto - 1;
-
+    Number(dados.produto || 0);
 
   const total =
-    linksDaAutomacao.length;
+    Number(dados.total || 0);
+
+  progressFill.style.width =
+    `${progresso}%`;
+
+  progressPercent.innerText =
+    `${progresso}%`;
 
 
-  const link =
-    linksDaAutomacao[index] ||
-    "";
+  if (dados.produto_link) {
 
+    currentProduct.innerText =
+      dados.produto_link;
 
-  const status =
-    String(
-      dados.status ||
-      ""
-    ).toLowerCase();
+  }
 
 
   if (
-    status === "processando"
+    dados.status === "processando"
   ) {
 
-    marcarProcessando(
-      index
-    );
+    automationStatus.innerText =
+      `Processando produto ${produto + 1}`;
 
+    if (produto < total) {
+
+      marcarProcessando(
+        produto
+      );
+
+    }
+
+  }
+
+
+  if (
+    dados.status === "aguardando"
+  ) {
 
     automationStatus.innerText =
-      `Processando produto ${produto}`;
+      "Aguardando próxima postagem";
+
+  }
 
 
-    currentProduct.innerText =
-      link;
+  if (
+    Array.isArray(
+      dados.resultados
+    )
+  ) {
 
+    dados.resultados.forEach(
+      resultado => {
+
+        const numero =
+          Number(resultado.produto);
+
+        if (
+          resultado.status === "postado"
+        ) {
+
+          marcarConcluido(
+            numero - 1
+          );
+
+        }
+
+      }
+    );
+
+  }
+
+
+  if (
+    produto < total
+  ) {
+
+    nextPost.innerText =
+      `Produto ${produto + 1}`;
+
+  }
+
+
+  if (
+    dados.status === "concluida"
+  ) {
+
+    finalizarAutomacao();
 
     return;
 
@@ -3250,130 +2021,86 @@ function atualizarStatusServidor(
 
 
   if (
-    status === "postado" ||
-    status === "sucesso" ||
-    status === "done"
+    dados.status === "cancelada"
   ) {
 
-    const item =
-      document.getElementById(
-        `produto-status-${index}`
+    automacaoAtiva =
+      false;
+
+    if (monitoramento) {
+
+      clearInterval(
+        monitoramento
       );
 
-
-    const icon =
-      document.getElementById(
-        `status-icon-${index}`
-      );
-
-
-    const state =
-      document.getElementById(
-        `status-text-${index}`
-      );
-
-
-    if (item) {
-
-      item.className =
-        "product-status done";
+      monitoramento =
+        null;
 
     }
 
+    statusDot.style.background =
+      "var(--red)";
 
-    if (icon) {
+    automationStatus.innerText =
+      "Automação interrompida";
 
-      icon.innerHTML =
-        '<i class="fa-solid fa-check"></i>';
+    nextPost.innerText =
+      "Parada pelo usuário";
 
-    }
+    btn.disabled =
+      false;
 
+    btn.innerHTML =
+      '<i class="fa-solid fa-rocket"></i> INICIAR AUTOMAÇÃO';
 
-    if (state) {
-
-      state.innerText =
-        "POSTADO";
-
-    }
-
-
-    atualizarProgresso(
-      produto,
-      total,
-      `Produto ${produto} concluído`,
-      link
+    mostrarMensagem(
+      "⚠️ A automação foi interrompida.",
+      "erro"
     );
-
-
-    if (
-      produto === total
-    ) {
-
-      finalizarAutomacao();
-
-    }
-
-
-    return;
 
   }
 
+}
 
-  if (
-    status === "erro" ||
-    status === "error" ||
-    status === "falhou"
-  ) {
 
-    const item =
-      document.getElementById(
-        `produto-status-${index}`
+/* ============================================================
+   PARAR
+============================================================ */
+
+async function pararAutomacao() {
+
+  if (!taskIdAtual) {
+    return;
+  }
+
+  try {
+
+    const resposta =
+      await fetch(
+        `${API_URL}/api/parar/${taskIdAtual}`,
+        {
+          method:"POST"
+        }
       );
 
+    const dados =
+      await resposta.json();
 
-    const icon =
-      document.getElementById(
-        `status-icon-${index}`
+    if (!resposta.ok) {
+
+      throw new Error(
+        dados.erro ||
+        "Não foi possível parar."
       );
-
-
-    const state =
-      document.getElementById(
-        `status-text-${index}`
-      );
-
-
-    if (item) {
-
-      item.className =
-        "product-status error";
 
     }
 
+  } catch (erro) {
 
-    if (icon) {
-
-      icon.innerHTML =
-        '<i class="fa-solid fa-xmark"></i>';
-
-    }
-
-
-    if (state) {
-
-      state.innerText =
-        "ERRO";
-
-    }
-
-
-    automationStatus.innerText =
-      `Erro no produto ${produto}`;
-
-
-    currentProduct.innerText =
-      link;
-
+    mostrarMensagem(
+      "❌ " + erro.message,
+      "erro"
+    );
 
     return;
 
@@ -3391,46 +2118,40 @@ function finalizarAutomacao() {
   automacaoAtiva =
     false;
 
+  if (monitoramento) {
 
-  progressoAtual =
-    100;
+    clearInterval(
+      monitoramento
+    );
 
+    monitoramento =
+      null;
+
+  }
 
   progressFill.style.width =
     "100%";
 
-
   progressPercent.innerText =
     "100%";
-
 
   automationStatus.innerText =
     "Automação concluída";
 
-
   currentProduct.innerText =
     "Todos os produtos foram processados";
-
 
   nextPost.innerText =
     "Concluído";
 
-
-  document
-    .querySelector(
-      ".status-dot"
-    )
-    .style.background =
+  statusDot.style.background =
     "var(--green)";
-
 
   btn.disabled =
     false;
 
-
   btn.innerHTML =
     '<i class="fa-solid fa-check"></i> AUTOMAÇÃO CONCLUÍDA';
-
 
   mostrarMensagem(
     "✓ Todas as postagens foram processadas.",
@@ -3439,9 +2160,7 @@ function finalizarAutomacao() {
 
 }
 
-
 </script>
 
 </body>
-
 </html>

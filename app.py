@@ -6,8 +6,8 @@ import threading
 import time
 import uuid
 import re
-import html
-from urllib.parse import urlparse, parse_qsl, urlencode
+
+from urllib.parse import urlparse, parse_qsl, unquote
 
 import requests
 from bs4 import BeautifulSoup
@@ -61,26 +61,15 @@ tarefas_lock = threading.Lock()
 
 
 # ============================================================
-# SESSÃO HTTP
+# LOG
 # ============================================================
 
-session = requests.Session()
-
-session.headers.update({
-    "User-Agent": (
-        "Mozilla/5.0 (Linux; Android 15) "
-        "AppleWebKit/537.36 "
-        "(KHTML, like Gecko) "
-        "Chrome/151.0.0.0 "
-        "Mobile Safari/537.36"
-    ),
-    "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-})
+def log(*args):
+    print(*args, flush=True)
 
 
 # ============================================================
-# DEBUG / SEGURANÇA
+# MÁSCARA
 # ============================================================
 
 def mascara_valor(valor):
@@ -94,7 +83,7 @@ def mascara_valor(valor):
 
     return (
         valor[:2]
-        + ("*" * max(0, len(valor) - 4))
+        + ("*" * (len(valor) - 4))
         + valor[-2:]
     )
 
@@ -120,6 +109,7 @@ def telegram_api_url(metodo):
 
 
 def telegram_request(metodo, payload=None, files=None):
+
     token = os.environ.get("BOT_TOKEN", "").strip()
 
     if not token:
@@ -129,18 +119,20 @@ def telegram_request(metodo, payload=None, files=None):
         }
 
     try:
+
         if files:
             resposta = requests.post(
                 telegram_api_url(metodo),
                 data=payload or {},
                 files=files,
-                timeout=30
+                timeout=40
             )
+
         else:
             resposta = requests.post(
                 telegram_api_url(metodo),
                 json=payload or {},
-                timeout=30
+                timeout=40
             )
 
         try:
@@ -152,6 +144,7 @@ def telegram_request(metodo, payload=None, files=None):
             }
 
     except Exception as erro:
+
         return {
             "ok": False,
             "description": str(erro)
@@ -160,13 +153,16 @@ def telegram_request(metodo, payload=None, files=None):
 
 def telegram_get_me():
 
-    if not BOT_TOKEN:
+    token = os.environ.get("BOT_TOKEN", "").strip()
+
+    if not token:
         return {
             "ok": False,
             "erro": "BOT_TOKEN não configurado."
         }
 
     try:
+
         resposta = requests.get(
             telegram_api_url("getMe"),
             timeout=20
@@ -175,468 +171,1023 @@ def telegram_get_me():
         return resposta.json()
 
     except Exception as erro:
+
         return {
             "ok": False,
             "erro": str(erro)
         }
 
 
+# ============================================================
+# TELEGRAM - PUBLICAR TEXTO
+# ============================================================
+
 def telegram_publicar_texto(texto):
 
-    if not BOT_TOKEN:
-        print("[TELEGRAM] BOT_TOKEN não configurado.")
-        return False
+    canal = os.environ.get(
+        "CHANNEL_USERNAME",
+        ""
+    ).strip()
 
-    if not CHANNEL_USERNAME:
-        print("[TELEGRAM] CHANNEL_USERNAME não configurado.")
-        return False
-
-    print("[TELEGRAM] Publicando mensagem de texto...")
+    if not canal:
+        log("[TELEGRAM] CHANNEL_USERNAME não configurado.")
+        return False, "CHANNEL_USERNAME não configurado."
 
     resultado = telegram_request(
         "sendMessage",
         {
-            "chat_id": CHANNEL_USERNAME,
+            "chat_id": canal,
             "text": texto,
             "parse_mode": "HTML",
             "disable_web_page_preview": False
         }
     )
 
-    print(
-        "[TELEGRAM] Resultado:",
-        json.dumps(resultado, ensure_ascii=False)[:2000]
+    if resultado.get("ok"):
+
+        log("[TELEGRAM] Mensagem publicada.")
+
+        return True, resultado
+
+    erro = (
+        resultado.get("description")
+        or
+        "Erro desconhecido do Telegram."
     )
 
-    return bool(resultado.get("ok"))
+    log("[TELEGRAM] ERRO:", erro)
+
+    return False, erro
 
 
-def telegram_publicar_foto(imagem, legenda):
+# ============================================================
+# TELEGRAM - PUBLICAR IMAGEM
+# ============================================================
 
-    if not BOT_TOKEN:
-        print("[TELEGRAM] BOT_TOKEN não configurado.")
-        return False
+def telegram_publicar_foto(
+    imagem_url,
+    legenda
+):
 
-    if not CHANNEL_USERNAME:
-        print("[TELEGRAM] CHANNEL_USERNAME não configurado.")
-        return False
+    canal = os.environ.get(
+        "CHANNEL_USERNAME",
+        ""
+    ).strip()
+
+    if not canal:
+        return False, "CHANNEL_USERNAME não configurado."
+
+    if not imagem_url:
+        return telegram_publicar_texto(legenda)
 
     try:
-        print("[TELEGRAM] Baixando imagem:")
-        print(imagem)
 
-        resposta = session.get(
-            imagem,
-            timeout=30
+        log("[TELEGRAM] Baixando imagem:")
+        log(imagem_url)
+
+        resposta_imagem = requests.get(
+            imagem_url,
+            timeout=30,
+            headers={
+                "User-Agent":
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 Chrome/120 Safari/537.36"
+            }
         )
 
-        print(
+        log(
             "[TELEGRAM] HTTP imagem:",
-            resposta.status_code
+            resposta_imagem.status_code
         )
 
-        if resposta.status_code != 200:
-            print("[TELEGRAM] Não foi possível baixar a imagem.")
-            return False
+        if resposta_imagem.status_code != 200:
+            return telegram_publicar_texto(legenda)
 
-        content_type = resposta.headers.get(
-            "Content-Type",
-            ""
-        )
-
-        print(
-            "[TELEGRAM] Content-Type:",
-            content_type
-        )
-
-        if not resposta.content:
-            print("[TELEGRAM] Imagem vazia.")
-            return False
-
-        arquivos = {
-            "photo": (
-                "produto.jpg",
-                resposta.content,
-                content_type or "image/jpeg"
-            )
-        }
-
-        dados = {
-            "chat_id": CHANNEL_USERNAME,
-            "caption": legenda,
-            "parse_mode": "HTML"
-        }
+        arquivo = resposta_imagem.content
 
         resultado = telegram_request(
             "sendPhoto",
-            payload=dados,
-            files=arquivos
+            payload={
+                "chat_id": canal,
+                "caption": legenda,
+                "parse_mode": "HTML"
+            },
+            files={
+                "photo": (
+                    "produto.jpg",
+                    arquivo,
+                    resposta_imagem.headers.get(
+                        "Content-Type",
+                        "image/jpeg"
+                    )
+                )
+            }
         )
 
-        print(
-            "[TELEGRAM] Resultado foto:",
-            json.dumps(resultado, ensure_ascii=False)[:2000]
+        if resultado.get("ok"):
+
+            log("[TELEGRAM] Produto publicado com imagem.")
+
+            return True, resultado
+
+        erro = (
+            resultado.get("description")
+            or
+            "Erro ao enviar foto."
         )
 
-        return bool(resultado.get("ok"))
+        log("[TELEGRAM] Erro ao enviar foto:", erro)
+
+        return telegram_publicar_texto(legenda)
 
     except Exception as erro:
 
-        print(
-            "[TELEGRAM] Erro ao publicar foto:",
-            repr(erro)
+        log(
+            "[TELEGRAM] Erro baixando/enviando imagem:",
+            erro
         )
 
-        return False
-
-
-# ============================================================
-# VALIDAÇÃO DE LINK
-# ============================================================
-
-def link_shopee_valido(link):
-
-    if not link:
-        return False
-
-    try:
-
-        parsed = urlparse(link)
-
-        if parsed.scheme not in ("http", "https"):
-            return False
-
-        hostname = (
-            parsed.hostname or ""
-        ).lower()
-
-        return (
-            "shopee" in hostname
-        )
-
-    except Exception:
-        return False
-
-
-# ============================================================
-# RESOLVER LINK SHOPEE
-# ============================================================
-
-def resolver_link_shopee(link):
-
-    print("=" * 40)
-    print("[SHOPEE] Tentando resolver URL:")
-    print(link)
-    print("=" * 40)
-
-    headers = {
-        "User-Agent": session.headers["User-Agent"],
-        "Accept": (
-            "text/html,application/xhtml+xml,"
-            "application/xml;q=0.9,*/*;q=0.8"
-        ),
-        "Accept-Language": "pt-BR,pt;q=0.9"
-    }
-
-    try:
-
-        resposta = session.get(
-            link,
-            headers=headers,
-            allow_redirects=True,
-            timeout=30
-        )
-
-        print(
-            "[SHOPEE] HTTP:",
-            resposta.status_code
-        )
-
-        print(
-            "[SHOPEE] URL final:",
-            resposta.url
-        )
-
-        return resposta.url, resposta.text
-
-    except Exception as erro:
-
-        print(
-            "[SHOPEE] Erro resolvendo:",
-            repr(erro)
-        )
-
-        return link, ""
-
-
-# ============================================================
-# EXTRAÇÃO DE IDs
-# ============================================================
-
-def extrair_ids_shopee(url, html_text=""):
-
-    print("[SHOPEE] Extraindo IDs...")
-
-    textos = [
-        url or "",
-        html_text or ""
-    ]
-
-    shop_id = None
-    item_id = None
-
-    padroes = [
-
-        r'"shopid"\s*:\s*(\d+)',
-        r'"shop_id"\s*:\s*(\d+)',
-        r'"shopId"\s*:\s*(\d+)',
-        r'"shop_id"\s*:\s*"(\d+)"',
-
-    ]
-
-    for texto in textos:
-
-        for padrao in padroes:
-
-            encontrados = re.findall(
-                padrao,
-                texto,
-                re.IGNORECASE
-            )
-
-            if encontrados:
-                shop_id = encontrados[0]
-                break
-
-        if shop_id:
-            break
-
-    padroes_item = [
-
-        r'"itemid"\s*:\s*(\d+)',
-        r'"item_id"\s*:\s*(\d+)',
-        r'"itemId"\s*:\s*(\d+)',
-        r'"item_id"\s*:\s*"(\d+)"',
-
-    ]
-
-    for texto in textos:
-
-        for padrao in padroes_item:
-
-            encontrados = re.findall(
-                padrao,
-                texto,
-                re.IGNORECASE
-            )
-
-            if encontrados:
-                item_id = encontrados[0]
-                break
-
-        if item_id:
-            break
-
-    # ========================================================
-    # TENTATIVA POR URL
-    # ========================================================
-
-    try:
-
-        parsed = urlparse(url)
-
-        partes = [
-            p for p in parsed.path.split("/")
-            if p
-        ]
-
-        # Alguns formatos da Shopee aparecem como:
-        #
-        # produto-nome.i.SHOP_ID.ITEM_ID
-        #
-        # ou:
-        #
-        # -i.SHOP_ID.ITEM_ID
-
-        texto_url = parsed.path
-
-        encontrados = re.findall(
-            r"(?:i\.|-i\.)(\d+)\.(\d+)",
-            texto_url
-        )
-
-        if encontrados:
-
-            shop_id = shop_id or encontrados[0][0]
-            item_id = item_id or encontrados[0][1]
-
-    except Exception:
-        pass
-
-    print(
-        "[SHOPEE] shopId:",
-        shop_id,
-        "| itemId:",
-        item_id
-    )
-
-    return shop_id, item_id
+        return telegram_publicar_texto(legenda)
 
 
 # ============================================================
 # ASSINATURA SHOPEE
 # ============================================================
 
-def gerar_assinatura_shopee(payload_json, timestamp):
+def shopee_headers(payload):
 
-    """
-    A API Affiliate usa assinatura HMAC.
+    timestamp = int(time.time())
 
-    Mantemos a geração centralizada para facilitar debug.
-    """
-
-    if not SHOPEE_SECRET:
-        raise RuntimeError(
-            "SHOPEE_SECRET não configurado."
-        )
-
-    base = (
-        f"{SHOPEE_APP_ID}"
-        f"{timestamp}"
-        f"{payload_json}"
+    payload_string = json.dumps(
+        payload,
+        ensure_ascii=False,
+        separators=(",", ":")
     )
 
-    assinatura = hmac.new(
-        SHOPEE_SECRET.encode("utf-8"),
-        base.encode("utf-8"),
-        hashlib.sha256
+    texto_assinatura = (
+        SHOPEE_APP_ID
+        +
+        str(timestamp)
+        +
+        payload_string
+        +
+        SHOPEE_SECRET
+    )
+
+    signature = hashlib.sha256(
+        texto_assinatura.encode("utf-8")
     ).hexdigest()
 
-    return assinatura
+    authorization = (
+        f"SHA256 "
+        f"Credential={SHOPEE_APP_ID}, "
+        f"Timestamp={timestamp}, "
+        f"Signature={signature}"
+    )
+
+    return {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": authorization
+    }
 
 
 # ============================================================
 # GRAPHQL SHOPEE
 # ============================================================
 
-def shopee_graphql(query, variables=None):
-
-    if not SHOPEE_API_URL:
-        print(
-            "[SHOPEE API] SHOPEE_API_URL não configurada."
-        )
-        return None
+def shopee_graphql(
+    query,
+    variables=None,
+    operation_name=None
+):
 
     if not SHOPEE_APP_ID:
-        print(
-            "[SHOPEE API] SHOPEE_APP_ID não configurado."
-        )
-        return None
+        return {
+            "ok": False,
+            "erro": "SHOPEE_APP_ID não configurado."
+        }
 
     if not SHOPEE_SECRET:
-        print(
-            "[SHOPEE API] SHOPEE_SECRET não configurado."
-        )
-        return None
+        return {
+            "ok": False,
+            "erro": "SHOPEE_SECRET não configurado."
+        }
+
+    if not SHOPEE_API_URL:
+        return {
+            "ok": False,
+            "erro": "SHOPEE_API_URL não configurada."
+        }
 
     payload = {
-        "query": query,
-        "variables": variables or {}
+        "query": query
     }
 
-    payload_json = json.dumps(
-        payload,
-        separators=(",", ":"),
-        ensure_ascii=False
-    )
+    if variables is not None:
+        payload["variables"] = variables
 
-    timestamp = int(time.time())
+    if operation_name:
+        payload["operationName"] = operation_name
+
+    headers = shopee_headers(payload)
 
     try:
 
-        signature = gerar_assinatura_shopee(
-            payload_json,
-            timestamp
+        log("========================================")
+        log("[SHOPEE API] GraphQL")
+        log("[SHOPEE API] URL:", SHOPEE_API_URL)
+        log("[SHOPEE API] AppID:", mascara_valor(SHOPEE_APP_ID))
+        log(
+            "[SHOPEE API] Timestamp:",
+            headers["Authorization"].split("Timestamp=")[1].split(",")[0]
         )
 
-    except Exception as erro:
-
-        print(
-            "[SHOPEE API] Erro assinatura:",
-            repr(erro)
+        log(
+            "[SHOPEE API] Payload:",
+            json.dumps(
+                payload,
+                ensure_ascii=False
+            )
         )
-
-        return None
-
-    # ========================================================
-    # HEADERS
-    # ========================================================
-
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": (
-            f"SHA256 Credential={SHOPEE_APP_ID},"
-            f"Timestamp={timestamp},"
-            f"Signature={signature}"
-        )
-    }
-
-    print("=" * 40)
-    print("[SHOPEE API] GraphQL")
-    print("[SHOPEE API] URL:", SHOPEE_API_URL)
-    print("[SHOPEE API] AppID:", mascara_valor(SHOPEE_APP_ID))
-    print("[SHOPEE API] Timestamp:", timestamp)
-
-    try:
 
         resposta = requests.post(
             SHOPEE_API_URL,
             headers=headers,
-            data=payload_json.encode("utf-8"),
+            json=payload,
             timeout=30
         )
 
-        print(
+        log(
             "[SHOPEE API] HTTP:",
             resposta.status_code
         )
 
-        print(
-            "[SHOPEE API] Resposta:",
-            resposta.text[:5000]
-        )
+        texto = resposta.text
 
-        if resposta.status_code != 200:
-            return None
+        log(
+            "[SHOPEE API] Resposta:",
+            texto[:5000]
+        )
 
         try:
             dados = resposta.json()
         except Exception:
 
-            print(
-                "[SHOPEE API] Resposta não é JSON."
-            )
+            return {
+                "ok": False,
+                "http_status": resposta.status_code,
+                "erro":
+                    "Shopee retornou uma resposta que não é JSON."
+            }
 
-            return None
+        if resposta.status_code != 200:
+
+            return {
+                "ok": False,
+                "http_status": resposta.status_code,
+                "erro":
+                    dados.get("message")
+                    or
+                    dados.get("error")
+                    or
+                    "Erro HTTP na API Shopee.",
+                "dados": dados
+            }
 
         if dados.get("errors"):
 
-            print(
-                "[SHOPEE API] GraphQL errors:",
-                json.dumps(
-                    dados["errors"],
-                    ensure_ascii=False
-                )[:5000]
-            )
+            erros = []
 
-        return dados
+            for erro in dados.get("errors", []):
+
+                mensagem = (
+                    erro.get("message")
+                    or
+                    "Erro GraphQL"
+                )
+
+                extensao = erro.get(
+                    "extensions",
+                    {}
+                )
+
+                codigo = extensao.get(
+                    "code"
+                )
+
+                if codigo:
+                    mensagem = (
+                        f"{mensagem} "
+                        f"(código {codigo})"
+                    )
+
+                erros.append(mensagem)
+
+            return {
+                "ok": False,
+                "http_status": 200,
+                "erro": " | ".join(erros),
+                "dados": dados
+            }
+
+        return {
+            "ok": True,
+            "http_status": 200,
+            "dados": dados
+        }
+
+    except requests.RequestException as erro:
+
+        log(
+            "[SHOPEE API] RequestException:",
+            erro
+        )
+
+        return {
+            "ok": False,
+            "erro": str(erro)
+        }
 
     except Exception as erro:
 
-        print(
-            "[SHOPEE API] Exceção:",
-            repr(erro)
+        log(
+            "[SHOPEE API] Exception:",
+            erro
+        )
+
+        return {
+            "ok": False,
+            "erro": str(erro)
+        }
+
+
+# ============================================================
+# EXTRAIR SHOP ID / ITEM ID
+# ============================================================
+
+def extrair_ids_shopee(url):
+
+    if not url:
+        return None, None
+
+    texto = unquote(url)
+
+    log("[SHOPEE] Extraindo IDs de:", texto)
+
+    shop_id = None
+    item_id = None
+
+    # --------------------------------------------------------
+    # FORMATO:
+    # shopee.com.br/product/123/456
+    # --------------------------------------------------------
+
+    padroes = [
+
+        r"/product/(\d+)/(\d+)",
+
+        r"/opaanlp/(\d+)/(\d+)",
+
+        r"-i\.(\d+)\.(\d+)",
+
+        r"shopid[=/](\d+).*?itemid[=/](\d+)",
+
+        r"itemid[=/](\d+).*?shopid[=/](\d+)"
+    ]
+
+    for indice, padrao in enumerate(padroes):
+
+        match = re.search(
+            padrao,
+            texto,
+            re.IGNORECASE
+        )
+
+        if not match:
+            continue
+
+        if indice == 4:
+
+            item_id = match.group(1)
+            shop_id = match.group(2)
+
+        else:
+
+            shop_id = match.group(1)
+            item_id = match.group(2)
+
+        break
+
+    # --------------------------------------------------------
+    # QUERY STRING
+    # --------------------------------------------------------
+
+    try:
+
+        parsed = urlparse(texto)
+
+        params = dict(
+            parse_qsl(
+                parsed.query,
+                keep_blank_values=True
+            )
+        )
+
+        if not shop_id:
+
+            shop_id = (
+                params.get("shopid")
+                or
+                params.get("shop_id")
+            )
+
+        if not item_id:
+
+            item_id = (
+                params.get("itemid")
+                or
+                params.get("item_id")
+            )
+
+    except Exception:
+        pass
+
+    if shop_id and item_id:
+
+        log(
+            "[SHOPEE] IDs encontrados:",
+            shop_id,
+            item_id
+        )
+
+        return str(shop_id), str(item_id)
+
+    log(
+        "[SHOPEE] Nenhum shopId/itemId encontrado."
+    )
+
+    return None, None
+
+
+# ============================================================
+# RESOLVER LINK
+# ============================================================
+
+def resolver_url_shopee(url):
+
+    log("========================================")
+    log("[SHOPEE] Tentando resolver URL:")
+    log(url)
+    log("========================================")
+
+    headers = {
+        "User-Agent":
+            "Mozilla/5.0 (Linux; Android 13) "
+            "AppleWebKit/537.36 "
+            "(KHTML, like Gecko) "
+            "Chrome/120.0 Mobile Safari/537.36",
+        "Accept":
+            "text/html,application/xhtml+xml,"
+            "application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language":
+            "pt-BR,pt;q=0.9,en;q=0.8"
+    }
+
+    urls_tentar = [
+        url,
+        url + "?__classic__=1"
+    ]
+
+    for numero, url_teste in enumerate(
+        urls_tentar,
+        start=1
+    ):
+
+        try:
+
+            log(
+                f"[SHOPEE] Tentativa {numero}"
+            )
+
+            resposta = requests.get(
+                url_teste,
+                headers=headers,
+                timeout=25,
+                allow_redirects=True
+            )
+
+            log(
+                "[SHOPEE] HTTP:",
+                resposta.status_code
+            )
+
+            log(
+                "[SHOPEE] URL final HTTP:",
+                resposta.url
+            )
+
+            if resposta.status_code != 200:
+                continue
+
+            url_final = resposta.url
+
+            # ----------------------------------------------
+            # Verifica URL final
+            # ----------------------------------------------
+
+            shop_id, item_id = extrair_ids_shopee(
+                url_final
+            )
+
+            if shop_id and item_id:
+
+                return {
+                    "url": url_final,
+                    "shop_id": shop_id,
+                    "item_id": item_id,
+                    "html": resposta.text
+                }
+
+            # ----------------------------------------------
+            # Procurar URLs no HTML
+            # ----------------------------------------------
+
+            html = resposta.text
+
+            encontrados = re.findall(
+                r'https?://[^"\']+',
+                html
+            )
+
+            for encontrada in encontrados:
+
+                encontrada = (
+                    encontrada
+                    .replace(
+                        "\\u002F",
+                        "/"
+                    )
+                    .replace(
+                        "\\/",
+                        "/"
+                    )
+                )
+
+                sid, iid = extrair_ids_shopee(
+                    encontrada
+                )
+
+                if sid and iid:
+
+                    log(
+                        "[SHOPEE] URL de produto encontrada no HTML:",
+                        encontrada
+                    )
+
+                    return {
+                        "url": encontrada,
+                        "shop_id": sid,
+                        "item_id": iid,
+                        "html": html
+                    }
+
+            # ----------------------------------------------
+            # Mesmo sem IDs, retorna HTML para metadata
+            # ----------------------------------------------
+
+            return {
+                "url": url_final,
+                "shop_id": None,
+                "item_id": None,
+                "html": html
+            }
+
+        except Exception as erro:
+
+            log(
+                "[SHOPEE] Erro tentativa:",
+                erro
+            )
+
+    return {
+        "url": url,
+        "shop_id": None,
+        "item_id": None,
+        "html": ""
+    }
+
+
+# ============================================================
+# PRODUCT OFFER V2 - POR ID
+# ============================================================
+
+def buscar_produto_por_ids(
+    shop_id,
+    item_id
+):
+
+    if not shop_id or not item_id:
+        return None
+
+    query = """
+query GetProductOffer(
+    $shopId: Int!,
+    $itemId: Int!
+) {
+    productOfferV2(
+        shopId: $shopId,
+        itemId: $itemId
+    ) {
+        nodes {
+            itemId
+            shopId
+            productName
+            productLink
+            offerLink
+            imageUrl
+            priceMin
+            priceMax
+            priceDiscountRate
+            commissionRate
+            sales
+            ratingStar
+            shopName
+        }
+        pageInfo {
+            page
+            limit
+            hasNextPage
+        }
+    }
+}
+"""
+
+    resultado = shopee_graphql(
+        query=query,
+        variables={
+            "shopId": int(shop_id),
+            "itemId": int(item_id)
+        },
+        operation_name="GetProductOffer"
+    )
+
+    if not resultado.get("ok"):
+
+        log(
+            "[PRODUTO] productOfferV2 por ID falhou:",
+            resultado.get("erro")
+        )
+
+        return None
+
+    try:
+
+        data = resultado["dados"]["data"]
+
+        oferta = data.get(
+            "productOfferV2"
+        )
+
+        if not oferta:
+            return None
+
+        nodes = oferta.get(
+            "nodes",
+            []
+        )
+
+        if not nodes:
+            return None
+
+        produto = nodes[0]
+
+        log(
+            "[PRODUTO] Produto encontrado pela API:",
+            produto
+        )
+
+        return normalizar_produto_api(
+            produto
+        )
+
+    except Exception as erro:
+
+        log(
+            "[PRODUTO] Erro interpretando productOfferV2:",
+            erro
+        )
+
+        return None
+
+
+# ============================================================
+# PRODUCT OFFER V2 - BUSCA POR LINK
+# ============================================================
+
+def buscar_produto_por_link(
+    link
+):
+
+    if not link:
+        return None
+
+    # --------------------------------------------------------
+    # Algumas versões da API aceitam productLink como filtro.
+    # Fazemos uma busca pequena e tentamos encontrar o link.
+    # --------------------------------------------------------
+
+    query = """
+query ProductOffers {
+    productOfferV2(
+        keyword: ""
+        listType: 1
+        sortType: 1
+        page: 1
+        limit: 20
+    ) {
+        nodes {
+            itemId
+            shopId
+            productName
+            productLink
+            offerLink
+            imageUrl
+            priceMin
+            priceMax
+            priceDiscountRate
+            commissionRate
+            sales
+            ratingStar
+            shopName
+        }
+        pageInfo {
+            page
+            limit
+            hasNextPage
+        }
+    }
+}
+"""
+
+    resultado = shopee_graphql(
+        query=query,
+        operation_name="ProductOffers"
+    )
+
+    if not resultado.get("ok"):
+
+        log(
+            "[PRODUTO] Busca geral productOfferV2 falhou:",
+            resultado.get("erro")
+        )
+
+        return None
+
+    try:
+
+        nodes = (
+            resultado["dados"]
+            .get("data", {})
+            .get("productOfferV2", {})
+            .get("nodes", [])
+        )
+
+        alvo = link.rstrip("/").lower()
+
+        for produto in nodes:
+
+            links_comparar = [
+                produto.get("productLink", ""),
+                produto.get("offerLink", "")
+            ]
+
+            for candidato in links_comparar:
+
+                if not candidato:
+                    continue
+
+                if (
+                    candidato.rstrip("/").lower()
+                    == alvo
+                ):
+
+                    return normalizar_produto_api(
+                        produto
+                    )
+
+        return None
+
+    except Exception as erro:
+
+        log(
+            "[PRODUTO] Erro busca por link:",
+            erro
+        )
+
+        return None
+
+
+# ============================================================
+# NORMALIZAR PRODUTO API
+# ============================================================
+
+def normalizar_produto_api(produto):
+
+    if not produto:
+        return None
+
+    nome = (
+        produto.get("productName")
+        or
+        produto.get("name")
+        or
+        ""
+    ).strip()
+
+    imagem = (
+        produto.get("imageUrl")
+        or
+        ""
+    ).strip()
+
+    link_produto = (
+        produto.get("productLink")
+        or
+        produto.get("offerLink")
+        or
+        ""
+    ).strip()
+
+    preco_min = produto.get(
+        "priceMin"
+    )
+
+    preco_max = produto.get(
+        "priceMax"
+    )
+
+    desconto = produto.get(
+        "priceDiscountRate"
+    )
+
+    if not nome:
+        return None
+
+    return {
+        "titulo": nome,
+        "imagem": imagem,
+        "preco_atual": preco_min,
+        "preco_max": preco_max,
+        "desconto": desconto,
+        "link": link_produto,
+        "offer_link": (
+            produto.get("offerLink")
+            or
+            ""
+        ),
+        "item_id": produto.get("itemId"),
+        "shop_id": produto.get("shopId"),
+        "shop_name": produto.get("shopName"),
+        "sales": produto.get("sales"),
+        "rating": produto.get("ratingStar"),
+        "origem": "shopee_api"
+    }
+
+
+# ============================================================
+# EXTRAIR METADATA DO HTML
+# ============================================================
+
+def extrair_metadata_html(html):
+
+    if not html:
+        return None
+
+    try:
+
+        soup = BeautifulSoup(
+            html,
+            "html.parser"
+        )
+
+        def meta(
+            *chaves
+        ):
+
+            for chave in chaves:
+
+                tag = soup.find(
+                    "meta",
+                    attrs={
+                        "property": chave
+                    }
+                )
+
+                if not tag:
+
+                    tag = soup.find(
+                        "meta",
+                        attrs={
+                            "name": chave
+                        }
+                    )
+
+                if tag and tag.get("content"):
+
+                    return tag.get(
+                        "content"
+                    ).strip()
+
+            return ""
+
+        titulo = (
+            meta(
+                "og:title",
+                "twitter:title"
+            )
+            or
+            (
+                soup.title.string.strip()
+                if soup.title and soup.title.string
+                else ""
+            )
+        )
+
+        imagem = meta(
+            "og:image",
+            "twitter:image"
+        )
+
+        descricao = meta(
+            "og:description",
+            "description"
+        )
+
+        # ----------------------------------------------------
+        # Procurar preço no texto/HTML
+        # ----------------------------------------------------
+
+        texto = soup.get_text(
+            " ",
+            strip=True
+        )
+
+        precos = re.findall(
+            r'R\$\s?\d{1,3}(?:\.\d{3})*(?:,\d{2})?',
+            texto
+        )
+
+        preco = ""
+
+        if precos:
+            preco = precos[0]
+
+        # ----------------------------------------------------
+        # Remover título genérico da Shopee
+        # ----------------------------------------------------
+
+        titulo_baixo = titulo.lower()
+
+        titulos_invalidos = [
+            "shopee brasil",
+            "ofertas incríveis",
+            "melhores preços do mercado",
+            "shopee brasil | ofertas"
+        ]
+
+        if any(
+            item in titulo_baixo
+            for item in titulos_invalidos
+        ):
+
+            titulo = ""
+
+        if not titulo and not imagem and not preco:
+            return None
+
+        return {
+            "titulo": titulo,
+            "imagem": imagem,
+            "preco_atual": preco,
+            "preco_max": "",
+            "desconto": "",
+            "link": "",
+            "offer_link": "",
+            "item_id": None,
+            "shop_id": None,
+            "shop_name": "",
+            "sales": None,
+            "rating": None,
+            "descricao": descricao,
+            "origem": "html"
+        }
+
+    except Exception as erro:
+
+        log(
+            "[HTML] Erro extraindo metadata:",
+            erro
         )
 
         return None
@@ -646,549 +1197,65 @@ def shopee_graphql(query, variables=None):
 # GERAR SHORT LINK
 # ============================================================
 
-def gerar_short_link(origin_url):
+def gerar_short_link(
+    origin_url
+):
 
     query = """
-mutation GenerateShortLink($input: ShortLinkInput!) {
-  generateShortLink(input: $input) {
-    shortLink
-  }
+mutation GenerateShortLink(
+    $input: ShortLinkInput!
+) {
+    generateShortLink(
+        input: $input
+    ) {
+        shortLink
+    }
 }
 """
 
-    dados = shopee_graphql(
-        query,
-        {
+    resultado = shopee_graphql(
+        query=query,
+        variables={
             "input": {
                 "originUrl": origin_url
             }
-        }
+        },
+        operation_name="GenerateShortLink"
     )
 
-    if not dados:
+    if not resultado.get("ok"):
+
+        log(
+            "[SHOPEE API] Falha generateShortLink:",
+            resultado.get("erro")
+        )
+
         return None
 
     try:
 
         short_link = (
-            dados
-            .get("data", {})
-            .get("generateShortLink", {})
-            .get("shortLink")
+            resultado["dados"]
+            ["data"]
+            ["generateShortLink"]
+            ["shortLink"]
         )
 
-        if short_link:
+        log(
+            "[SHOPEE API] ShortLink gerado:",
+            short_link
+        )
 
-            print(
-                "[SHOPEE API] ShortLink gerado:",
-                short_link
-            )
-
-            return short_link
+        return short_link
 
     except Exception as erro:
 
-        print(
-            "[SHOPEE API] Erro lendo ShortLink:",
-            repr(erro)
-        )
-
-    return None
-
-
-# ============================================================
-# PRODUCT OFFER
-# ============================================================
-
-def consultar_product_offer(shop_id, item_id):
-
-    if not shop_id or not item_id:
-
-        print(
-            "[PRODUTO] Não há IDs para consultar ProductOfferV2."
+        log(
+            "[SHOPEE API] Resposta sem shortLink:",
+            erro
         )
 
         return None
-
-    query = """
-query ProductOffer($itemId: Int!, $shopId: Int!) {
-  productOfferV2(
-    itemId: $itemId
-    shopId: $shopId
-  ) {
-    nodes {
-      itemId
-      shopId
-      productName
-      price
-      priceMin
-      priceMax
-      imageUrl
-      productLink
-      offerLink
-      commissionRate
-      commission
-      sellerName
-    }
-  }
-}
-"""
-
-    print(
-        "[PRODUTO] Consultando ProductOfferV2..."
-    )
-
-    try:
-
-        resultado = shopee_graphql(
-            query,
-            {
-                "itemId": int(item_id),
-                "shopId": int(shop_id)
-            }
-        )
-
-        if not resultado:
-            return None
-
-        if resultado.get("errors"):
-            return None
-
-        nodes = (
-            resultado
-            .get("data", {})
-            .get("productOfferV2", {})
-            .get("nodes", [])
-        )
-
-        if nodes:
-
-            produto = nodes[0]
-
-            print(
-                "[PRODUTO] ProductOfferV2 encontrado:"
-            )
-
-            print(
-                json.dumps(
-                    produto,
-                    ensure_ascii=False
-                )[:5000]
-            )
-
-            return produto
-
-    except Exception as erro:
-
-        print(
-            "[PRODUTO] Erro ProductOfferV2:",
-            repr(erro)
-        )
-
-    return None
-
-
-# ============================================================
-# LIMPAR TEXTO
-# ============================================================
-
-def limpar_texto(valor):
-
-    if valor is None:
-        return ""
-
-    valor = html.unescape(
-        str(valor)
-    )
-
-    valor = re.sub(
-        r"\s+",
-        " ",
-        valor
-    )
-
-    return valor.strip()
-
-
-# ============================================================
-# EXTRAIR JSON-LD
-# ============================================================
-
-def extrair_json_ld(soup):
-
-    resultados = []
-
-    for script in soup.find_all(
-        "script",
-        type="application/ld+json"
-    ):
-
-        try:
-
-            texto = script.string
-
-            if not texto:
-                continue
-
-            dados = json.loads(
-                texto
-            )
-
-            if isinstance(dados, list):
-                resultados.extend(dados)
-
-            else:
-                resultados.append(dados)
-
-        except Exception:
-            continue
-
-    return resultados
-
-
-# ============================================================
-# EXTRAIR PRODUTO DO HTML
-# ============================================================
-
-def extrair_produto_html(url, html_text):
-
-    print("=" * 40)
-    print("[HTML] Tentando extrair dados do produto...")
-    print("=" * 40)
-
-    if not html_text:
-
-        print(
-            "[HTML] HTML vazio."
-        )
-
-        return {}
-
-    try:
-
-        soup = BeautifulSoup(
-            html_text,
-            "html.parser"
-        )
-
-    except Exception as erro:
-
-        print(
-            "[HTML] Erro BeautifulSoup:",
-            repr(erro)
-        )
-
-        return {}
-
-    titulo = ""
-    preco = ""
-    preco_antigo = ""
-    imagem = ""
-
-    # ========================================================
-    # TITLE
-    # ========================================================
-
-    meta_title = soup.find(
-        "meta",
-        attrs={
-            "property": "og:title"
-        }
-    )
-
-    if meta_title:
-
-        titulo = (
-            meta_title.get("content")
-            or ""
-        )
-
-    if not titulo:
-
-        meta_title = soup.find(
-            "meta",
-            attrs={
-                "name": "twitter:title"
-            }
-        )
-
-        if meta_title:
-
-            titulo = (
-                meta_title.get("content")
-                or ""
-            )
-
-    if not titulo and soup.title:
-
-        titulo = soup.title.get_text(
-            " ",
-            strip=True
-        )
-
-    # ========================================================
-    # IMAGE
-    # ========================================================
-
-    meta_image = soup.find(
-        "meta",
-        attrs={
-            "property": "og:image"
-        }
-    )
-
-    if meta_image:
-
-        imagem = (
-            meta_image.get("content")
-            or ""
-        )
-
-    if not imagem:
-
-        meta_image = soup.find(
-            "meta",
-            attrs={
-                "name": "twitter:image"
-            }
-        )
-
-        if meta_image:
-
-            imagem = (
-                meta_image.get("content")
-                or ""
-            )
-
-    # ========================================================
-    # JSON-LD
-    # ========================================================
-
-    json_ld = extrair_json_ld(
-        soup
-    )
-
-    for dados in json_ld:
-
-        if not isinstance(
-            dados,
-            dict
-        ):
-            continue
-
-        # Produto diretamente
-        candidatos = [dados]
-
-        # @graph
-        if isinstance(
-            dados.get("@graph"),
-            list
-        ):
-
-            candidatos.extend(
-                dados["@graph"]
-            )
-
-        for item in candidatos:
-
-            if not isinstance(
-                item,
-                dict
-            ):
-                continue
-
-            tipo = item.get(
-                "@type",
-                ""
-            )
-
-            if (
-                str(tipo).lower()
-                == "product"
-            ):
-
-                if not titulo:
-
-                    titulo = (
-                        item.get("name")
-                        or ""
-                    )
-
-                if not imagem:
-
-                    img = item.get(
-                        "image"
-                    )
-
-                    if isinstance(
-                        img,
-                        list
-                    ) and img:
-
-                        imagem = img[0]
-
-                    elif isinstance(
-                        img,
-                        str
-                    ):
-
-                        imagem = img
-
-                offers = item.get(
-                    "offers"
-                )
-
-                if isinstance(
-                    offers,
-                    dict
-                ):
-
-                    if not preco:
-
-                        preco = (
-                            offers.get(
-                                "price"
-                            )
-                            or ""
-                        )
-
-                    if not preco:
-
-                        preco = (
-                            offers.get(
-                                "lowPrice"
-                            )
-                            or ""
-                        )
-
-    # ========================================================
-    # META PRICE
-    # ========================================================
-
-    if not preco:
-
-        metas_preco = [
-
-            {
-                "property":
-                    "product:price:amount"
-            },
-
-            {
-                "property":
-                    "og:price:amount"
-            },
-
-            {
-                "name":
-                    "price"
-            },
-
-            {
-                "itemprop":
-                    "price"
-            }
-
-        ]
-
-        for attrs in metas_preco:
-
-            tag = soup.find(
-                "meta",
-                attrs=attrs
-            )
-
-            if tag:
-
-                preco = (
-                    tag.get("content")
-                    or ""
-                )
-
-                if preco:
-                    break
-
-    # ========================================================
-    # LIMPEZA
-    # ========================================================
-
-    titulo = limpar_texto(
-        titulo
-    )
-
-    preco = limpar_texto(
-        preco
-    )
-
-    preco_antigo = limpar_texto(
-        preco_antigo
-    )
-
-    imagem = limpar_texto(
-        imagem
-    )
-
-    # ========================================================
-    # DETECTAR PÁGINA GENÉRICA
-    # ========================================================
-
-    titulo_lower = titulo.lower()
-
-    pagina_generica = (
-        not titulo
-        or "shopee brasil | ofertas incríveis" in titulo_lower
-        or "ofertas incríveis. melhores preços do mercado" in titulo_lower
-        or titulo_lower == "shopee"
-    )
-
-    if pagina_generica:
-
-        print(
-            "[HTML] A Shopee retornou uma página genérica."
-        )
-
-        titulo = ""
-
-    print("=" * 40)
-    print("[HTML] Título:", titulo)
-    print("[HTML] Preço:", preco)
-    print("[HTML] Imagem:", imagem)
-    print("=" * 40)
-
-    return {
-        "title": titulo,
-        "price": preco,
-        "old_price": preco_antigo,
-        "image": imagem,
-        "product_link": url
-    }
-
-
-# ============================================================
-# VALIDAR IMAGEM
-# ============================================================
-
-def imagem_valida(url):
-
-    if not url:
-        return False
-
-    url_lower = url.lower()
-
-    # Não aceitar imagem genérica da homepage
-    if "homepagefe" in url_lower:
-        return False
-
-    if "logo" in url_lower:
-        return False
-
-    if not (
-        url_lower.startswith("http://")
-        or url_lower.startswith("https://")
-    ):
-        return False
-
-    return True
 
 
 # ============================================================
@@ -1200,25 +1267,33 @@ def formatar_preco(valor):
     if valor is None:
         return ""
 
-    valor = str(valor).strip()
+    if isinstance(valor, str):
 
-    if not valor:
-        return ""
+        valor = valor.strip()
 
-    # Já está em formato brasileiro
-    if "R$" in valor:
-        return valor
+        if valor.startswith("R$"):
+            return valor
 
-    # Decimal simples
+        # Caso já venha como número em string
+        try:
+            valor = float(
+                valor.replace(
+                    ".",
+                    ""
+                ).replace(
+                    ",",
+                    "."
+                )
+            )
+        except Exception:
+            return valor
+
     try:
-
-        numero = float(
-            valor.replace(",", ".")
-        )
 
         return (
             "R$ "
-            + f"{numero:,.2f}"
+            +
+            f"{float(valor):,.2f}"
             .replace(",", "X")
             .replace(".", ",")
             .replace("X", ".")
@@ -1226,89 +1301,103 @@ def formatar_preco(valor):
 
     except Exception:
 
-        return valor
+        return str(valor)
 
 
 # ============================================================
-# MONTAR LEGENDA
+# MONTAR TEXTO DO PRODUTO
 # ============================================================
 
-def montar_legenda(produto, link):
+def montar_legenda(
+    produto,
+    link
+):
 
     titulo = (
-        produto.get("title")
-        or produto.get("productName")
-        or "Oferta Shopee"
-    )
-
-    preco = (
-        produto.get("price")
-        or ""
-    )
-
-    preco_antigo = (
-        produto.get("old_price")
-        or ""
-    )
-
-    link_final = (
-        produto.get("offerLink")
-        or produto.get("product_link")
-        or link
-    )
-
-    titulo = limpar_texto(
-        titulo
-    )
+        produto.get("titulo")
+        or
+        "Produto Shopee"
+    ).strip()
 
     preco = formatar_preco(
-        preco
+        produto.get("preco_atual")
     )
 
-    preco_antigo = formatar_preco(
-        preco_antigo
+    preco_max = formatar_preco(
+        produto.get("preco_max")
     )
 
-    linhas = []
+    desconto = produto.get(
+        "desconto"
+    )
 
-    linhas.append(
-        f"🦊 <b>{html.escape(titulo)}</b>"
+    short_link = (
+        produto.get("short_link")
+        or
+        link
+    )
+
+    partes = []
+
+    partes.append(
+        "🦊 <b>OFERTA SHOPEE</b>"
+    )
+
+    partes.append("")
+
+    partes.append(
+        f"🔥 <b>{titulo}</b>"
     )
 
     if preco:
 
-        if preco_antigo:
+        if (
+            preco_max
+            and
+            preco_max != preco
+        ):
 
-            linhas.append(
-                f"🔥 <s>{html.escape(preco_antigo)}</s> "
-                f"<b>{html.escape(preco)}</b>"
+            partes.append(
+                f"💰 <b>{preco}</b>"
+            )
+
+            partes.append(
+                f"🏷️ De: {preco_max}"
             )
 
         else:
 
-            linhas.append(
-                f"🔥 <b>{html.escape(preco)}</b>"
+            partes.append(
+                f"💰 <b>{preco}</b>"
             )
 
-    linhas.append("")
+    if desconto not in (
+        None,
+        "",
+        0,
+        "0"
+    ):
 
-    linhas.append(
-        "🛒 <b>Comprar na Shopee:</b>"
+        try:
+
+            partes.append(
+                f"🔥 {desconto}% OFF"
+            )
+
+        except Exception:
+            pass
+
+    partes.append("")
+
+    partes.append(
+        "🛒 <b>COMPRAR NA SHOPEE</b>"
     )
 
-    linhas.append(
-        html.escape(link_final)
+    partes.append(
+        f"👉 {short_link}"
     )
 
-    linhas.append("")
-
-    linhas.append(
-        "⚡ Oferta encontrada pela Raposa Caçadora"
-    )
-
-    return "\n".join(
-        linhas
-    )
+    return "\n".join(partes)
 
 
 # ============================================================
@@ -1317,469 +1406,399 @@ def montar_legenda(produto, link):
 
 def processar_produto(link):
 
-    print("=" * 40)
-    print("[PRODUTO] Abrindo link:")
-    print(link)
-    print("=" * 40)
+    log("========================================")
+    log("[PRODUTO] Abrindo link:")
+    log(link)
+    log("========================================")
 
-    if not link_shopee_valido(link):
-
-        print(
-            "[PRODUTO] Link inválido."
-        )
-
-        return None
-
-    # ========================================================
-    # 1. RESOLVER URL
-    # ========================================================
-
-    url_final, html_text = resolver_link_shopee(
+    resolvido = resolver_url_shopee(
         link
     )
 
-    print(
+    url_final = resolvido.get(
+        "url"
+    ) or link
+
+    shop_id = resolvido.get(
+        "shop_id"
+    )
+
+    item_id = resolvido.get(
+        "item_id"
+    )
+
+    html = resolvido.get(
+        "html",
+        ""
+    )
+
+    log(
         "[PRODUTO] URL final:",
         url_final
     )
 
-    # ========================================================
-    # 2. TENTAR IDS
-    # ========================================================
-
-    shop_id, item_id = extrair_ids_shopee(
-        url_final,
-        html_text
-    )
-
-    print(
+    log(
         "[PRODUTO] shopId:",
         shop_id
     )
 
-    print(
+    log(
         "[PRODUTO] itemId:",
         item_id
     )
 
-    # ========================================================
-    # 3. PRODUCT OFFER
-    # ========================================================
+    produto = None
 
-    produto_api = None
+    # --------------------------------------------------------
+    # 1. API por IDs
+    # --------------------------------------------------------
 
     if shop_id and item_id:
 
-        produto_api = consultar_product_offer(
+        log(
+            "[PRODUTO] Consultando ProductOfferV2..."
+        )
+
+        produto = buscar_produto_por_ids(
             shop_id,
             item_id
         )
 
     else:
 
-        print(
-            "[PRODUTO] Pulando ProductOfferV2 "
-            "porque os IDs não foram encontrados."
+        log(
+            "[PRODUTO] Não há IDs para consultar ProductOfferV2."
         )
 
-    # ========================================================
-    # 4. FALLBACK HTML
-    # ========================================================
+    # --------------------------------------------------------
+    # 2. Tentar metadata HTML
+    # --------------------------------------------------------
 
-    produto_html = {}
+    if not produto:
 
-    if html_text:
-
-        produto_html = extrair_produto_html(
-            url_final,
-            html_text
+        log(
+            "[PRODUTO] API não retornou produto."
         )
 
-    # ========================================================
-    # 5. COMBINAR
-    # ========================================================
-
-    produto = {}
-
-    if produto_api:
-
-        produto.update(
-            produto_api
+        log(
+            "[PRODUTO] Tentando metadata HTML..."
         )
 
-    if produto_html:
-
-        if not produto.get("productName"):
-            produto["productName"] = (
-                produto_html.get("title")
-                or ""
-            )
-
-        if not produto.get("price"):
-            produto["price"] = (
-                produto_html.get("price")
-                or ""
-            )
-
-        if not produto.get("imageUrl"):
-            produto["imageUrl"] = (
-                produto_html.get("image")
-                or ""
-            )
-
-        if not produto.get("productLink"):
-            produto["productLink"] = (
-                produto_html.get("product_link")
-                or ""
-            )
-
-    # ========================================================
-    # 6. NORMALIZAR
-    # ========================================================
-
-    titulo = limpar_texto(
-        produto.get("productName")
-        or produto.get("title")
-        or ""
-    )
-
-    preco = (
-        produto.get("price")
-        or ""
-    )
-
-    imagem = limpar_texto(
-        produto.get("imageUrl")
-        or produto.get("image")
-        or ""
-    )
-
-    product_link = (
-        produto.get("offerLink")
-        or produto.get("productLink")
-        or url_final
-    )
-
-    # ========================================================
-    # 7. NÃO ACEITAR PÁGINA GENÉRICA
-    # ========================================================
-
-    titulo_lower = titulo.lower()
-
-    if (
-        not titulo
-        or titulo_lower.startswith(
-            "shopee brasil |"
-        )
-        or titulo_lower == "shopee"
-    ):
-
-        print(
-            "[PRODUTO] ❌ Nenhum título real encontrado."
+        produto = extrair_metadata_html(
+            html
         )
 
-        titulo = ""
+    # --------------------------------------------------------
+    # 3. Se ainda não encontrou, erro.
+    # --------------------------------------------------------
 
-    # ========================================================
-    # 8. LOG FINAL
-    # ========================================================
+    if not produto:
 
-    print("=" * 40)
-    print("[PRODUTO] RESULTADO FINAL")
-    print("[PRODUTO] Título:", titulo)
-    print("[PRODUTO] Preço:", preco)
-    print("[PRODUTO] Imagem:", imagem)
-    print("[PRODUTO] Link:", product_link)
-    print("=" * 40)
+        return {
+            "sucesso": False,
+            "erro":
+                "A Shopee não retornou os dados do produto.",
+            "link": link,
+            "url_final": url_final,
+            "shop_id": shop_id,
+            "item_id": item_id,
+            "short_link": None
+        }
 
-    # ========================================================
-    # 9. SEM DADOS
-    # ========================================================
+    # --------------------------------------------------------
+    # 4. Validar título
+    # --------------------------------------------------------
+
+    titulo = (
+        produto.get("titulo")
+        or
+        ""
+    ).strip()
 
     if not titulo:
 
-        print(
-            "[PRODUTO] ❌ Não foi possível obter "
-            "dados reais do produto."
-        )
-
         return {
-            "success": False,
-            "error": (
-                "A Shopee não retornou os dados "
-                "do produto."
-            ),
-            "link": url_final,
-            "shortLink": None
+            "sucesso": False,
+            "erro":
+                "Foi encontrado conteúdo da Shopee, "
+                "mas não foi possível identificar o nome do produto.",
+            "link": link,
+            "url_final": url_final,
+            "shop_id": shop_id,
+            "item_id": item_id,
+            "short_link": None
         }
 
-    # ========================================================
-    # 10. SHORT LINK
-    # ========================================================
+    # --------------------------------------------------------
+    # 5. Gerar link de afiliado
+    # --------------------------------------------------------
+
+    url_para_afiliado = (
+        produto.get("link")
+        or
+        produto.get("offer_link")
+        or
+        url_final
+        or
+        link
+    )
+
+    log(
+        "[PRODUTO] URL usada para afiliado:",
+        url_para_afiliado
+    )
 
     short_link = gerar_short_link(
-        url_final
+        url_para_afiliado
     )
 
-    if short_link:
+    # --------------------------------------------------------
+    # 6. Se não gerou short link, ainda podemos usar
+    #    offer_link caso exista.
+    # --------------------------------------------------------
 
-        product_link = short_link
+    if not short_link:
 
-    # ========================================================
-    # 11. RESULTADO
-    # ========================================================
+        short_link = (
+            produto.get("offer_link")
+            or
+            ""
+        )
 
-    resultado = {
+    if not short_link:
 
-        "success": True,
+        return {
+            "sucesso": False,
+            "erro":
+                "Os dados do produto foram encontrados, "
+                "mas a Shopee não conseguiu gerar o link de afiliado.",
+            "link": link,
+            "url_final": url_final,
+            "shop_id": shop_id,
+            "item_id": item_id,
+            "short_link": None,
+            "produto": produto
+        }
 
-        "title": titulo,
+    produto["short_link"] = short_link
 
-        "productName": titulo,
-
-        "price": preco,
-
-        "image": imagem,
-
-        "imageUrl": imagem,
-
-        "product_link": product_link,
-
-        "productLink": product_link,
-
-        "offerLink": short_link or product_link,
-
-        "shortLink": short_link,
-
-        "shopId": shop_id,
-
-        "itemId": item_id
-    }
-
-    return resultado
-
-
-# ============================================================
-# PUBLICAR PRODUTO
-# ============================================================
-
-def publicar_produto(produto, link_original):
-
-    if not produto:
-        return False
-
-    if not produto.get("success"):
-        return False
-
-    titulo = (
-        produto.get("title")
-        or "Oferta Shopee"
-    )
-
-    link = (
-        produto.get("shortLink")
-        or produto.get("offerLink")
-        or produto.get("product_link")
-        or link_original
-    )
-
-    imagem = (
-        produto.get("imageUrl")
-        or produto.get("image")
-        or ""
-    )
+    # --------------------------------------------------------
+    # 7. Legenda
+    # --------------------------------------------------------
 
     legenda = montar_legenda(
         produto,
-        link
+        short_link
     )
 
-    print(
-        "[TELEGRAM] Publicando:",
-        titulo
+    produto["legenda"] = legenda
+
+    log("========================================")
+    log(
+        "[PRODUTO] Título:",
+        produto.get("titulo")
     )
 
-    print(
-        "[TELEGRAM] Link:",
-        link
+    log(
+        "[PRODUTO] Preço:",
+        produto.get("preco_atual")
     )
 
-    # ========================================================
-    # COM IMAGEM
-    # ========================================================
-
-    if imagem_valida(imagem):
-
-        sucesso = telegram_publicar_foto(
-            imagem,
-            legenda
-        )
-
-        if sucesso:
-
-            print(
-                "[TELEGRAM] Produto publicado com imagem."
-            )
-
-            return True
-
-        print(
-            "[TELEGRAM] Falha ao publicar imagem."
-        )
-
-    else:
-
-        print(
-            "[TELEGRAM] Imagem não disponível."
-        )
-
-    # ========================================================
-    # FALLBACK TEXTO
-    # ========================================================
-
-    sucesso = telegram_publicar_texto(
-        legenda
+    log(
+        "[PRODUTO] Imagem:",
+        produto.get("imagem")
     )
 
-    if sucesso:
-
-        print(
-            "[TELEGRAM] Produto publicado como texto."
-        )
-
-        return True
-
-    print(
-        "[TELEGRAM] ❌ Falha ao publicar produto."
+    log(
+        "[PRODUTO] ShortLink:",
+        short_link
     )
 
-    return False
+    log("========================================")
+
+    return {
+        "sucesso": True,
+        "link": link,
+        "url_final": url_final,
+        "shop_id": shop_id,
+        "item_id": item_id,
+        "short_link": short_link,
+        "produto": produto
+    }
 
 
 # ============================================================
-# PROCESSAMENTO DA TAREFA
+# PROCESSAR TAREFA
 # ============================================================
 
 def executar_tarefa(
     task_id,
     links,
     intervalo,
-    quantidade
+    quantidade,
+    usuario
 ):
 
-    print(
+    log(
         "[TASK] Iniciando",
         task_id
     )
 
+    with tarefas_lock:
+
+        tarefas[task_id] = {
+            "status": "processando",
+            "task_id": task_id,
+            "total": len(links),
+            "processados": 0,
+            "publicados": 0,
+            "erros": []
+        }
+
     try:
 
-        with tarefas_lock:
-
-            tarefas[task_id] = {
-                "status": "processando",
-                "total": len(links),
-                "processados": 0,
-                "publicados": 0,
-                "erros": 0,
-                "mensagem": "Processando produtos..."
-            }
-
         for indice, link in enumerate(
-            links[:quantidade],
+            links,
             start=1
         ):
 
-            print("=" * 40)
-            print(
-                f"[TASK] Produto {indice}/{quantidade}"
+            log("========================================")
+            log(
+                f"[TASK] Produto {indice}/{len(links)}"
             )
 
-            print(
+            log(
                 "[TELEGRAM] Link:",
                 link
             )
 
-            try:
+            resultado = processar_produto(
+                link
+            )
 
-                produto = processar_produto(
-                    link
-                )
+            if not resultado.get(
+                "sucesso"
+            ):
 
-                if produto and produto.get("success"):
+                erro = {
+                    "produto": indice,
+                    "link": link,
+                    "erro":
+                        resultado.get(
+                            "erro",
+                            "Erro desconhecido."
+                        )
+                }
 
-                    publicado = publicar_produto(
-                        produto,
-                        link
-                    )
-
-                    if publicado:
-
-                        with tarefas_lock:
-
-                            tarefas[task_id][
-                                "publicados"
-                            ] += 1
-
-                    else:
-
-                        with tarefas_lock:
-
-                            tarefas[task_id][
-                                "erros"
-                            ] += 1
-
-                else:
-
-                    with tarefas_lock:
-
-                        tarefas[task_id][
-                            "erros"
-                        ] += 1
-
-                    print(
-                        "[TASK] Produto não possui "
-                        "dados suficientes."
-                    )
-
-            except Exception as erro:
-
-                print(
-                    "[TASK] Erro no produto:",
-                    repr(erro)
+                log(
+                    "[TASK] ERRO:",
+                    erro
                 )
 
                 with tarefas_lock:
 
                     tarefas[task_id][
                         "erros"
-                    ] += 1
-
-            finally:
-
-                with tarefas_lock:
+                    ].append(
+                        erro
+                    )
 
                     tarefas[task_id][
                         "processados"
                     ] = indice
 
-            # =================================================
-            # INTERVALO
-            # =================================================
+                # Não publica conteúdo incorreto
+                continue
 
-            if indice < quantidade:
+            produto = resultado[
+                "produto"
+            ]
 
-                print(
+            legenda = produto[
+                "legenda"
+            ]
+
+            imagem = produto.get(
+                "imagem"
+            )
+
+            log(
+                "[TELEGRAM] Publicando:",
+                produto.get("titulo")
+            )
+
+            log(
+                "[TELEGRAM] Link:",
+                resultado.get(
+                    "short_link"
+                )
+            )
+
+            if imagem:
+
+                sucesso, retorno = (
+                    telegram_publicar_foto(
+                        imagem,
+                        legenda
+                    )
+                )
+
+            else:
+
+                sucesso, retorno = (
+                    telegram_publicar_texto(
+                        legenda
+                    )
+                )
+
+            if sucesso:
+
+                log(
+                    "[TELEGRAM] Produto publicado."
+                )
+
+                with tarefas_lock:
+
+                    tarefas[task_id][
+                        "publicados"
+                    ] += 1
+
+            else:
+
+                erro = {
+                    "produto": indice,
+                    "link": link,
+                    "erro":
+                        f"Telegram: {retorno}"
+                }
+
+                with tarefas_lock:
+
+                    tarefas[task_id][
+                        "erros"
+                    ].append(
+                        erro
+                    )
+
+            with tarefas_lock:
+
+                tarefas[task_id][
+                    "processados"
+                ] = indice
+
+            # ------------------------------------------------
+            # Intervalo
+            # ------------------------------------------------
+
+            if indice < len(links):
+
+                log(
                     f"[TASK] Aguardando {intervalo}s..."
                 )
 
                 time.sleep(
                     intervalo
                 )
-
-        # =====================================================
-        # FINAL
-        # =====================================================
 
         with tarefas_lock:
 
@@ -1788,19 +1807,21 @@ def executar_tarefa(
             ] = "concluida"
 
             tarefas[task_id][
-                "mensagem"
-            ] = "Automação concluída."
+                "finalizada_em"
+            ] = int(
+                time.time()
+            )
 
-        print(
+        log(
             "[TASK] Finalizada",
             task_id
         )
 
     except Exception as erro:
 
-        print(
+        log(
             "[TASK] ERRO FATAL:",
-            repr(erro)
+            erro
         )
 
         with tarefas_lock:
@@ -1810,8 +1831,351 @@ def executar_tarefa(
             ] = "erro"
 
             tarefas[task_id][
-                "mensagem"
+                "erro"
             ] = str(erro)
+
+            tarefas[task_id][
+                "finalizada_em"
+            ] = int(
+                time.time()
+            )
+
+
+# ============================================================
+# API CONFIGURAR
+# ============================================================
+
+@app.route(
+    "/api/configurar",
+    methods=["POST"]
+)
+def configurar():
+
+    log("========================================")
+    log("[API] POST /api/configurar")
+
+    try:
+
+        dados = request.get_json(
+            silent=True
+        )
+
+        if not dados:
+
+            return jsonify({
+                "sucesso": False,
+                "erro":
+                    "JSON inválido ou vazio."
+            }), 400
+
+        links = dados.get(
+            "links",
+            []
+        )
+
+        intervalo = dados.get(
+            "intervalo",
+            10
+        )
+
+        quantidade = dados.get(
+            "quantidade",
+            1
+        )
+
+        usuario = dados.get(
+            "user"
+        )
+
+        if not isinstance(
+            links,
+            list
+        ):
+
+            return jsonify({
+                "sucesso": False,
+                "erro":
+                    "O campo links precisa ser uma lista."
+            }), 400
+
+        # ----------------------------------------------------
+        # Limpeza
+        # ----------------------------------------------------
+
+        links = [
+            str(link).strip()
+            for link in links
+            if str(link).strip()
+        ]
+
+        log(
+            "[API] Links recebidos:",
+            len(links)
+        )
+
+        if not links:
+
+            return jsonify({
+                "sucesso": False,
+                "erro":
+                    "Informe pelo menos um link da Shopee."
+            }), 400
+
+        if len(links) > MAX_LINKS:
+
+            return jsonify({
+                "sucesso": False,
+                "erro":
+                    "Máximo de 20 links."
+            }), 400
+
+        try:
+
+            intervalo = int(
+                intervalo
+            )
+
+        except Exception:
+
+            return jsonify({
+                "sucesso": False,
+                "erro":
+                    "Intervalo inválido."
+            }), 400
+
+        if intervalo not in INTERVALOS_PERMITIDOS:
+
+            return jsonify({
+                "sucesso": False,
+                "erro":
+                    "Intervalo inválido. "
+                    "Use 10, 60, 300 ou 600 segundos."
+            }), 400
+
+        try:
+
+            quantidade = int(
+                quantidade
+            )
+
+        except Exception:
+
+            return jsonify({
+                "sucesso": False,
+                "erro":
+                    "Quantidade inválida."
+            }), 400
+
+        if quantidade < 1:
+
+            return jsonify({
+                "sucesso": False,
+                "erro":
+                    "Quantidade mínima é 1."
+            }), 400
+
+        if quantidade > len(links):
+
+            quantidade = len(links)
+
+        # ----------------------------------------------------
+        # Validar URLs
+        # ----------------------------------------------------
+
+        for link in links:
+
+            try:
+
+                parsed = urlparse(
+                    link
+                )
+
+                hostname = (
+                    parsed.hostname
+                    or
+                    ""
+                ).lower()
+
+                if (
+                    parsed.scheme
+                    not in
+                    ("http", "https")
+                ):
+
+                    return jsonify({
+                        "sucesso": False,
+                        "erro":
+                            f"Link inválido: {link}"
+                    }), 400
+
+                if "shopee" not in hostname:
+
+                    return jsonify({
+                        "sucesso": False,
+                        "erro":
+                            f"O link não parece ser da Shopee: {link}"
+                    }), 400
+
+            except Exception:
+
+                return jsonify({
+                    "sucesso": False,
+                    "erro":
+                        f"Link inválido: {link}"
+                }), 400
+
+        # ----------------------------------------------------
+        # Configuração
+        # ----------------------------------------------------
+
+        log(
+            "[TELEGRAM] Usuário:",
+            usuario
+        )
+
+        log(
+            "[TELEGRAM] Canal:",
+            CHANNEL_USERNAME
+        )
+
+        log(
+            "[SHOPEE] API URL:",
+            SHOPEE_API_URL
+        )
+
+        log(
+            "[SHOPEE] AppID:",
+            mascara_valor(
+                SHOPEE_APP_ID
+            )
+        )
+
+        log(
+            "[SHOPEE] Secret configurado:",
+            bool(SHOPEE_SECRET)
+        )
+
+        # ----------------------------------------------------
+        # Verificar credenciais mínimas
+        # ----------------------------------------------------
+
+        if not BOT_TOKEN:
+
+            return jsonify({
+                "sucesso": False,
+                "erro":
+                    "BOT_TOKEN não configurado no servidor."
+            }), 500
+
+        if not CHANNEL_USERNAME:
+
+            return jsonify({
+                "sucesso": False,
+                "erro":
+                    "CHANNEL_USERNAME não configurado no servidor."
+            }), 500
+
+        if not SHOPEE_APP_ID:
+
+            return jsonify({
+                "sucesso": False,
+                "erro":
+                    "SHOPEE_APP_ID não configurado no servidor."
+            }), 500
+
+        if not SHOPEE_SECRET:
+
+            return jsonify({
+                "sucesso": False,
+                "erro":
+                    "SHOPEE_SECRET não configurado no servidor."
+            }), 500
+
+        # ----------------------------------------------------
+        # Criar tarefa
+        # ----------------------------------------------------
+
+        task_id = str(
+            uuid.uuid4()
+        )
+
+        with tarefas_lock:
+
+            tarefas[task_id] = {
+                "status": "aguardando",
+                "task_id": task_id,
+                "total": quantidade,
+                "processados": 0,
+                "publicados": 0,
+                "erros": []
+            }
+
+        thread = threading.Thread(
+            target=executar_tarefa,
+            args=(
+                task_id,
+                links[:quantidade],
+                intervalo,
+                quantidade,
+                usuario
+            ),
+            daemon=True
+        )
+
+        thread.start()
+
+        log(
+            "[API] Task criada:",
+            task_id
+        )
+
+        return jsonify({
+            "sucesso": True,
+            "mensagem":
+                "Automação iniciada com sucesso!",
+            "task_id": task_id
+        })
+
+    except Exception as erro:
+
+        log(
+            "[API] Erro:",
+            erro
+        )
+
+        return jsonify({
+            "sucesso": False,
+            "erro": str(erro)
+        }), 500
+
+
+# ============================================================
+# API STATUS
+# ============================================================
+
+@app.route(
+    "/api/status/<task_id>",
+    methods=["GET"]
+)
+def status_task(task_id):
+
+    with tarefas_lock:
+
+        tarefa = tarefas.get(
+            task_id
+        )
+
+        if not tarefa:
+
+            return jsonify({
+                "status": "nao_encontrada",
+                "erro":
+                    "Tarefa não encontrada."
+            }), 404
+
+        return jsonify(
+            tarefa
+        )
 
 
 # ============================================================
@@ -1889,6 +2253,16 @@ def debug_env():
 )
 def debug_telegram():
 
+    token = os.environ.get(
+        "BOT_TOKEN",
+        ""
+    ).strip()
+
+    canal = os.environ.get(
+        "CHANNEL_USERNAME",
+        ""
+    ).strip()
+
     resultado = telegram_get_me()
 
     bot = None
@@ -1904,19 +2278,19 @@ def debug_telegram():
         "BOT_TOKEN": {
 
             "existe":
-                bool(BOT_TOKEN),
+                bool(token),
 
             "tamanho":
-                len(BOT_TOKEN)
+                len(token)
         },
 
         "CHANNEL_USERNAME": {
 
             "existe":
-                bool(CHANNEL_USERNAME),
+                bool(canal),
 
             "valor":
-                CHANNEL_USERNAME
+                canal
         },
 
         "telegram_api_ok":
@@ -1945,9 +2319,13 @@ def debug_telegram():
         },
 
         "erro":
-            resultado.get("erro")
+            resultado.get(
+                "erro"
+            )
             or
-            resultado.get("description")
+            resultado.get(
+                "description"
+            )
     })
 
 
@@ -2045,15 +2423,15 @@ def debug_shopee_conexao():
     if not SHOPEE_API_URL:
 
         return jsonify({
-
             "sucesso": False,
-
             "erro":
                 "SHOPEE_API_URL não configurada."
-
         }), 500
 
     try:
+
+        # GET serve apenas para verificar conectividade.
+        # A API GraphQL propriamente dita usa POST.
 
         resposta = requests.get(
             SHOPEE_API_URL,
@@ -2074,7 +2452,9 @@ def debug_shopee_conexao():
                 ),
 
             "tamanho_resposta":
-                len(resposta.content),
+                len(
+                    resposta.content
+                ),
 
             "url_final":
                 resposta.url
@@ -2087,12 +2467,123 @@ def debug_shopee_conexao():
             "sucesso": False,
 
             "erro": str(erro)
-
         }), 500
 
 
 # ============================================================
-# TESTE DIRETO DE LINK
+# DEBUG - TESTAR GRAPHQL
+# ============================================================
+
+@app.route(
+    "/debug-shopee-graphql",
+    methods=["GET"]
+)
+def debug_shopee_graphql():
+
+    query = """
+query TestOffers {
+    productOfferV2(
+        keyword: "celular"
+        listType: 1
+        sortType: 1
+        page: 1
+        limit: 3
+    ) {
+        nodes {
+            itemId
+            shopId
+            productName
+            productLink
+            offerLink
+            imageUrl
+            priceMin
+            priceMax
+            priceDiscountRate
+        }
+        pageInfo {
+            page
+            limit
+            hasNextPage
+        }
+    }
+}
+"""
+
+    resultado = shopee_graphql(
+        query=query,
+        operation_name="TestOffers"
+    )
+
+    # Nunca devolve Secret.
+    return jsonify({
+        "sucesso":
+            resultado.get(
+                "ok",
+                False
+            ),
+
+        "http_status":
+            resultado.get(
+                "http_status"
+            ),
+
+        "erro":
+            resultado.get(
+                "erro"
+            ),
+
+        "tem_dados":
+            bool(
+                resultado.get(
+                    "dados"
+                )
+            )
+    })
+
+
+# ============================================================
+# DEBUG - TESTAR SHORT LINK
+# ============================================================
+
+@app.route(
+    "/debug-shopee-shortlink",
+    methods=["GET"]
+)
+def debug_shopee_shortlink():
+
+    link = request.args.get(
+        "link",
+        ""
+    ).strip()
+
+    if not link:
+
+        return jsonify({
+            "sucesso": False,
+            "erro":
+                "Informe ?link=https://..."
+        }), 400
+
+    resultado = gerar_short_link(
+        link
+    )
+
+    if not resultado:
+
+        return jsonify({
+            "sucesso": False,
+            "erro":
+                "Não foi possível gerar short link."
+        }), 500
+
+    return jsonify({
+        "sucesso": True,
+        "short_link": resultado
+    })
+
+
+# ============================================================
+# DEBUG - TESTAR PRODUTO
 # ============================================================
 
 @app.route(
@@ -2101,58 +2592,26 @@ def debug_shopee_conexao():
 )
 def debug_produto():
 
-    link = (
-        request.args.get(
-            "url",
-            ""
-        )
-        .strip()
-    )
+    link = request.args.get(
+        "link",
+        ""
+    ).strip()
 
     if not link:
 
         return jsonify({
-
             "sucesso": False,
-
             "erro":
-                "Informe ?url=LINK_DA_SHOPEE"
-
+                "Informe ?link=https://..."
         }), 400
 
-    if not link_shopee_valido(link):
+    resultado = processar_produto(
+        link
+    )
 
-        return jsonify({
-
-            "sucesso": False,
-
-            "erro":
-                "O link informado não parece ser da Shopee."
-
-        }), 400
-
-    try:
-
-        produto = processar_produto(
-            link
-        )
-
-        return jsonify(
-            produto or {
-                "success": False,
-                "error": "Nenhum resultado."
-            }
-        )
-
-    except Exception as erro:
-
-        return jsonify({
-
-            "success": False,
-
-            "error": str(erro)
-
-        }), 500
+    return jsonify(
+        resultado
+    )
 
 
 # ============================================================
@@ -2167,8 +2626,7 @@ def health():
 
     return jsonify({
 
-        "status":
-            "ok",
+        "status": "ok",
 
         "service":
             "raposa-cacadora",
@@ -2209,6 +2667,38 @@ def health():
 
 
 # ============================================================
+# TESTE
+# ============================================================
+
+@app.route(
+    "/api/teste",
+    methods=["GET"]
+)
+def teste():
+
+    return jsonify({
+
+        "sucesso": True,
+
+        "mensagem":
+            "API funcionando corretamente.",
+
+        "telegram_configurado":
+            bool(BOT_TOKEN),
+
+        "shopee_configurada":
+            bool(
+                SHOPEE_APP_ID
+                and
+                SHOPEE_SECRET
+            ),
+
+        "timestamp":
+            int(time.time())
+    })
+
+
+# ============================================================
 # PÁGINA PRINCIPAL
 # ============================================================
 
@@ -2233,418 +2723,11 @@ def index():
 
             "mensagem":
                 "Servidor funcionando."
-
         })
 
 
 # ============================================================
-# TESTE API
-# ============================================================
-
-@app.route(
-    "/api/teste",
-    methods=["GET"]
-)
-def teste():
-
-    return jsonify({
-
-        "sucesso":
-            True,
-
-        "mensagem":
-            "API funcionando corretamente.",
-
-        "telegram_configurado":
-            bool(BOT_TOKEN),
-
-        "shopee_configurada":
-            bool(
-                SHOPEE_APP_ID
-                and
-                SHOPEE_SECRET
-            ),
-
-        "timestamp":
-            int(time.time())
-    })
-
-
-# ============================================================
-# CONFIGURAR AUTOMAÇÃO
-# ============================================================
-
-@app.route(
-    "/api/configurar",
-    methods=["POST"]
-)
-def configurar():
-
-    print("=" * 40)
-    print("[API] POST /api/configurar")
-
-    try:
-
-        dados = request.get_json(
-            silent=True
-        )
-
-        if not isinstance(
-            dados,
-            dict
-        ):
-
-            print(
-                "[API] JSON inválido."
-            )
-
-            return jsonify({
-
-                "erro":
-                    "Dados JSON inválidos."
-
-            }), 400
-
-        links = dados.get(
-            "links",
-            []
-        )
-
-        intervalo = dados.get(
-            "intervalo",
-            10
-        )
-
-        quantidade = dados.get(
-            "quantidade",
-            1
-        )
-
-        usuario = dados.get(
-            "user"
-        )
-
-        if not isinstance(
-            links,
-            list
-        ):
-
-            return jsonify({
-
-                "erro":
-                    "O campo links deve ser uma lista."
-
-            }), 400
-
-        # ====================================================
-        # LIMPAR LINKS
-        # ====================================================
-
-        links_limpos = []
-
-        for link in links:
-
-            if not isinstance(
-                link,
-                str
-            ):
-                continue
-
-            link = link.strip()
-
-            if not link:
-                continue
-
-            if not link_shopee_valido(
-                link
-            ):
-
-                return jsonify({
-
-                    "erro":
-                        f"Link inválido: {link}"
-
-                }), 400
-
-            links_limpos.append(
-                link
-            )
-
-        links = links_limpos
-
-        print(
-            "[API] Links recebidos:",
-            len(links)
-        )
-
-        if not links:
-
-            return jsonify({
-
-                "erro":
-                    "Informe pelo menos um link da Shopee."
-
-            }), 400
-
-        if len(links) > MAX_LINKS:
-
-            return jsonify({
-
-                "erro":
-                    "Máximo de 20 links."
-
-            }), 400
-
-        # ====================================================
-        # INTERVALO
-        # ====================================================
-
-        try:
-
-            intervalo = int(
-                intervalo
-            )
-
-        except Exception:
-
-            return jsonify({
-
-                "erro":
-                    "Intervalo inválido."
-
-            }), 400
-
-        if intervalo not in INTERVALOS_PERMITIDOS:
-
-            return jsonify({
-
-                "erro":
-                    "Intervalo inválido. "
-                    "Use 10, 60, 300 ou 600 segundos."
-
-            }), 400
-
-        # ====================================================
-        # QUANTIDADE
-        # ====================================================
-
-        try:
-
-            quantidade = int(
-                quantidade
-            )
-
-        except Exception:
-
-            return jsonify({
-
-                "erro":
-                    "Quantidade inválida."
-
-            }), 400
-
-        if quantidade < 1:
-
-            return jsonify({
-
-                "erro":
-                    "Quantidade mínima é 1."
-
-            }), 400
-
-        if quantidade > len(links):
-
-            quantidade = len(links)
-
-        # ====================================================
-        # LOG
-        # ====================================================
-
-        print(
-            "[TELEGRAM] Usuário:",
-            usuario
-        )
-
-        print(
-            "[TELEGRAM] Canal:",
-            CHANNEL_USERNAME
-        )
-
-        print(
-            "[SHOPEE] API URL:",
-            SHOPEE_API_URL
-        )
-
-        print(
-            "[SHOPEE] AppID:",
-            mascara_valor(
-                SHOPEE_APP_ID
-            )
-        )
-
-        print(
-            "[SHOPEE] Secret configurado:",
-            bool(SHOPEE_SECRET)
-        )
-
-        # ====================================================
-        # VERIFICAR CONFIGURAÇÃO
-        # ====================================================
-
-        if not BOT_TOKEN:
-
-            return jsonify({
-
-                "erro":
-                    "BOT_TOKEN não configurado no servidor."
-
-            }), 500
-
-        if not CHANNEL_USERNAME:
-
-            return jsonify({
-
-                "erro":
-                    "CHANNEL_USERNAME não configurado."
-
-            }), 500
-
-        if not SHOPEE_APP_ID:
-
-            return jsonify({
-
-                "erro":
-                    "SHOPEE_APP_ID não configurado."
-
-            }), 500
-
-        if not SHOPEE_SECRET:
-
-            return jsonify({
-
-                "erro":
-                    "SHOPEE_SECRET não configurado."
-
-            }), 500
-
-        # ====================================================
-        # CRIAR TAREFA
-        # ====================================================
-
-        task_id = str(
-            uuid.uuid4()
-        )
-
-        with tarefas_lock:
-
-            tarefas[task_id] = {
-
-                "status":
-                    "iniciando",
-
-                "total":
-                    quantidade,
-
-                "processados":
-                    0,
-
-                "publicados":
-                    0,
-
-                "erros":
-                    0,
-
-                "mensagem":
-                    "Tarefa criada."
-
-            }
-
-        print(
-            "[TASK] Iniciando",
-            task_id
-        )
-
-        thread = threading.Thread(
-            target=executar_tarefa,
-            args=(
-                task_id,
-                links,
-                intervalo,
-                quantidade
-            ),
-            daemon=True
-        )
-
-        thread.start()
-
-        print(
-            "[API] Task criada:",
-            task_id
-        )
-
-        return jsonify({
-
-            "sucesso":
-                True,
-
-            "mensagem":
-                "Automação iniciada com sucesso!",
-
-            "task_id":
-                task_id
-
-        }), 200
-
-    except Exception as erro:
-
-        print(
-            "[API] ERRO:",
-            repr(erro)
-        )
-
-        return jsonify({
-
-            "erro":
-                str(erro)
-
-        }), 500
-
-
-# ============================================================
-# STATUS DA TAREFA
-# ============================================================
-
-@app.route(
-    "/api/status/<task_id>",
-    methods=["GET"]
-)
-def status_tarefa(task_id):
-
-    with tarefas_lock:
-
-        tarefa = tarefas.get(
-            task_id
-        )
-
-        if not tarefa:
-
-            return jsonify({
-
-                "status":
-                    "nao_encontrada",
-
-                "mensagem":
-                    "Tarefa não encontrada."
-
-            }), 404
-
-        return jsonify(
-            tarefa
-        )
-
-
-# ============================================================
-# EXECUÇÃO LOCAL
+# EXECUÇÃO
 # ============================================================
 
 if __name__ == "__main__":

@@ -39,7 +39,6 @@ BOT_TOKEN = os.environ.get(
     ""
 ).strip()
 
-# Canal onde o bot irá publicar
 CHANNEL_USERNAME = os.environ.get(
     "CHANNEL_USERNAME",
     "@raposacacadora"
@@ -73,14 +72,19 @@ def telegram_api(method, data=None):
     Executa uma chamada para a API oficial do Telegram.
     """
 
-    if not BOT_TOKEN:
+    token = os.environ.get(
+        "BOT_TOKEN",
+        ""
+    ).strip()
+
+    if not token:
         raise RuntimeError(
-            "BOT_TOKEN não configurado no Render."
+            "BOT_TOKEN não está disponível para o processo do Render."
         )
 
     url = (
         f"https://api.telegram.org/bot"
-        f"{BOT_TOKEN}/{method}"
+        f"{token}/{method}"
     )
 
     resposta = requests.post(
@@ -98,6 +102,7 @@ def telegram_api(method, data=None):
         )
 
     if not resposta.ok or not resultado.get("ok"):
+
         descricao = resultado.get(
             "description",
             "Erro desconhecido da API do Telegram."
@@ -112,19 +117,17 @@ def telegram_api(method, data=None):
 
 def testar_bot():
     """
-    Testa se o token do bot está funcionando.
+    Testa o token através do método getMe.
     """
 
-    return telegram_api("getMe")
+    return telegram_api(
+        "getMe"
+    )
 
 
 def enviar_produto_telegram(link):
     """
-    Publica o produto no canal.
-
-    Por enquanto a postagem contém o link Shopee.
-    Depois podemos transformar isso em uma postagem
-    completa com título, preço, imagem etc.
+    Publica uma mensagem no canal configurado.
     """
 
     mensagem = (
@@ -154,11 +157,15 @@ def validar_init_data(init_data):
     """
     Valida o initData recebido do Telegram.
 
-    Se BOT_TOKEN não estiver configurado,
-    permite funcionamento para testes.
+    Se BOT_TOKEN não existir, permite teste.
     """
 
-    if not BOT_TOKEN:
+    token = os.environ.get(
+        "BOT_TOKEN",
+        ""
+    ).strip()
+
+    if not token:
         return True
 
     if not init_data:
@@ -189,7 +196,7 @@ def validar_init_data(init_data):
 
         secret_key = hmac.new(
             b"WebAppData",
-            BOT_TOKEN.encode(),
+            token.encode(),
             hashlib.sha256
         ).digest()
 
@@ -215,9 +222,6 @@ def validar_init_data(init_data):
 
 
 def obter_usuario(init_data):
-    """
-    Obtém o usuário enviado pelo Telegram.
-    """
 
     if not init_data:
         return None
@@ -238,7 +242,9 @@ def obter_usuario(init_data):
         if not usuario:
             return None
 
-        return json.loads(usuario)
+        return json.loads(
+            usuario
+        )
 
     except Exception as erro:
 
@@ -255,9 +261,6 @@ def obter_usuario(init_data):
 # ============================================================
 
 def link_shopee_valido(link):
-    """
-    Validação básica do link Shopee.
-    """
 
     if not isinstance(
         link,
@@ -350,7 +353,7 @@ def criar_tarefa(
 
 
 # ============================================================
-# PUBLICAÇÃO REAL
+# PUBLICAÇÃO
 # ============================================================
 
 def publicar_produto(
@@ -390,9 +393,15 @@ def publicar_produto(
     )
 
     return {
-        "sucesso": True,
-        "mensagem": "Produto publicado no Telegram.",
-        "telegram": resultado
+
+        "sucesso":
+            True,
+
+        "mensagem":
+            "Produto publicado no Telegram.",
+
+        "telegram":
+            resultado
     }
 
 
@@ -419,7 +428,9 @@ def executar_tarefa(task_id):
 
             if tarefa["cancelada"]:
 
-                tarefa["status"] = "cancelada"
+                tarefa[
+                    "status"
+                ] = "cancelada"
 
                 return
 
@@ -457,9 +468,13 @@ def executar_tarefa(task_id):
 
                 if tarefa:
 
-                    tarefa["status"] = "concluida"
+                    tarefa[
+                        "status"
+                    ] = "concluida"
 
-                    tarefa["progresso"] = 100
+                    tarefa[
+                        "progresso"
+                    ] = 100
 
                     tarefa[
                         "produto_atual"
@@ -476,7 +491,7 @@ def executar_tarefa(task_id):
             return
 
         # ----------------------------------------------------
-        # PRODUTO ATUAL
+        # PRODUTO
         # ----------------------------------------------------
 
         link = links[indice]
@@ -539,7 +554,8 @@ def executar_tarefa(task_id):
             sucesso = False
 
             resultado = {
-                "mensagem": str(erro)
+                "mensagem":
+                    str(erro)
             }
 
         # ----------------------------------------------------
@@ -657,7 +673,7 @@ def executar_tarefa(task_id):
             continue
 
         # ----------------------------------------------------
-        # ÚLTIMO PRODUTO
+        # ÚLTIMO
         # ----------------------------------------------------
 
         if numero_produto >= quantidade:
@@ -745,7 +761,7 @@ def index():
 
 
 # ============================================================
-# HEALTH
+# HEALTH CHECK
 # ============================================================
 
 @app.route(
@@ -753,6 +769,16 @@ def index():
     methods=["GET"]
 )
 def health():
+
+    token = os.environ.get(
+        "BOT_TOKEN",
+        ""
+    ).strip()
+
+    canal = os.environ.get(
+        "CHANNEL_USERNAME",
+        "@raposacacadora"
+    ).strip()
 
     return jsonify({
 
@@ -763,10 +789,10 @@ def health():
             "raposa-cacadora",
 
         "channel":
-            CHANNEL_USERNAME,
+            canal,
 
         "telegram_configurado":
-            bool(BOT_TOKEN),
+            bool(token),
 
         "timestamp":
             int(time.time())
@@ -860,7 +886,16 @@ def configurar():
             ""
         )
 
-        if BOT_TOKEN:
+        # ----------------------------------------------------
+        # VALIDAÇÃO TELEGRAM
+        # ----------------------------------------------------
+
+        token = os.environ.get(
+            "BOT_TOKEN",
+            ""
+        ).strip()
+
+        if token:
 
             if not validar_init_data(
                 init_data
@@ -1004,17 +1039,39 @@ def configurar():
         # LIMITA LINKS
         # ----------------------------------------------------
 
-        links = links[:quantidade]
+        links = links[
+            :quantidade
+        ]
 
         # ----------------------------------------------------
-        # BOT TOKEN
+        # TESTA TELEGRAM ANTES DE CRIAR TAREFA
+        #
+        # Aqui está a correção principal.
+        # Não usamos mais o antigo:
+        #
+        # if not BOT_TOKEN:
+        #
+        # para bloquear a requisição.
+        #
+        # O token é lido diretamente do ambiente atual.
         # ----------------------------------------------------
 
-        if not BOT_TOKEN:
+        try:
+
+            testar_bot()
+
+        except Exception as erro:
+
+            print(
+                "[TELEGRAM] Falha no teste:",
+                erro
+            )
 
             return jsonify({
+
                 "erro":
-                    "BOT_TOKEN não configurado no Render."
+                    str(erro)
+
             }), 500
 
         # ----------------------------------------------------
@@ -1173,7 +1230,7 @@ def parar(task_id):
 
 
 # ============================================================
-# EXECUÇÃO
+# EXECUÇÃO LOCAL
 # ============================================================
 
 if __name__ == "__main__":

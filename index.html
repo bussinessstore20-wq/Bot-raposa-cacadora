@@ -1,6692 +1,3447 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-    <meta name="theme-color" content="#080808">
+<meta charset="UTF-8">
 
-    <title>Raposa Caçadora</title>
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+>
 
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<meta name="theme-color" content="#070707">
 
-    <style>
-        /* =========================================================
-           RAPOSA CAÇADORA
-           PARTE 1 — DESIGN + DASHBOARD + AUTOMAÇÃO
-           ========================================================= */
+<title>Raposa Caçadora PRO</title>
 
-        :root {
-            --bg: #070707;
-            --bg-soft: #0d0d0e;
-            --card: rgba(20, 20, 21, .78);
-            --card-solid: #111112;
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-            --orange: #ff6a00;
-            --orange-light: #ff8a33;
-            --orange-dark: #c94f00;
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+>
 
-            --gold: #d7a84b;
+<style>
 
-            --green: #27d17f;
-            --red: #ff4d5e;
-            --yellow: #ffb020;
+:root {
 
-            --text: #f5f5f5;
-            --text-soft: #a2a2a8;
-            --text-muted: #66666d;
+  --orange:#ff6b00;
+  --orange-light:#ff934d;
+  --bg:#070707;
+  --card:#111113;
+  --card2:#171719;
+  --input:#1b1b1e;
 
-            --border: rgba(255,255,255,.075);
-            --border-orange: rgba(255,106,0,.28);
+  --white:#fff;
+  --text:#e8e8eb;
+  --muted:#85858c;
+  --dim:#4f4f55;
 
-            --radius: 18px;
-            --radius-sm: 13px;
+  --green:#32d583;
+  --red:#ff5c5c;
+  --yellow:#ffca3a;
 
-            --shadow:
-                0 18px 45px rgba(0,0,0,.35);
+  --border:rgba(255,255,255,.07);
 
-            --nav-height: 76px;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        html {
-            background: var(--bg);
-            color-scheme: dark;
-        }
-
-        body {
-            min-height: 100vh;
-            background:
-                radial-gradient(
-                    circle at 85% -10%,
-                    rgba(255,106,0,.09),
-                    transparent 32%
-                ),
-                radial-gradient(
-                    circle at -10% 35%,
-                    rgba(255,106,0,.045),
-                    transparent 28%
-                ),
-                var(--bg);
-
-            color: var(--text);
-            font-family:
-                Inter,
-                -apple-system,
-                BlinkMacSystemFont,
-                "Segoe UI",
-                sans-serif;
-
-            -webkit-font-smoothing: antialiased;
-            padding-bottom: calc(var(--nav-height) + 20px);
-            overflow-x: hidden;
-        }
-
-        button,
-        input,
-        select {
-            font: inherit;
-        }
-
-        button {
-            border: 0;
-            cursor: pointer;
-        }
-
-        .app {
-            width: 100%;
-            max-width: 560px;
-            margin: 0 auto;
-            padding: 18px 15px 30px;
-        }
-
-        /* =========================================================
-           HEADER
-           ========================================================= */
-
-        .top-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 22px;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 11px;
-        }
-
-        .brand-icon {
-            width: 43px;
-            height: 43px;
-            border-radius: 14px;
-
-            display: grid;
-            place-items: center;
-
-            font-size: 22px;
-
-            background:
-                linear-gradient(
-                    145deg,
-                    rgba(255,106,0,.20),
-                    rgba(255,106,0,.055)
-                );
-
-            border: 1px solid var(--border-orange);
-
-            box-shadow:
-                0 0 25px rgba(255,106,0,.08);
-        }
-
-        .brand-text h1 {
-            font-size: 16px;
-            font-weight: 800;
-            letter-spacing: -.3px;
-        }
-
-        .brand-text span {
-            display: block;
-            margin-top: 3px;
-            color: var(--text-muted);
-            font-size: 11px;
-        }
-
-        .server-status {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-
-            padding: 8px 10px;
-
-            border-radius: 999px;
-            background: rgba(255,255,255,.035);
-            border: 1px solid var(--border);
-
-            font-size: 9px;
-            font-weight: 800;
-            letter-spacing: .5px;
-        }
-
-        .status-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: var(--green);
-            box-shadow: 0 0 10px rgba(39,209,127,.65);
-
-            animation: pulse 2s infinite;
-        }
-
-        .server-status.offline .status-dot {
-            background: var(--red);
-            box-shadow: 0 0 10px rgba(255,77,94,.55);
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: .45;
-            }
-        }
-
-        /* =========================================================
-           TELAS
-           ========================================================= */
-
-        .screen {
-            display: none;
-            animation: screenIn .28s ease;
-        }
-
-        .screen.active {
-            display: block;
-        }
-
-        @keyframes screenIn {
-            from {
-                opacity: 0;
-                transform: translateY(7px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .screen-title {
-            margin-bottom: 17px;
-        }
-
-        .screen-title h2 {
-            font-size: 23px;
-            letter-spacing: -.7px;
-        }
-
-        .screen-title p {
-            color: var(--text-soft);
-            font-size: 12px;
-            margin-top: 5px;
-        }
-
-        /* =========================================================
-           HERO
-           ========================================================= */
-
-        .hero {
-            position: relative;
-            overflow: hidden;
-
-            padding: 22px;
-            margin-bottom: 14px;
-
-            border-radius: 22px;
-
-            background:
-                linear-gradient(
-                    135deg,
-                    rgba(255,106,0,.13),
-                    rgba(255,255,255,.025) 48%,
-                    rgba(255,255,255,.015)
-                );
-
-            border: 1px solid var(--border-orange);
-
-            box-shadow: var(--shadow);
-        }
-
-        .hero::after {
-            content: "";
-
-            position: absolute;
-            width: 170px;
-            height: 170px;
-
-            right: -80px;
-            top: -90px;
-
-            border-radius: 50%;
-
-            background: rgba(255,106,0,.10);
-            filter: blur(35px);
-
-            pointer-events: none;
-        }
-
-        .hero-label {
-            color: var(--orange-light);
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 1.2px;
-            text-transform: uppercase;
-            margin-bottom: 9px;
-        }
-
-        .hero h2 {
-            font-size: 24px;
-            line-height: 1.12;
-            letter-spacing: -.8px;
-            max-width: 300px;
-        }
-
-        .hero p {
-            color: var(--text-soft);
-            font-size: 12px;
-            margin-top: 8px;
-            line-height: 1.5;
-        }
-
-        /* =========================================================
-           CARDS DE ESTATÍSTICAS
-           ========================================================= */
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 14px;
-        }
-
-        .stat-card {
-            padding: 17px;
-
-            background: var(--card);
-            backdrop-filter: blur(15px);
-
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-
-            box-shadow: 0 10px 28px rgba(0,0,0,.18);
-
-            transition:
-                transform .2s ease,
-                border-color .2s ease;
-        }
-
-        .stat-card:active {
-            transform: scale(.98);
-        }
-
-        .stat-number {
-            font-size: 25px;
-            font-weight: 800;
-            letter-spacing: -1px;
-        }
-
-        .stat-label {
-            margin-top: 5px;
-
-            color: var(--text-muted);
-
-            font-size: 9px;
-            font-weight: 800;
-            letter-spacing: .8px;
-        }
-
-        .stat-orange .stat-number {
-            color: var(--orange-light);
-        }
-
-        .stat-green .stat-number {
-            color: var(--green);
-        }
-
-        .stat-yellow .stat-number {
-            color: var(--yellow);
-        }
-
-        .stat-red .stat-number {
-            color: var(--red);
-        }
-
-        /* =========================================================
-           CARD PADRÃO
-           ========================================================= */
-
-        .card {
-            background:
-                linear-gradient(
-                    145deg,
-                    rgba(255,255,255,.045),
-                    rgba(255,255,255,.018)
-                );
-
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-
-            padding: 18px;
-            margin-bottom: 14px;
-
-            box-shadow: var(--shadow);
-        }
-
-        .card-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            margin-bottom: 16px;
-        }
-
-        .card-title {
-            font-size: 13px;
-            font-weight: 800;
-        }
-
-        .card-subtitle {
-            color: var(--text-muted);
-            font-size: 10px;
-            margin-top: 4px;
-        }
-
-        .section-label {
-            display: block;
-
-            color: var(--text-muted);
-
-            font-size: 9px;
-            font-weight: 800;
-
-            letter-spacing: .9px;
-            text-transform: uppercase;
-
-            margin-bottom: 9px;
-        }
-
-        /* =========================================================
-           INPUT
-           ========================================================= */
-
-        .input-row {
-            display: flex;
-            gap: 8px;
-        }
-
-        .input {
-            width: 100%;
-            min-height: 46px;
-
-            color: var(--text);
-
-            background: rgba(0,0,0,.28);
-
-            border: 1px solid var(--border);
-            border-radius: 13px;
-
-            padding: 0 13px;
-
-            outline: none;
-
-            transition:
-                border-color .2s ease,
-                box-shadow .2s ease;
-        }
-
-        .input::placeholder {
-            color: #55555c;
-        }
-
-        .input:focus {
-            border-color: var(--border-orange);
-
-            box-shadow:
-                0 0 0 3px rgba(255,106,0,.07);
-        }
-
-        /* =========================================================
-           BOTÕES
-           ========================================================= */
-
-        .btn {
-            min-height: 46px;
-
-            padding: 0 16px;
-
-            border-radius: 13px;
-
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-
-            font-size: 11px;
-            font-weight: 800;
-
-            transition:
-                transform .15s ease,
-                opacity .15s ease,
-                box-shadow .2s ease;
-        }
-
-        .btn:active {
-            transform: scale(.97);
-        }
-
-        .btn-primary {
-            color: #fff;
-
-            background:
-                linear-gradient(
-                    135deg,
-                    var(--orange-light),
-                    var(--orange-dark)
-                );
-
-            box-shadow:
-                0 10px 25px rgba(255,106,0,.18);
-        }
-
-        .btn-primary:disabled {
-            opacity: .45;
-            cursor: not-allowed;
-        }
-
-        .btn-secondary {
-            color: var(--text);
-
-            background: rgba(255,255,255,.045);
-
-            border: 1px solid var(--border);
-        }
-
-        .btn-danger {
-            color: var(--red);
-
-            background: rgba(255,77,94,.07);
-
-            border: 1px solid rgba(255,77,94,.18);
-        }
-
-        .btn-full {
-            width: 100%;
-        }
-
-        /* =========================================================
-           PRODUTOS
-           ========================================================= */
-
-        .products-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            margin-bottom: 10px;
-        }
-
-        .products-counter {
-            color: var(--orange-light);
-
-            font-size: 11px;
-            font-weight: 800;
-        }
-
-        .products-counter.limit {
-            color: var(--red);
-        }
-
-        .products-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .product-item {
-            position: relative;
-
-            padding: 13px;
-
-            border-radius: 14px;
-
-            background: rgba(0,0,0,.22);
-
-            border: 1px solid var(--border);
-
-            animation: itemIn .22s ease;
-        }
-
-        @keyframes itemIn {
-            from {
-                opacity: 0;
-                transform: translateY(-5px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .product-top {
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            margin-bottom: 9px;
-        }
-
-        .product-number {
-            width: 27px;
-            height: 27px;
-
-            flex: 0 0 27px;
-
-            display: grid;
-            place-items: center;
-
-            border-radius: 9px;
-
-            color: var(--orange-light);
-
-            background: rgba(255,106,0,.09);
-
-            border: 1px solid rgba(255,106,0,.16);
-
-            font-size: 9px;
-            font-weight: 800;
-        }
-
-        .product-name {
-            flex: 1;
-
-            font-size: 11px;
-            font-weight: 700;
-        }
-
-        .remove-product {
-            width: 29px;
-            height: 29px;
-
-            display: grid;
-            place-items: center;
-
-            border-radius: 9px;
-
-            color: var(--text-muted);
-            background: rgba(255,255,255,.035);
-
-            font-size: 15px;
-        }
-
-        .remove-product:hover {
-            color: var(--red);
-        }
-
-        .product-input {
-            font-size: 10px;
-            min-height: 40px;
-        }
-
-        .product-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            margin-top: 8px;
-        }
-
-        .product-status {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-
-            color: var(--text-muted);
-
-            font-size: 8px;
-            font-weight: 800;
-            letter-spacing: .6px;
-        }
-
-        .status-indicator {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: #555;
-        }
-
-        .product-item.valid {
-            border-color: rgba(39,209,127,.17);
-        }
-
-        .product-item.valid .status-indicator {
-            background: var(--green);
-            box-shadow: 0 0 8px rgba(39,209,127,.4);
-        }
-
-        .product-item.valid .product-status {
-            color: var(--green);
-        }
-
-        .product-item.invalid {
-            border-color: rgba(255,77,94,.25);
-        }
-
-        .product-item.invalid .status-indicator {
-            background: var(--red);
-        }
-
-        .product-item.invalid .product-status {
-            color: var(--red);
-        }
-
-        .add-product {
-            width: 100%;
-            margin-top: 10px;
-        }
-
-        .paste-hint {
-            margin-top: 9px;
-
-            color: var(--text-muted);
-
-            font-size: 9px;
-            line-height: 1.5;
-        }
-
-        /* =========================================================
-           INTERVALOS
-           ========================================================= */
-
-        .interval-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 7px;
-        }
-
-        .interval-option {
-            min-height: 67px;
-
-            padding: 9px 5px;
-
-            border-radius: 13px;
-
-            background: rgba(255,255,255,.025);
-
-            border: 1px solid var(--border);
-
-            color: var(--text);
-
-            transition:
-                background .2s ease,
-                border-color .2s ease,
-                transform .15s ease;
-        }
-
-        .interval-option:active {
-            transform: scale(.97);
-        }
-
-        .interval-option.selected {
-            background: rgba(255,106,0,.09);
-            border-color: var(--border-orange);
-
-            box-shadow:
-                inset 0 0 0 1px rgba(255,106,0,.05);
-        }
-
-        .interval-icon {
-            font-size: 16px;
-            margin-bottom: 4px;
-        }
-
-        .interval-time {
-            display: block;
-            font-size: 10px;
-            font-weight: 800;
-        }
-
-        .interval-desc {
-            display: block;
-
-            color: var(--text-muted);
-
-            font-size: 7px;
-            margin-top: 2px;
-        }
-
-        /* =========================================================
-           QUANTIDADE
-           ========================================================= */
-
-        .quantity-control {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            padding: 7px;
-
-            background: rgba(0,0,0,.25);
-
-            border: 1px solid var(--border);
-            border-radius: 14px;
-        }
-
-        .quantity-info strong {
-            display: block;
-            font-size: 11px;
-        }
-
-        .quantity-info span {
-            display: block;
-
-            color: var(--text-muted);
-
-            font-size: 8px;
-            margin-top: 3px;
-        }
-
-        .quantity-buttons {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .quantity-btn {
-            width: 34px;
-            height: 34px;
-
-            border-radius: 10px;
-
-            color: var(--text);
-            background: rgba(255,255,255,.06);
-
-            font-size: 17px;
-        }
-
-        .quantity-value {
-            width: 34px;
-            text-align: center;
-
-            font-size: 13px;
-            font-weight: 800;
-        }
-
-        /* =========================================================
-           RESUMO
-           ========================================================= */
-
-        .summary {
-            padding: 15px;
-
-            border-radius: 14px;
-
-            background: rgba(255,255,255,.025);
-
-            border: 1px solid var(--border);
-        }
-
-        .summary-title {
-            color: var(--text-muted);
-
-            font-size: 9px;
-            font-weight: 800;
-            letter-spacing: .9px;
-
-            margin-bottom: 11px;
-        }
-
-        .summary-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            padding: 7px 0;
-
-            border-bottom: 1px solid rgba(255,255,255,.04);
-
-            font-size: 10px;
-        }
-
-        .summary-row:last-child {
-            border-bottom: 0;
-        }
-
-        .summary-row span:first-child {
-            color: var(--text-muted);
-        }
-
-        .summary-row strong {
-            font-weight: 700;
-        }
-
-        /* =========================================================
-           TOAST
-           ========================================================= */
-
-        .toast-container {
-            position: fixed;
-
-            left: 15px;
-            right: 15px;
-            bottom: calc(var(--nav-height) + 15px);
-
-            z-index: 1000;
-
-            pointer-events: none;
-        }
-
-        .toast {
-            max-width: 540px;
-            margin: 0 auto;
-
-            padding: 13px 15px;
-
-            border-radius: 13px;
-
-            background: #171718;
-            border: 1px solid var(--border);
-
-            box-shadow: 0 15px 40px rgba(0,0,0,.5);
-
-            font-size: 11px;
-            line-height: 1.4;
-
-            animation: toastIn .25s ease;
-        }
-
-        .toast.success {
-            border-color: rgba(39,209,127,.25);
-        }
-
-        .toast.error {
-            border-color: rgba(255,77,94,.28);
-        }
-
-        @keyframes toastIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* =========================================================
-           NAVEGAÇÃO
-           ========================================================= */
-
-        .bottom-nav {
-            position: fixed;
-
-            left: 50%;
-            bottom: 9px;
-
-            transform: translateX(-50%);
-
-            width: min(530px, calc(100% - 18px));
-            height: var(--nav-height);
-
-            z-index: 900;
-
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-
-            padding: 7px;
-
-            border-radius: 21px;
-
-            background: rgba(17,17,18,.92);
-
-            backdrop-filter: blur(20px);
-
-            border: 1px solid rgba(255,255,255,.08);
-
-            box-shadow:
-                0 15px 50px rgba(0,0,0,.55);
-        }
-
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-
-            border-radius: 15px;
-
-            color: #68686f;
-
-            background: transparent;
-
-            transition:
-                color .2s ease,
-                background .2s ease;
-        }
-
-        .nav-item.active {
-            color: var(--orange-light);
-
-            background: rgba(255,106,0,.08);
-        }
-
-        .nav-icon {
-            font-size: 18px;
-            line-height: 1;
-        }
-
-        .nav-label {
-            font-size: 8px;
-            font-weight: 800;
-        }
-
-        /* =========================================================
-           TELAS FUTURAS
-           ========================================================= */
-
-        .placeholder {
-            min-height: 280px;
-
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-
-            text-align: center;
-
-            color: var(--text-muted);
-        }
-
-        .placeholder-icon {
-            font-size: 35px;
-            margin-bottom: 12px;
-            opacity: .7;
-        }
-
-        .placeholder strong {
-            color: var(--text-soft);
-            font-size: 13px;
-        }
-
-        .placeholder span {
-            max-width: 260px;
-            margin-top: 6px;
-
-            font-size: 10px;
-            line-height: 1.5;
-        }
-
-        /* =========================================================
-           RESPONSIVIDADE
-           ========================================================= */
-
-        @media (max-width: 360px) {
-            .app {
-                padding-left: 11px;
-                padding-right: 11px;
-            }
-
-            .interval-grid {
-                gap: 4px;
-            }
-
-            .interval-option {
-                padding-left: 2px;
-                padding-right: 2px;
-            }
-
-            .interval-time {
-                font-size: 9px;
-            }
-
-            .hero h2 {
-                font-size: 21px;
-            }
-        }
-
-            /* =========================================================
-   BLOCO 1 — PAINEL DE PROGRESSO DA AUTOMAÇÃO
-   ========================================================= */
-
-.automation-progress {
-    display: none;
 }
 
-.automation-progress.visible {
-    display: block;
-    animation: screenIn .28s ease;
+
+* {
+
+  box-sizing:border-box;
+
+  -webkit-tap-highlight-color:transparent;
+
 }
 
-.progress-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 14px;
+
+body {
+
+  margin:0;
+
+  min-height:100vh;
+
+  padding:12px 10px 30px;
+
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Arial,
+    sans-serif;
+
+  color:var(--white);
+
+  background:
+
+    radial-gradient(
+      circle at 50% -10%,
+      rgba(255,107,0,.20),
+      transparent 34%
+    ),
+
+    #070707;
+
 }
 
-.progress-status {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    color: var(--yellow);
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: .6px;
+
+.app {
+
+  width:100%;
+
+  max-width:440px;
+
+  margin:auto;
+
 }
 
-.progress-status-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--yellow);
-    box-shadow: 0 0 9px rgba(255,176,32,.55);
-    animation: pulse 1.5s infinite;
-}
-
-.progress-status.finished {
-    color: var(--green);
-}
-
-.progress-status.finished .progress-status-dot {
-    background: var(--green);
-    box-shadow: 0 0 9px rgba(39,209,127,.55);
-    animation: none;
-}
-
-.progress-status.error {
-    color: var(--red);
-}
-
-.progress-status.error .progress-status-dot {
-    background: var(--red);
-    box-shadow: 0 0 9px rgba(255,77,94,.55);
-    animation: none;
-}
-
-.progress-percent {
-    color: var(--orange-light);
-    font-size: 20px;
-    font-weight: 800;
-    letter-spacing: -.7px;
-}
-
-.progress-bar {
-    width: 100%;
-    height: 9px;
-    overflow: hidden;
-    border-radius: 999px;
-    background: rgba(255,255,255,.06);
-    border: 1px solid rgba(255,255,255,.04);
-    margin-bottom: 10px;
-}
-
-.progress-bar-fill {
-    width: 0%;
-    height: 100%;
-    border-radius: inherit;
-    background: linear-gradient(
-        90deg,
-        var(--orange-dark),
-        var(--orange-light)
-    );
-    box-shadow: 0 0 14px rgba(255,106,0,.25);
-    transition: width .4s ease;
-}
-
-.progress-numbers {
-    display: flex;
-    justify-content: space-between;
-    color: var(--text-muted);
-    font-size: 9px;
-    font-weight: 700;
-}
-
-.progress-numbers strong {
-    color: var(--text-soft);
-}
-
-.progress-current {
-    margin-top: 14px;
-    padding: 13px;
-    border-radius: 13px;
-    background: rgba(255,106,0,.055);
-    border: 1px solid rgba(255,106,0,.12);
-}
-
-.progress-current-label {
-    color: var(--text-muted);
-    font-size: 8px;
-    font-weight: 800;
-    letter-spacing: .7px;
-}
-
-.progress-current-text {
-    margin-top: 5px;
-    font-size: 11px;
-    font-weight: 700;
-    word-break: break-all;
-}
-
-.progress-countdown {
-    margin-top: 6px;
-    color: var(--orange-light);
-    font-size: 10px;
-    font-weight: 800;
-}
-
-.progress-products {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-    margin-top: 14px;
-}
-
-.progress-product {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 11px;
-    border-radius: 12px;
-    background: rgba(0,0,0,.20);
-    border: 1px solid var(--border);
-}
-
-.progress-product-number {
-    width: 29px;
-    height: 29px;
-    flex: 0 0 29px;
-    display: grid;
-    place-items: center;
-    border-radius: 9px;
-    background: rgba(255,255,255,.04);
-    color: var(--text-muted);
-    font-size: 8px;
-    font-weight: 800;
-}
-
-.progress-product-info {
-    min-width: 0;
-    flex: 1;
-}
-
-.progress-product-name {
-    font-size: 10px;
-    font-weight: 700;
-}
-
-.progress-product-link {
-    margin-top: 3px;
-    color: var(--text-muted);
-    font-size: 8px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.progress-product-status {
-    flex: 0 0 auto;
-    font-size: 8px;
-    font-weight: 800;
-}
-
-.progress-product.aguardando .progress-product-status {
-    color: var(--text-muted);
-}
-
-.progress-product.processando {
-    border-color: rgba(255,176,32,.20);
-}
-
-.progress-product.processando .progress-product-status {
-    color: var(--yellow);
-}
-
-.progress-product.processando .progress-product-number {
-    color: var(--yellow);
-    background: rgba(255,176,32,.08);
-}
-
-.progress-product.postado {
-    border-color: rgba(39,209,127,.16);
-}
-
-.progress-product.postado .progress-product-status {
-    color: var(--green);
-}
-
-.progress-product.postado .progress-product-number {
-    color: var(--green);
-    background: rgba(39,209,127,.08);
-}
-
-.progress-product.erro {
-    border-color: rgba(255,77,94,.20);
-}
-
-.progress-product.erro .progress-product-status {
-    color: var(--red);
-}
-
-.progress-product.erro .progress-product-number {
-    color: var(--red);
-    background: rgba(255,77,94,.08);
-}
-
-.progress-actions {
-    margin-top: 14px;
-}
-
-.progress-complete {
-    display: none;
-    padding: 13px;
-    margin-bottom: 10px;
-    text-align: center;
-    border-radius: 13px;
-    color: var(--green);
-    background: rgba(39,209,127,.055);
-    border: 1px solid rgba(39,209,127,.15);
-    font-size: 10px;
-    font-weight: 800;
-}
-
-.progress-complete.visible {
-    display: block;
-}
-
-        /* =========================================================
-   BLOCO 2 — HISTÓRICO + CONFIGURAÇÕES + DASHBOARD
-   ========================================================= */
-
-.history-list {
-    display: flex;
-    flex-direction: column;
-    gap: 9px;
-}
-
-.history-item {
-    padding: 14px;
-    border-radius: 14px;
-    background: rgba(0,0,0,.20);
-    border: 1px solid var(--border);
-}
-
-.history-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-}
-
-.history-title {
-    font-size: 11px;
-    font-weight: 800;
-}
-
-.history-date {
-    color: var(--text-muted);
-    font-size: 8px;
-}
-
-.history-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    margin-top: 7px;
-    font-size: 8px;
-    font-weight: 800;
-}
-
-.history-status.success {
-    color: var(--green);
-}
-
-.history-status.error {
-    color: var(--red);
-}
-
-.history-status.pending {
-    color: var(--yellow);
-}
-
-.history-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-    margin-top: 10px;
-}
-
-.history-stat {
-    padding: 8px 5px;
-    text-align: center;
-    border-radius: 9px;
-    background: rgba(255,255,255,.025);
-}
-
-.history-stat strong {
-    display: block;
-    font-size: 12px;
-}
-
-.history-stat span {
-    display: block;
-    margin-top: 2px;
-    color: var(--text-muted);
-    font-size: 7px;
-    font-weight: 700;
-}
-
-.empty-state {
-    padding: 30px 15px;
-    text-align: center;
-    color: var(--text-muted);
-}
-
-.empty-state-icon {
-    font-size: 30px;
-    margin-bottom: 10px;
-}
-
-.empty-state strong {
-    display: block;
-    color: var(--text-soft);
-    font-size: 12px;
-}
-
-.empty-state span {
-    display: block;
-    margin-top: 5px;
-    font-size: 9px;
-    line-height: 1.5;
-}
 
 /* =========================================================
-   CONFIGURAÇÕES
-   ========================================================= */
+   HEADER
+========================================================= */
 
-.settings-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+.header {
+
+  text-align:center;
+
+  padding:7px 0 17px;
+
 }
 
-.setting-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 13px;
-    border-radius: 13px;
-    background: rgba(0,0,0,.20);
-    border: 1px solid var(--border);
+
+.logo {
+
+  width:70px;
+
+  height:70px;
+
+  margin:auto;
+
+  display:flex;
+
+  align-items:center;
+
+  justify-content:center;
+
+  border-radius:22px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,138,61,.20),
+      rgba(255,107,0,.035)
+    );
+
+  border:
+    1px solid
+    rgba(255,107,0,.25);
+
+  box-shadow:
+    0 0 45px
+    rgba(255,107,0,.13);
+
+  font-size:36px;
+
 }
 
-.setting-info {
-    flex: 1;
+
+.header h1 {
+
+  margin:11px 0 0;
+
+  font-size:24px;
+
+  font-weight:900;
+
+  letter-spacing:-.7px;
+
 }
 
-.setting-title {
-    font-size: 10px;
-    font-weight: 800;
+
+.header p {
+
+  margin:5px 0 0;
+
+  color:var(--muted);
+
+  font-size:10px;
+
 }
 
-.setting-description {
-    margin-top: 4px;
-    color: var(--text-muted);
-    font-size: 8px;
-    line-height: 1.4;
+
+/* =========================================================
+   CARD
+========================================================= */
+
+.card {
+
+  padding:16px;
+
+  border-radius:20px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(25,25,28,.98),
+      rgba(11,11,12,.98)
+    );
+
+  border:1px solid var(--border);
+
+  box-shadow:
+    0 25px 80px
+    rgba(0,0,0,.55);
+
 }
 
-.setting-select {
-    min-width: 95px;
-    min-height: 36px;
-    padding: 0 9px;
-    color: var(--text);
-    background: rgba(255,255,255,.05);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    outline: none;
-    font-size: 9px;
+
+/* =========================================================
+   PLATFORM
+========================================================= */
+
+.platform {
+
+  display:flex;
+
+  align-items:center;
+
+  justify-content:space-between;
+
+  padding:10px;
+
+  margin-bottom:17px;
+
+  border-radius:12px;
+
+  background:
+    rgba(255,107,0,.05);
+
+  border:
+    1px solid
+    rgba(255,107,0,.12);
+
 }
 
-.toggle {
-    position: relative;
-    width: 43px;
-    height: 25px;
-    flex: 0 0 43px;
+
+.platform-left {
+
+  display:flex;
+
+  align-items:center;
+
+  gap:9px;
+
 }
 
-.toggle input {
-    opacity: 0;
-    width: 0;
-    height: 0;
+
+.platform-icon {
+
+  width:34px;
+
+  height:34px;
+
+  display:flex;
+
+  align-items:center;
+
+  justify-content:center;
+
+  border-radius:9px;
+
+  color:var(--orange);
+
+  background:
+    rgba(255,107,0,.12);
+
 }
 
-.toggle-slider {
-    position: absolute;
-    inset: 0;
-    border-radius: 999px;
-    background: #29292c;
-    border: 1px solid var(--border);
-    cursor: pointer;
-    transition: .2s ease;
+
+.platform strong {
+
+  display:block;
+
+  font-size:11px;
+
 }
 
-.toggle-slider::before {
-    content: "";
-    position: absolute;
-    width: 17px;
-    height: 17px;
-    left: 3px;
-    top: 3px;
-    border-radius: 50%;
-    background: #777;
-    transition: .2s ease;
+
+.platform span {
+
+  display:block;
+
+  margin-top:2px;
+
+  color:var(--muted);
+
+  font-size:8px;
+
 }
 
-.toggle input:checked + .toggle-slider {
-    background: rgba(255,106,0,.22);
-    border-color: var(--border-orange);
+
+.badge {
+
+  padding:5px 8px;
+
+  border-radius:7px;
+
+  color:#ff995a;
+
+  background:
+    rgba(255,107,0,.08);
+
+  border:
+    1px solid
+    rgba(255,107,0,.16);
+
+  font-size:8px;
+
+  font-weight:900;
+
+  letter-spacing:.6px;
+
 }
 
-.toggle input:checked + .toggle-slider::before {
-    transform: translateX(18px);
-    background: var(--orange-light);
-    box-shadow: 0 0 9px rgba(255,106,0,.35);
+
+/* =========================================================
+   SECTION
+========================================================= */
+
+.section-head {
+
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+  margin-bottom:8px;
+
 }
 
-.user-info {
-    padding: 14px;
-    border-radius: 14px;
-    background: rgba(255,106,0,.045);
-    border: 1px solid rgba(255,106,0,.12);
+
+.section-title {
+
+  display:flex;
+
+  align-items:center;
+
+  gap:7px;
+
+  color:#ddd;
+
+  font-size:11px;
+
+  font-weight:800;
+
 }
 
-.user-info-label {
-    color: var(--text-muted);
-    font-size: 8px;
-    font-weight: 800;
-    letter-spacing: .7px;
+
+.section-title i {
+
+  color:var(--orange);
+
 }
 
-.user-info-value {
-    margin-top: 5px;
-    font-size: 11px;
-    font-weight: 700;
-    word-break: break-word;
+
+.counter {
+
+  padding:4px 8px;
+
+  border-radius:7px;
+
+  color:#ff995a;
+
+  background:
+    rgba(255,107,0,.07);
+
+  font-size:8px;
+
+  font-weight:900;
+
 }
 
-.settings-version {
-    margin-top: 15px;
-    text-align: center;
-    color: var(--text-muted);
-    font-size: 8px;
+
+/* =========================================================
+   LINKS
+========================================================= */
+
+.links-list {
+
+  display:flex;
+
+  flex-direction:column;
+
+  gap:7px;
+
 }
 
-        
-    </style>
+
+.link-row {
+
+  display:flex;
+
+  align-items:center;
+
+  gap:7px;
+
+}
+
+
+.link-number {
+
+  width:29px;
+
+  height:43px;
+
+  flex-shrink:0;
+
+  display:flex;
+
+  align-items:center;
+
+  justify-content:center;
+
+  border-radius:8px;
+
+  color:#55555b;
+
+  background:
+    rgba(255,255,255,.035);
+
+  font-size:8px;
+
+  font-weight:900;
+
+}
+
+
+.link-row.valid .link-number {
+
+  color:var(--orange);
+
+}
+
+
+.link-wrapper {
+
+  position:relative;
+
+  flex:1;
+
+}
+
+
+.link-input {
+
+  width:100%;
+
+  height:43px;
+
+  padding:
+    0 35px
+    0 35px;
+
+  border-radius:9px;
+
+  border:
+    1px solid
+    rgba(255,255,255,.06);
+
+  outline:none;
+
+  color:#fff;
+
+  background:
+    rgba(255,255,255,.035);
+
+  font-size:10px;
+
+}
+
+
+.link-input:focus {
+
+  border-color:
+    rgba(255,107,0,.55);
+
+  box-shadow:
+    0 0 0 3px
+    rgba(255,107,0,.05);
+
+}
+
+
+.link-icon {
+
+  position:absolute;
+
+  left:12px;
+
+  top:50%;
+
+  transform:translateY(-50%);
+
+  color:#606067;
+
+  font-size:10px;
+
+}
+
+
+.link-status {
+
+  position:absolute;
+
+  right:10px;
+
+  top:50%;
+
+  transform:translateY(-50%);
+
+  font-size:9px;
+
+}
+
+
+.remove-link {
+
+  width:30px;
+
+  height:30px;
+
+  flex-shrink:0;
+
+  border:0;
+
+  border-radius:8px;
+
+  color:#555;
+
+  background:
+    rgba(255,255,255,.025);
+
+  cursor:pointer;
+
+}
+
+
+.remove-link:hover {
+
+  color:var(--red);
+
+}
+
+
+.add-btn {
+
+  width:100%;
+
+  height:40px;
+
+  margin-top:8px;
+
+  border-radius:9px;
+
+  border:
+    1px dashed
+    rgba(255,107,0,.28);
+
+  color:#ff914f;
+
+  background:
+    rgba(255,107,0,.025);
+
+  font-size:9px;
+
+  font-weight:900;
+
+  cursor:pointer;
+
+}
+
+
+.add-btn:disabled {
+
+  opacity:.35;
+
+}
+
+
+/* =========================================================
+   INTERVAL
+========================================================= */
+
+.settings {
+
+  margin-top:18px;
+
+}
+
+
+.intervals {
+
+  display:grid;
+
+  grid-template-columns:
+    repeat(4,1fr);
+
+  gap:5px;
+
+  margin-top:8px;
+
+}
+
+
+.interval {
+
+  height:47px;
+
+  border-radius:9px;
+
+  border:
+    1px solid
+    rgba(255,255,255,.06);
+
+  background:
+    rgba(255,255,255,.035);
+
+  color:#77777e;
+
+  cursor:pointer;
+
+}
+
+
+.interval strong {
+
+  display:block;
+
+  font-size:10px;
+
+}
+
+
+.interval small {
+
+  display:block;
+
+  margin-top:2px;
+
+  font-size:7px;
+
+  color:#4f4f55;
+
+}
+
+
+.interval.active {
+
+  color:#fff;
+
+  border-color:
+    rgba(255,107,0,.55);
+
+  background:
+    rgba(255,107,0,.11);
+
+}
+
+
+.interval.active small {
+
+  color:#ff9453;
+
+}
+
+
+/* =========================================================
+   QUANTITY
+========================================================= */
+
+.quantity {
+
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+  margin-top:11px;
+
+  padding:10px 11px;
+
+  border-radius:10px;
+
+  background:
+    rgba(255,255,255,.03);
+
+  border:
+    1px solid
+    rgba(255,255,255,.05);
+
+}
+
+
+.quantity strong {
+
+  display:block;
+
+  font-size:10px;
+
+}
+
+
+.quantity span {
+
+  display:block;
+
+  margin-top:2px;
+
+  color:var(--muted);
+
+  font-size:7px;
+
+}
+
+
+.quantity-control {
+
+  display:flex;
+
+  align-items:center;
+
+  gap:6px;
+
+}
+
+
+.quantity-button {
+
+  width:28px;
+
+  height:28px;
+
+  border:0;
+
+  border-radius:7px;
+
+  color:#aaa;
+
+  background:
+    rgba(255,255,255,.06);
+
+  cursor:pointer;
+
+}
+
+
+.quantity-number {
+
+  width:25px;
+
+  text-align:center;
+
+  font-size:12px;
+
+  font-weight:900;
+
+}
+
+
+/* =========================================================
+   SUMMARY
+========================================================= */
+
+.summary {
+
+  margin-top:13px;
+
+  padding:12px;
+
+  border-radius:12px;
+
+  background:
+    rgba(255,255,255,.025);
+
+  border:
+    1px solid
+    rgba(255,255,255,.05);
+
+}
+
+
+.summary-title {
+
+  margin-bottom:9px;
+
+  color:#77777e;
+
+  font-size:8px;
+
+  font-weight:900;
+
+  letter-spacing:.7px;
+
+  text-transform:uppercase;
+
+}
+
+
+.summary-grid {
+
+  display:grid;
+
+  grid-template-columns:
+    repeat(3,1fr);
+
+  gap:5px;
+
+}
+
+
+.summary-item {
+
+  padding:8px 4px;
+
+  text-align:center;
+
+  border-radius:8px;
+
+  background:
+    rgba(255,255,255,.025);
+
+}
+
+
+.summary-item i {
+
+  margin-bottom:4px;
+
+  color:var(--orange);
+
+  font-size:10px;
+
+}
+
+
+.summary-item strong {
+
+  display:block;
+
+  font-size:10px;
+
+}
+
+
+.summary-item span {
+
+  display:block;
+
+  margin-top:2px;
+
+  color:#55555b;
+
+  font-size:6px;
+
+}
+
+
+/* =========================================================
+   START
+========================================================= */
+
+.start-btn {
+
+  width:100%;
+
+  height:53px;
+
+  margin-top:12px;
+
+  border:0;
+
+  border-radius:12px;
+
+  color:#fff;
+
+  background:
+    linear-gradient(
+      135deg,
+      #ff8a36,
+      #ff5b00
+    );
+
+  font-size:12px;
+
+  font-weight:900;
+
+  cursor:pointer;
+
+  box-shadow:
+    0 12px 30px
+    rgba(255,107,0,.22);
+
+}
+
+
+.start-btn:disabled {
+
+  background:#363638;
+
+  color:#777;
+
+  box-shadow:none;
+
+}
+
+
+/* =========================================================
+   PROGRESS PANEL
+========================================================= */
+
+.progress-panel {
+
+  display:none;
+
+  margin-top:14px;
+
+  padding:13px;
+
+  border-radius:14px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,107,0,.07),
+      rgba(255,255,255,.025)
+    );
+
+  border:
+    1px solid
+    rgba(255,107,0,.12);
+
+}
+
+
+.progress-top {
+
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+}
+
+
+.progress-status {
+
+  display:flex;
+
+  align-items:center;
+
+  gap:7px;
+
+  font-size:10px;
+
+  font-weight:800;
+
+}
+
+
+.status-dot {
+
+  width:7px;
+
+  height:7px;
+
+  border-radius:50%;
+
+  background:var(--orange);
+
+  box-shadow:
+    0 0 10px
+    rgba(255,107,0,.7);
+
+  animation:
+    pulse 1.3s infinite;
+
+}
+
+
+@keyframes pulse {
+
+  0%,100% {
+    opacity:1;
+    transform:scale(1);
+  }
+
+  50% {
+    opacity:.4;
+    transform:scale(.7);
+  }
+
+}
+
+
+.progress-percent {
+
+  color:#ff914f;
+
+  font-size:11px;
+
+  font-weight:900;
+
+}
+
+
+.progress-bar {
+
+  height:7px;
+
+  margin-top:11px;
+
+  overflow:hidden;
+
+  border-radius:99px;
+
+  background:
+    rgba(255,255,255,.06);
+
+}
+
+
+.progress-fill {
+
+  width:0%;
+
+  height:100%;
+
+  border-radius:99px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #ff5b00,
+      #ff9a57
+    );
+
+  box-shadow:
+    0 0 15px
+    rgba(255,107,0,.35);
+
+  transition:
+    width .4s ease;
+
+}
+
+
+.current-product {
+
+  margin-top:11px;
+
+  padding:10px;
+
+  border-radius:9px;
+
+  background:
+    rgba(0,0,0,.18);
+
+}
+
+
+.current-label {
+
+  color:#5f5f65;
+
+  font-size:7px;
+
+  text-transform:uppercase;
+
+  letter-spacing:.5px;
+
+}
+
+
+.current-link {
+
+  margin-top:4px;
+
+  overflow:hidden;
+
+  color:#bbb;
+
+  font-size:9px;
+
+  white-space:nowrap;
+
+  text-overflow:ellipsis;
+
+}
+
+
+/* =========================================================
+   PRODUCT STATUS LIST
+========================================================= */
+
+.product-status-list {
+
+  display:flex;
+
+  flex-direction:column;
+
+  gap:5px;
+
+  margin-top:10px;
+
+  max-height:230px;
+
+  overflow-y:auto;
+
+}
+
+
+.product-status {
+
+  display:flex;
+
+  align-items:center;
+
+  gap:8px;
+
+  padding:8px;
+
+  border-radius:8px;
+
+  background:
+    rgba(255,255,255,.025);
+
+}
+
+
+.product-status-icon {
+
+  width:24px;
+
+  height:24px;
+
+  flex-shrink:0;
+
+  display:flex;
+
+  align-items:center;
+
+  justify-content:center;
+
+  border-radius:7px;
+
+  background:
+    rgba(255,255,255,.05);
+
+  color:#555;
+
+  font-size:8px;
+
+}
+
+
+.product-status.processing
+.product-status-icon {
+
+  color:var(--orange);
+
+}
+
+
+.product-status.done
+.product-status-icon {
+
+  color:var(--green);
+
+  background:
+    rgba(50,213,131,.08);
+
+}
+
+
+.product-status.error
+.product-status-icon {
+
+  color:var(--red);
+
+  background:
+    rgba(255,92,92,.08);
+
+}
+
+
+.product-status-text {
+
+  flex:1;
+
+  min-width:0;
+
+}
+
+
+.product-status-text strong {
+
+  display:block;
+
+  overflow:hidden;
+
+  color:#bbb;
+
+  font-size:8px;
+
+  white-space:nowrap;
+
+  text-overflow:ellipsis;
+
+}
+
+
+.product-status-text span {
+
+  display:block;
+
+  margin-top:2px;
+
+  color:#555;
+
+  font-size:7px;
+
+}
+
+
+.product-status-state {
+
+  color:#555;
+
+  font-size:7px;
+
+  font-weight:800;
+
+}
+
+
+/* =========================================================
+   NEXT POST
+========================================================= */
+
+.next-post {
+
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+  margin-top:9px;
+
+  padding-top:9px;
+
+  border-top:
+    1px solid
+    rgba(255,255,255,.05);
+
+}
+
+
+.next-post span {
+
+  color:#555;
+
+  font-size:7px;
+
+}
+
+
+.next-post strong {
+
+  color:#999;
+
+  font-size:8px;
+
+}
+
+
+/* =========================================================
+   STOP
+========================================================= */
+
+.stop-btn {
+
+  width:100%;
+
+  height:40px;
+
+  margin-top:8px;
+
+  border:
+    1px solid
+    rgba(255,92,92,.15);
+
+  border-radius:9px;
+
+  color:#ff7070;
+
+  background:
+    rgba(255,92,92,.045);
+
+  font-size:9px;
+
+  font-weight:900;
+
+  cursor:pointer;
+
+}
+
+
+/* =========================================================
+   MESSAGE
+========================================================= */
+
+#mensagem {
+
+  display:none;
+
+  margin-top:10px;
+
+  padding:11px;
+
+  border-radius:10px;
+
+  font-size:9px;
+
+  line-height:1.5;
+
+}
+
+
+.msg-sucesso {
+
+  color:#65df93;
+
+  background:
+    rgba(50,213,131,.06);
+
+  border:
+    1px solid
+    rgba(50,213,131,.17);
+
+}
+
+
+.msg-erro {
+
+  color:#ff7474;
+
+  background:
+    rgba(255,92,92,.06);
+
+  border:
+    1px solid
+    rgba(255,92,92,.17);
+
+}
+
+
+/* =========================================================
+   INFO
+========================================================= */
+
+.info {
+
+  display:flex;
+
+  gap:8px;
+
+  margin-top:10px;
+
+  padding:10px;
+
+  border-radius:10px;
+
+  color:#69696f;
+
+  background:
+    rgba(255,255,255,.02);
+
+  font-size:8px;
+
+  line-height:1.5;
+
+}
+
+
+.info i {
+
+  color:var(--orange);
+
+}
+
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.footer {
+
+  text-align:center;
+
+  margin-top:12px;
+
+  color:#3d3d42;
+
+  font-size:7px;
+
+}
+
+</style>
+
 </head>
+
 
 <body>
 
+
 <div class="app">
 
-    <!-- =========================================================
-         HEADER
-         ========================================================= -->
 
-    <header class="top-header">
+<header class="header">
 
-        <div class="brand">
+  <div class="logo">
+    🦊
+  </div>
 
-            <div class="brand-icon">
-                🦊
-            </div>
+  <h1>
+    Raposa Caçadora
+  </h1>
 
-            <div class="brand-text">
-                <h1>Raposa Caçadora</h1>
-                <span>Automação inteligente de ofertas Shopee</span>
-            </div>
+  <p>
+    Automação inteligente de ofertas Shopee
+  </p>
 
-        </div>
+</header>
 
-        <div class="server-status" id="serverStatus">
 
-            <span class="status-dot"></span>
+<main class="card">
 
-            <span id="serverStatusText">
-                BOT ONLINE
-            </span>
 
-        </div>
+  <!-- PLATAFORMA -->
 
-    </header>
+  <div class="platform">
 
+    <div class="platform-left">
 
-    <!-- =========================================================
-         INÍCIO
-         ========================================================= -->
+      <div class="platform-icon">
+        <i class="fa-solid fa-bag-shopping"></i>
+      </div>
 
-    <main>
+      <div>
 
-        <section
-            class="screen active"
-            id="screen-home"
-            data-screen="home">
+        <strong>
+          SHOPEE
+        </strong>
 
-            <div class="hero">
+        <span>
+          Central de automação
+        </span>
 
-                <div class="hero-label">
-                    SHOPEE AUTOMATION
-                </div>
+      </div>
 
-                <h2>
-                    Automação inteligente de ofertas.
-                </h2>
+    </div>
 
-                <p>
-                    Gerencie seus produtos Shopee com velocidade,
-                    controle e acompanhamento centralizado.
-                </p>
+    <div class="badge">
+      PRO
+    </div>
 
-            </div>
+  </div>
 
 
-            <div class="stats-grid">
+  <!-- LINKS -->
 
-                <div class="stat-card stat-orange">
-                    <div class="stat-number" id="statOffers">
-                        0
-                    </div>
+  <div class="section-head">
 
-                    <div class="stat-label">
-                        OFERTAS HOJE
-                    </div>
-                </div>
+    <div class="section-title">
 
-                <div class="stat-card stat-green">
-                    <div class="stat-number" id="statPosted">
-                        0
-                    </div>
+      <i class="fa-solid fa-link"></i>
 
-                    <div class="stat-label">
-                        POSTADAS
-                    </div>
-                </div>
+      Produtos
 
-                <div class="stat-card stat-yellow">
-                    <div class="stat-number" id="statPending">
-                        0
-                    </div>
+    </div>
 
-                    <div class="stat-label">
-                        PENDENTES
-                    </div>
-                </div>
+    <div
+      class="counter"
+      id="linkCounter"
+    >
+      0 / 20
+    </div>
 
-                <div class="stat-card stat-red">
-                    <div class="stat-number" id="statErrors">
-                        0
-                    </div>
+  </div>
 
-                    <div class="stat-label">
-                        ERROS
-                    </div>
-                </div>
 
-            </div>
+  <div
+    class="links-list"
+    id="linksContainer"
+  ></div>
 
 
-            <div class="card">
+  <button
+    class="add-btn"
+    id="addLinkBtn"
+    type="button"
+    onclick="adicionarLink()"
+  >
 
-                <div class="card-header">
+    <i class="fa-solid fa-plus"></i>
 
-                    <div>
-                        <div class="card-title">
-                            Nova automação
-                        </div>
+    ADICIONAR PRODUTO
 
-                        <div class="card-subtitle">
-                            Configure uma nova sequência Shopee
-                        </div>
-                    </div>
+  </button>
 
-                    <span style="font-size:20px;">🚀</span>
 
-                </div>
+  <!-- INTERVALO -->
 
-                <div class="summary">
+  <div class="settings">
 
-                    <div class="summary-row">
-                        <span>Produtos</span>
-                        <strong id="homeProducts">
-                            0
-                        </strong>
-                    </div>
+    <div class="section-title">
 
-                    <div class="summary-row">
-                        <span>Intervalo</span>
-                        <strong id="homeInterval">
-                            1 min
-                        </strong>
-                    </div>
+      <i class="fa-solid fa-clock"></i>
 
-                    <div class="summary-row">
-                        <span>Postagens</span>
-                        <strong id="homeQuantity">
-                            1
-                        </strong>
-                    </div>
-
-                </div>
-
-                <div style="height:10px;"></div>
-
-                <button
-                    class="btn btn-primary btn-full"
-                    onclick="navigateTo('automation')">
-
-                    🚀 CONFIGURAR AUTOMAÇÃO
-
-                </button>
-
-            </div>
-
-        </section>
-
-
-        <!-- =====================================================
-             AUTOMAÇÃO
-             ===================================================== -->
-
-        <section
-            class="screen"
-            id="screen-automation"
-            data-screen="automation">
-
-            <div class="screen-title">
-
-                <h2>
-                    Automação
-                </h2>
-
-                <p>
-                    Configure os produtos que serão processados.
-                </p>
-
-            </div>
-
-
-            <!-- PRODUTOS -->
-
-            <div class="card">
-
-                <div class="products-header">
-
-                    <div>
-                        <div class="card-title">
-                            Produtos Shopee
-                        </div>
-
-                        <div class="card-subtitle">
-                            Adicione até 20 links
-                        </div>
-                    </div>
-
-                    <div
-                        class="products-counter"
-                        id="productsCounter">
-
-                        0 / 20
-
-                    </div>
-
-                </div>
-
-
-                <div
-                    class="products-list"
-                    id="productsList">
-                </div>
-
-
-                <button
-                    class="btn btn-secondary add-product"
-                    id="addProductButton"
-                    onclick="addProduct()">
-
-                    + ADICIONAR PRODUTO
-
-                </button>
-
-
-                <p class="paste-hint">
-
-                    Dica: você pode colar vários links separados
-                    por quebra de linha, espaço ou vírgula.
-
-                </p>
-
-            </div>
-
-
-            <!-- INTERVALOS -->
-
-            <div class="card">
-
-                <div class="card-header">
-
-                    <div>
-                        <div class="card-title">
-                            Intervalo
-                        </div>
-
-                        <div class="card-subtitle">
-                            Tempo entre as postagens
-                        </div>
-                    </div>
-
-                </div>
-
-
-                <div class="interval-grid">
-
-                    <button
-                        class="interval-option"
-                        data-interval="10"
-                        onclick="selectInterval(10, this)">
-
-                        <div class="interval-icon">
-                            ⚡
-                        </div>
-
-                        <span class="interval-time">
-                            10s
-                        </span>
-
-                        <span class="interval-desc">
-                            Rápido
-                        </span>
-
-                    </button>
-
-
-                    <button
-                        class="interval-option selected"
-                        data-interval="60"
-                        onclick="selectInterval(60, this)">
-
-                        <div class="interval-icon">
-                            🚀
-                        </div>
-
-                        <span class="interval-time">
-                            1 min
-                        </span>
-
-                        <span class="interval-desc">
-                            Normal
-                        </span>
-
-                    </button>
-
-
-                    <button
-                        class="interval-option"
-                        data-interval="300"
-                        onclick="selectInterval(300, this)">
-
-                        <div class="interval-icon">
-                            🛡️
-                        </div>
-
-                        <span class="interval-time">
-                            5 min
-                        </span>
-
-                        <span class="interval-desc">
-                            Moderado
-                        </span>
-
-                    </button>
-
-
-                    <button
-                        class="interval-option"
-                        data-interval="600"
-                        onclick="selectInterval(600, this)">
-
-                        <div class="interval-icon">
-                            ◷
-                        </div>
-
-                        <span class="interval-time">
-                            10 min
-                        </span>
-
-                        <span class="interval-desc">
-                            Conservador
-                        </span>
-
-                    </button>
-
-                </div>
-
-            </div>
-
-
-            <!-- QUANTIDADE -->
-
-            <div class="card">
-
-                <div class="quantity-control">
-
-                    <div class="quantity-info">
-
-                        <strong>
-                            Quantidade de postagens
-                        </strong>
-
-                        <span>
-                            Mínimo 1 • máximo 20
-                        </span>
-
-                    </div>
-
-
-                    <div class="quantity-buttons">
-
-                        <button
-                            class="quantity-btn"
-                            onclick="changeQuantity(-1)">
-
-                            −
-
-                        </button>
-
-                        <div
-                            class="quantity-value"
-                            id="quantityValue">
-
-                            1
-
-                        </div>
-
-                        <button
-                            class="quantity-btn"
-                            onclick="changeQuantity(1)">
-
-                            +
-
-                        </button>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <!-- RESUMO -->
-
-            <div class="card">
-
-                <div class="card-header">
-
-                    <div>
-                        <div class="card-title">
-                            Resumo
-                        </div>
-
-                        <div class="card-subtitle">
-                            Confira antes de iniciar
-                        </div>
-                    </div>
-
-                </div>
-
-
-                <div class="summary">
-
-                    <div class="summary-row">
-                        <span>Produtos</span>
-
-                        <strong id="summaryProducts">
-                            0
-                        </strong>
-                    </div>
-
-
-                    <div class="summary-row">
-                        <span>Intervalo</span>
-
-                        <strong id="summaryInterval">
-                            1 min
-                        </strong>
-                    </div>
-
-
-                    <div class="summary-row">
-                        <span>Postagens</span>
-
-                        <strong id="summaryQuantity">
-                            1
-                        </strong>
-                    </div>
-
-
-                    <div class="summary-row">
-                        <span>Início</span>
-
-                        <strong>
-                            Agora
-                        </strong>
-                    </div>
-
-                </div>
-
-
-                <div style="height:12px;"></div>
-
-
-                <button
-                    class="btn btn-primary btn-full"
-                    id="startAutomationButton"
-                    onclick="startAutomation()">
-
-                    🚀 INICIAR AUTOMAÇÃO
-
-                </button>
-
-            </div>
-
-            <!-- =====================================================
-     BLOCO 1 — PROGRESSO DA AUTOMAÇÃO
-     ===================================================== -->
-
-<div
-    class="card automation-progress"
-    id="automationProgress">
-
-    <div class="progress-header">
-
-        <div>
-
-            <div class="card-title">
-                Progresso da automação
-            </div>
-
-            <div class="card-subtitle">
-                Acompanhamento em tempo real
-            </div>
-
-        </div>
-
-        <div
-            class="progress-status"
-            id="automationProgressStatus">
-
-            <span class="progress-status-dot"></span>
-
-            <span id="automationProgressStatusText">
-                PROCESSANDO
-            </span>
-
-        </div>
+      Intervalo entre postagens
 
     </div>
 
 
-    <div class="progress-percent">
-        <span id="automationPercent">
-            0
-        </span>%
+    <div class="intervals">
+
+
+      <button
+        type="button"
+        class="interval active"
+        data-segundos="10"
+      >
+
+        <strong>10s</strong>
+
+        <small>rápido</small>
+
+      </button>
+
+
+      <button
+        type="button"
+        class="interval"
+        data-segundos="60"
+      >
+
+        <strong>1 min</strong>
+
+        <small>normal</small>
+
+      </button>
+
+
+      <button
+        type="button"
+        class="interval"
+        data-segundos="300"
+      >
+
+        <strong>5 min</strong>
+
+        <small>moderado</small>
+
+      </button>
+
+
+      <button
+        type="button"
+        class="interval"
+        data-segundos="600"
+      >
+
+        <strong>10 min</strong>
+
+        <small>lento</small>
+
+      </button>
+
+
+    </div>
+
+
+    <!-- QUANTIDADE -->
+
+    <div class="quantity">
+
+      <div>
+
+        <strong>
+          Quantidade de postagens
+        </strong>
+
+        <span>
+          Mínimo 1 • máximo 20
+        </span>
+
+      </div>
+
+
+      <div class="quantity-control">
+
+        <button
+          type="button"
+          class="quantity-button"
+          onclick="alterarQuantidade(-1)"
+        >
+
+          <i class="fa-solid fa-minus"></i>
+
+        </button>
+
+
+        <div
+          class="quantity-number"
+          id="quantidade"
+        >
+          1
+        </div>
+
+
+        <button
+          type="button"
+          class="quantity-button"
+          onclick="alterarQuantidade(1)"
+        >
+
+          <i class="fa-solid fa-plus"></i>
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- RESUMO -->
+
+  <div class="summary">
+
+    <div class="summary-title">
+      Resumo da automação
+    </div>
+
+
+    <div class="summary-grid">
+
+
+      <div class="summary-item">
+
+        <i class="fa-solid fa-link"></i>
+
+        <strong id="summaryLinks">
+          0
+        </strong>
+
+        <span>
+          PRODUTOS
+        </span>
+
+      </div>
+
+
+      <div class="summary-item">
+
+        <i class="fa-solid fa-clock"></i>
+
+        <strong id="summaryInterval">
+          10s
+        </strong>
+
+        <span>
+          INTERVALO
+        </span>
+
+      </div>
+
+
+      <div class="summary-item">
+
+        <i class="fa-solid fa-paper-plane"></i>
+
+        <strong id="summaryPosts">
+          1
+        </strong>
+
+        <span>
+          POSTAGENS
+        </span>
+
+      </div>
+
+
+    </div>
+
+  </div>
+
+
+  <!-- INICIAR -->
+
+  <button
+    class="start-btn"
+    id="btn-iniciar"
+    type="button"
+    onclick="enviarConfiguracao()"
+  >
+
+    <i class="fa-solid fa-rocket"></i>
+
+    INICIAR AUTOMAÇÃO
+
+  </button>
+
+
+  <!-- =======================================================
+       PAINEL DE PROGRESSO
+  ======================================================== -->
+
+  <div
+    class="progress-panel"
+    id="progressPanel"
+  >
+
+
+    <div class="progress-top">
+
+      <div class="progress-status">
+
+        <div
+          class="status-dot"
+          id="statusDot"
+        ></div>
+
+        <span id="automationStatus">
+          Preparando...
+        </span>
+
+      </div>
+
+
+      <div
+        class="progress-percent"
+        id="progressPercent"
+      >
+        0%
+      </div>
+
     </div>
 
 
     <div class="progress-bar">
 
-        <div
-            class="progress-bar-fill"
-            id="automationProgressBar">
-        </div>
+      <div
+        class="progress-fill"
+        id="progressFill"
+      ></div>
 
     </div>
 
 
-    <div class="progress-numbers">
+    <div class="current-product">
 
-        <span>
-            Processados:
-            <strong id="automationProcessed">
-                0
-            </strong>
-        </span>
+      <div class="current-label">
+        Produto atual
+      </div>
 
-        <span>
-            Total:
-            <strong id="automationTotal">
-                0
-            </strong>
-        </span>
-
-    </div>
-
-
-    <div class="progress-current">
-
-        <div class="progress-current-label">
-            PRODUTO ATUAL
-        </div>
-
-        <div
-            class="progress-current-text"
-            id="automationCurrentProduct">
-
-            Aguardando processamento...
-
-        </div>
-
-        <div
-            class="progress-countdown"
-            id="automationCountdown">
-
-            Aguardando...
-
-        </div>
+      <div
+        class="current-link"
+        id="currentProduct"
+      >
+        Aguardando automação...
+      </div>
 
     </div>
 
 
     <div
-        class="progress-products"
-        id="automationProducts">
+      class="product-status-list"
+      id="productStatusList"
+    ></div>
+
+
+    <div class="next-post">
+
+      <span>
+        PRÓXIMA POSTAGEM
+      </span>
+
+      <strong id="nextPost">
+        Aguardando...
+      </strong>
 
     </div>
 
 
-    <div class="progress-actions">
+    <button
+      type="button"
+      class="stop-btn"
+      onclick="pararAutomacao()"
+    >
 
-        <div
-            class="progress-complete"
-            id="automationComplete">
+      <i class="fa-solid fa-stop"></i>
 
-            ✅ Automação concluída.
+      PARAR AUTOMAÇÃO
 
-        </div>
+    </button>
 
-        <button
-            class="btn btn-danger btn-full"
-            id="stopAutomationButton"
-            onclick="stopAutomation()">
 
-            🛑 PARAR AUTOMAÇÃO
+  </div>
 
-        </button>
+
+  <!-- MENSAGEM -->
+
+  <div id="mensagem"></div>
+
+
+  <!-- INFO -->
+
+  <div class="info">
+
+    <i class="fa-solid fa-shield-halved"></i>
+
+    <div>
+
+      Adicione até <strong>20 produtos da Shopee</strong>.
+      Escolha o intervalo e a quantidade de postagens.
+      O painel acompanha o andamento da automação.
 
     </div>
+
+  </div>
+
+
+</main>
+
+
+<div class="footer">
+
+  🦊 Raposa Caçadora PRO
 
 </div>
 
-        </section>
 
+</div>
 
-        <!-- =====================================================
-             HISTÓRICO — PARTE 2
-             ===================================================== -->
 
-        <section
-    class="screen"
-    id="screen-history"
-    data-screen="history">
+<script>
 
-    <div class="screen-title">
 
-        <h2>
-            Histórico
-        </h2>
-
-        <p>
-            Acompanhe suas automações anteriores.
-        </p>
-
-    </div>
-
-
-    <div class="card">
-
-        <div class="card-header">
-
-            <div>
-
-                <div class="card-title">
-                    Automações recentes
-                </div>
-
-                <div class="card-subtitle">
-                    Últimas execuções da Raposa Caçadora
-                </div>
-
-            </div>
-
-            <span style="font-size:20px;">
-                📊
-            </span>
-
-        </div>
-
-
-        <div
-            class="history-list"
-            id="historyList">
-
-        </div>
-
-    </div>
-
-
-    <div class="card">
-
-        <button
-            class="btn btn-danger btn-full"
-            onclick="clearLocalHistory()">
-
-            🗑️ LIMPAR HISTÓRICO LOCAL
-
-        </button>
-
-    </div>
-
-</section>
-
-
-
-        <!-- =====================================================
-             CONFIGURAÇÕES — PARTE 2
-             ===================================================== -->
-
-        <section
-    class="screen"
-    id="screen-settings"
-    data-screen="settings">
-
-    <div class="screen-title">
-
-        <h2>
-            Configurações
-        </h2>
-
-        <p>
-            Preferências da Raposa Caçadora.
-        </p>
-
-    </div>
-
-
-    <div class="card">
-
-        <div class="card-header">
-
-            <div>
-
-                <div class="card-title">
-                    Preferências
-                </div>
-
-                <div class="card-subtitle">
-                    Personalize o funcionamento do aplicativo.
-                </div>
-
-            </div>
-
-            <span style="font-size:20px;">
-                ⚙️
-            </span>
-
-        </div>
-
-
-        <div class="settings-list">
-
-            <div class="setting-row">
-
-                <div class="setting-info">
-
-                    <div class="setting-title">
-                        Notificações
-                    </div>
-
-                    <div class="setting-description">
-                        Receber avisos quando uma automação terminar.
-                    </div>
-
-                </div>
-
-
-                <label class="toggle">
-
-                    <input
-                        type="checkbox"
-                        id="settingNotifications"
-                        checked
-                        onchange="saveSettings()">
-
-                    <span class="toggle-slider"></span>
-
-                </label>
-
-            </div>
-
-
-            <div class="setting-row">
-
-                <div class="setting-info">
-
-                    <div class="setting-title">
-                        Intervalo padrão
-                    </div>
-
-                    <div class="setting-description">
-                        Intervalo utilizado ao criar uma nova automação.
-                    </div>
-
-                </div>
-
-
-                <select
-                    class="setting-select"
-                    id="settingInterval"
-                    onchange="saveSettings()">
-
-                    <option value="10">
-                        10s
-                    </option>
-
-                    <option value="60">
-                        1 min
-                    </option>
-
-                    <option value="300">
-                        5 min
-                    </option>
-
-                    <option value="600">
-                        10 min
-                    </option>
-
-                </select>
-
-            </div>
-
-
-            <div class="setting-row">
-
-                <div class="setting-info">
-
-                    <div class="setting-title">
-                        Quantidade padrão
-                    </div>
-
-                    <div class="setting-description">
-                        Quantidade inicial para novas automações.
-                    </div>
-
-                </div>
-
-
-                <select
-                    class="setting-select"
-                    id="settingQuantity"
-                    onchange="saveSettings()">
-
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="5">5</option>
-                    <option value="10">10</option>
-                    <option value="20">20</option>
-
-                </select>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <div class="card">
-
-        <div class="card-header">
-
-            <div>
-
-                <div class="card-title">
-                    Conta Telegram
-                </div>
-
-                <div class="card-subtitle">
-                    Informações da sessão atual.
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="user-info">
-
-            <div class="user-info-label">
-                USUÁRIO
-            </div>
-
-            <div
-                class="user-info-value"
-                id="telegramUserName">
-
-                Sessão Telegram
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <div class="card">
-
-        <button
-            class="btn btn-secondary btn-full"
-            onclick="resetSettings()">
-
-            ↻ RESTAURAR PADRÕES
-
-        </button>
-
-    </div>
-
-
-    <div class="settings-version">
-        Raposa Caçadora • v1.0
-    </div>
-
-</section>
-
-/* ===============================================================
-   RAPOSA CAÇADORA
-   PARTE 1 — JAVASCRIPT
-   =============================================================== */
-
-
-/* ===============================================================
-   CONFIGURAÇÃO
-   =============================================================== */
-
-const CONFIG = {
-
-    API_BASE:
-        "https://bot-raposa-cacadora.onrender.com",
-
-    ENDPOINT_CONFIGURAR:
-        "/api/configurar",
-
-    MAX_PRODUCTS:
-        20,
-
-    MIN_QUANTITY:
-        1,
-
-    MAX_QUANTITY:
-        20
-
-};
-
-
-/* ===============================================================
-   ESTADO DA APLICAÇÃO
-   =============================================================== */
-
-const state = {
-
-    initData:
-        "",
-
-    products:
-        [],
-
-    interval:
-        60,
-
-    quantity:
-        1,
-
-    automation:
-        null,
-
-    serverOnline:
-        true
-
-};
-
-
-/* ===============================================================
-   TELEGRAM WEB APP
-   =============================================================== */
+/* ============================================================
+   TELEGRAM
+============================================================ */
 
 const tg =
-    window.Telegram &&
-    window.Telegram.WebApp
-        ? window.Telegram.WebApp
-        : null;
+  window.Telegram?.WebApp;
 
 
-function initTelegram() {
+if (tg) {
 
-    if (!tg) {
-        console.warn(
-            "Telegram WebApp não detectado."
-        );
+  tg.ready();
 
-        return;
-    }
+  tg.expand();
 
-    try {
+  if (tg.setHeaderColor) {
 
-        tg.ready();
+    tg.setHeaderColor("#070707");
 
-        tg.expand();
+  }
 
-        state.initData =
-            tg.initData || "";
+  if (tg.setBackgroundColor) {
 
-        /*
-         * Mantemos initData exatamente como
-         * fornecido pelo Telegram.
-         */
+    tg.setBackgroundColor("#070707");
 
-        if (tg.colorScheme) {
-            document.documentElement.dataset.telegramTheme =
-                tg.colorScheme;
-        }
-
-    } catch (error) {
-
-        console.error(
-            "Erro ao inicializar Telegram WebApp:",
-            error
-        );
-
-    }
+  }
 
 }
 
 
-/* ===============================================================
-   NAVEGAÇÃO SPA
-   =============================================================== */
+/* ============================================================
+   CONFIGURAÇÃO
+============================================================ */
 
-function navigateTo(screenName) {
+const MAX_LINKS = 20;
 
-    document
-        .querySelectorAll(".screen")
-        .forEach(screen => {
+let intervaloSelecionado = 10;
 
-            screen.classList.toggle(
-                "active",
-                screen.dataset.screen === screenName
-            );
+let quantidade = 1;
 
-        });
+let automacaoAtiva = false;
 
+let progressoAtual = 0;
 
-    document
-        .querySelectorAll(".nav-item")
-        .forEach(button => {
+let linksDaAutomacao = [];
 
-            button.classList.toggle(
-                "active",
-                button.dataset.target === screenName
-            );
+let timerSimulado = null;
 
-        });
 
+/* ============================================================
+   ELEMENTOS
+============================================================ */
 
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
+const linksContainer =
+  document.getElementById(
+    "linksContainer"
+  );
 
-}
+const addLinkBtn =
+  document.getElementById(
+    "addLinkBtn"
+  );
 
+const linkCounter =
+  document.getElementById(
+    "linkCounter"
+  );
 
-/* ===============================================================
-   PRODUTOS
-   =============================================================== */
+const summaryLinks =
+  document.getElementById(
+    "summaryLinks"
+  );
 
-function addProduct(initialValue = "") {
+const summaryInterval =
+  document.getElementById(
+    "summaryInterval"
+  );
 
-    if (
-        state.products.length >=
-        CONFIG.MAX_PRODUCTS
-    ) {
+const summaryPosts =
+  document.getElementById(
+    "summaryPosts"
+  );
 
-        showToast(
-            "Limite de 20 produtos atingido.",
-            "error"
-        );
+const quantidadeEl =
+  document.getElementById(
+    "quantidade"
+  );
 
-        updateProductsUI();
+const progressPanel =
+  document.getElementById(
+    "progressPanel"
+  );
 
-        return;
+const progressFill =
+  document.getElementById(
+    "progressFill"
+  );
 
-    }
+const progressPercent =
+  document.getElementById(
+    "progressPercent"
+  );
 
+const automationStatus =
+  document.getElementById(
+    "automationStatus"
+  );
 
-    state.products.push({
+const currentProduct =
+  document.getElementById(
+    "currentProduct"
+  );
 
-        id:
-            crypto.randomUUID
-            ? crypto.randomUUID()
-            : Date.now() + Math.random(),
+const nextPost =
+  document.getElementById(
+    "nextPost"
+  );
 
-        link:
-            initialValue.trim(),
+const productStatusList =
+  document.getElementById(
+    "productStatusList"
+  );
 
-        status:
-            "aguardando",
+const btn =
+  document.getElementById(
+    "btn-iniciar"
+  );
 
-        valid:
-            initialValue.trim()
-                ? isShopeeLink(initialValue.trim())
-                : false,
+const msgBox =
+  document.getElementById(
+    "mensagem"
+  );
 
-        createdAt:
-            new Date().toISOString()
 
-    });
+/* ============================================================
+   PRIMEIRO LINK
+============================================================ */
 
+adicionarLink();
 
-    updateProductsUI();
 
-}
+/* ============================================================
+   ADICIONAR LINK
+============================================================ */
 
+function adicionarLink() {
 
-function removeProduct(id) {
+  const total =
+    document.querySelectorAll(
+      ".link-row"
+    ).length;
 
-    state.products =
-        state.products.filter(
-            product => product.id !== id
-        );
 
-    normalizeQuantity();
+  if (
+    total >= MAX_LINKS
+  ) {
 
-    updateProductsUI();
+    mostrarMensagem(
+      "❌ Limite máximo de 20 produtos.",
+      "erro"
+    );
 
-}
+    return;
 
+  }
 
-function updateProductLink(id, value) {
 
-    const product =
-        state.products.find(
-            item => item.id === id
-        );
+  const numero =
+    total + 1;
 
-    if (!product) {
-        return;
-    }
 
-
-    product.link =
-        value.trim();
-
-    product.valid =
-        product.link.length > 0 &&
-        isShopeeLink(product.link);
-
-    updateProductsUI(false);
-
-}
-
-
-/* ===============================================================
-   RENDER DOS PRODUTOS
-   =============================================================== */
-
-function updateProductsUI(rebuild = true) {
-
-    const list =
-        document.getElementById(
-            "productsList"
-        );
-
-    if (rebuild) {
-
-        list.innerHTML = "";
-
-        state.products.forEach(
-            (product, index) => {
-
-                const item =
-                    document.createElement("div");
-
-                item.className =
-                    "product-item";
-
-                if (product.valid) {
-                    item.classList.add("valid");
-                }
-
-                if (
-                    product.link &&
-                    !product.valid
-                ) {
-                    item.classList.add("invalid");
-                }
-
-
-                item.innerHTML = `
-
-                    <div class="product-top">
-
-                        <div class="product-number">
-                            ${String(index + 1).padStart(2, "0")}
-                        </div>
-
-                        <div class="product-name">
-                            Produto Shopee
-                        </div>
-
-                        <button
-                            class="remove-product"
-                            onclick="removeProduct('${product.id}')"
-                            aria-label="Remover produto">
-
-                            ×
-
-                        </button>
-
-                    </div>
-
-
-                    <input
-                        class="input product-input"
-                        type="url"
-                        inputmode="url"
-                        autocomplete="off"
-                        placeholder="https://shopee.com.br/..."
-                        value="${escapeHtml(product.link)}"
-                        oninput="updateProductLink('${product.id}', this.value)"
-                    >
-
-
-                    <div class="product-footer">
-
-                        <div class="product-status">
-
-                            <span class="status-indicator"></span>
-
-                            <span>
-                                ${
-                                    !product.link
-                                    ? "AGUARDANDO LINK"
-                                    : product.valid
-                                        ? "LINK VÁLIDO"
-                                        : "LINK INVÁLIDO"
-                                }
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                `;
-
-
-                list.appendChild(item);
-
-            }
-        );
-
-    }
-
-
-    const count =
-        state.products.length;
-
-
-    const counter =
-        document.getElementById(
-            "productsCounter"
-        );
-
-    counter.textContent =
-        `${count} / ${CONFIG.MAX_PRODUCTS}`;
-
-
-    counter.classList.toggle(
-        "limit",
-        count >= CONFIG.MAX_PRODUCTS
+  const row =
+    document.createElement(
+      "div"
     );
 
 
-    const addButton =
-        document.getElementById(
-            "addProductButton"
-        );
-
-    addButton.disabled =
-        count >= CONFIG.MAX_PRODUCTS;
+  row.className =
+    "link-row";
 
 
-    if (
-        count >= CONFIG.MAX_PRODUCTS
-    ) {
+  row.innerHTML = `
 
-        addButton.textContent =
-            "LIMITE DE 20 PRODUTOS";
+    <div class="link-number">
+      ${String(numero).padStart(2,"0")}
+    </div>
 
-    } else {
+    <div class="link-wrapper">
 
-        addButton.textContent =
-            "+ ADICIONAR PRODUTO";
+      <input
+        type="url"
+        class="link-input"
+        placeholder="Cole o link da Shopee..."
+        autocomplete="off"
+        spellcheck="false"
+      >
 
-    }
+      <i class="fa-solid fa-link link-icon"></i>
 
+      <div class="link-status"></div>
 
-    updateSummaryUI();
+    </div>
 
-}
+    <button
+      type="button"
+      class="remove-link"
+    >
 
+      <i class="fa-solid fa-xmark"></i>
 
-/* ===============================================================
-   COLAGEM DE VÁRIOS LINKS
-   =============================================================== */
+    </button>
 
-function extractLinks(text) {
-
-    if (!text) {
-        return [];
-    }
-
-
-    /*
-     * Identifica URLs mesmo quando o usuário
-     * cola separadas por:
-     *
-     * quebra de linha
-     * espaço
-     * vírgula
-     */
-
-    const matches =
-        text.match(
-            /https?:\/\/[^\s,]+/gi
-        );
+  `;
 
 
-    if (!matches) {
-        return [];
-    }
+  linksContainer.appendChild(row);
 
 
-    return [
-        ...new Set(
-            matches.map(
-                link =>
-                    link
-                        .trim()
-                        .replace(
-                            /[),.;]+$/g,
-                            ""
-                        )
-            )
-        )
-    ];
-
-}
-
-
-function addMultipleLinks(text) {
-
-    const links =
-        extractLinks(text);
-
-
-    if (!links.length) {
-        return;
-    }
-
-
-    const available =
-        CONFIG.MAX_PRODUCTS -
-        state.products.length;
-
-
-    const accepted =
-        links.slice(
-            0,
-            available
-        );
-
-
-    accepted.forEach(
-        link => addProduct(link)
+  const input =
+    row.querySelector(
+      ".link-input"
     );
 
 
-    if (
-        links.length >
-        available
-    ) {
-
-        showToast(
-            `Apenas ${available} links puderam ser adicionados. Limite de 20 produtos.`,
-            "error"
-        );
-
-    }
-
-}
-
-
-/* ===============================================================
-   VALIDAÇÃO SHOPEE
-   =============================================================== */
-
-function isShopeeLink(value) {
-
-    if (!value) {
-        return false;
-    }
-
-
-    try {
-
-        const url =
-            new URL(value);
-
-
-        const hostname =
-            url.hostname
-                .toLowerCase()
-                .replace(/^www\./, "");
-
-
-        /*
-         * Aceitamos somente domínios Shopee.
-         */
-
-        return (
-            hostname === "shopee.com.br" ||
-            hostname.endsWith(".shopee.com.br")
-        );
-
-    } catch {
-
-        return false;
-
-    }
-
-}
-
-
-/* ===============================================================
-   INTERVALOS
-   =============================================================== */
-
-function selectInterval(seconds, element) {
-
-    state.interval =
-        Number(seconds);
-
-
-    document
-        .querySelectorAll(
-            ".interval-option"
-        )
-        .forEach(option => {
-
-            option.classList.remove(
-                "selected"
-            );
-
-        });
-
-
-    if (element) {
-
-        element.classList.add(
-            "selected"
-        );
-
-    }
-
-
-    updateSummaryUI();
-
-}
-
-
-/* ===============================================================
-   QUANTIDADE
-   =============================================================== */
-
-function changeQuantity(delta) {
-
-    const available =
-        state.products.length;
-
-
-    let next =
-        state.quantity + delta;
-
-
-    next =
-        Math.max(
-            CONFIG.MIN_QUANTITY,
-            next
-        );
-
-
-    next =
-        Math.min(
-            CONFIG.MAX_QUANTITY,
-            next
-        );
-
-
-    if (available > 0) {
-
-        next =
-            Math.min(
-                next,
-                available
-            );
-
-    }
-
-
-    state.quantity =
-        next;
-
-
-    updateQuantityUI();
-
-}
-
-
-function normalizeQuantity() {
-
-    const available =
-        state.products.length;
-
-
-    if (available <= 0) {
-
-        state.quantity = 1;
-
-        return;
-
-    }
-
-
-    state.quantity =
-        Math.min(
-            Math.max(
-                CONFIG.MIN_QUANTITY,
-                state.quantity
-            ),
-            available,
-            CONFIG.MAX_QUANTITY
-        );
-
-}
-
-
-function updateQuantityUI() {
-
-    normalizeQuantity();
-
-
-    document.getElementById(
-        "quantityValue"
-    ).textContent =
-        state.quantity;
-
-
-    updateSummaryUI();
-
-}
-
-
-/* ===============================================================
-   RESUMO
-   =============================================================== */
-
-function formatInterval(seconds) {
-
-    if (seconds < 60) {
-        return `${seconds}s`;
-    }
-
-
-    return `${seconds / 60} min`;
-
-}
-
-
-function updateSummaryUI() {
-
-    const products =
-        state.products.length;
-
-
-    const intervalText =
-        formatInterval(
-            state.interval
-        );
-
-
-    const quantity =
-        state.quantity;
-
-
-    const summaryProducts =
-        document.getElementById(
-            "summaryProducts"
-        );
-
-    const summaryInterval =
-        document.getElementById(
-            "summaryInterval"
-        );
-
-    const summaryQuantity =
-        document.getElementById(
-            "summaryQuantity"
-        );
-
-
-    if (summaryProducts) {
-        summaryProducts.textContent =
-            products;
-    }
-
-    if (summaryInterval) {
-        summaryInterval.textContent =
-            intervalText;
-    }
-
-    if (summaryQuantity) {
-        summaryQuantity.textContent =
-            quantity;
-    }
-
-
-    const homeProducts =
-        document.getElementById(
-            "homeProducts"
-        );
-
-    const homeInterval =
-        document.getElementById(
-            "homeInterval"
-        );
-
-    const homeQuantity =
-        document.getElementById(
-            "homeQuantity"
-        );
-
-
-    if (homeProducts) {
-        homeProducts.textContent =
-            products;
-    }
-
-    if (homeInterval) {
-        homeInterval.textContent =
-            intervalText;
-    }
-
-    if (homeQuantity) {
-        homeQuantity.textContent =
-            quantity;
-    }
-
-}
-
-
-/* ===============================================================
-   API
-   =============================================================== */
-
-async function configurarAutomacao(payload) {
-
-    const url =
-        CONFIG.API_BASE +
-        CONFIG.ENDPOINT_CONFIGURAR;
-
-
-    const response =
-        await fetch(
-            url,
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
-
-                body:
-                    JSON.stringify(payload)
-            }
-        );
-
-
-    let data = null;
-
-
-    try {
-
-        data =
-            await response.json();
-
-    } catch {
-
-        data = null;
-
-    }
-
-
-    if (!response.ok) {
-
-        const message =
-            data?.message ||
-            data?.erro ||
-            "Não foi possível iniciar a automação.";
-
-        throw new Error(message);
-
-    }
-
-
-    return data;
-
-}
-
-
-/* ===============================================================
-   INICIAR AUTOMAÇÃO
-   =============================================================== */
-
-async function startAutomation() {
-
-    const validProducts =
-        state.products.filter(
-            product =>
-                product.valid &&
-                product.link
-        );
-
-
-    if (
-        validProducts.length === 0
-    ) {
-
-        showToast(
-            "Adicione pelo menos um link válido da Shopee.",
-            "error"
-        );
-
-        navigateTo("automation");
-
-        return;
-
-    }
-
-
-    if (
-        validProducts.length !==
-        state.products.length
-    ) {
-
-        showToast(
-            "Corrija os links inválidos antes de iniciar.",
-            "error"
-        );
-
-        return;
-
-    }
-
-
-    normalizeQuantity();
-
-
-    if (
-        state.quantity >
-        validProducts.length
-    ) {
-
-        state.quantity =
-            validProducts.length;
-
-        updateQuantityUI();
-
-    }
-
-
-    /*
-     * Compatibilidade com o backend atual.
-     *
-     * links = todos os produtos
-     * link  = primeiro link
-     * intervalo = segundos
-     * quantidade = quantidade solicitada
-     * initData = Telegram WebApp initData
-     */
-
-    const payload = {
-
-        initData:
-            state.initData,
-
-        links:
-            validProducts.map(
-                product =>
-                    product.link
-            ),
-
-        link:
-            validProducts[0].link,
-
-        intervalo:
-            Number(state.interval),
-
-        quantidade:
-            Number(state.quantity)
-
-    };
-
-
-    const button =
-        document.getElementById(
-            "startAutomationButton"
-        );
-
-
-    button.disabled =
-        true;
-
-    button.textContent =
-        "CONECTANDO AO SERVIDOR...";
-
-
-    try {
-
-        const result =
-            await configurarAutomacao(
-                payload
-            );
-
-
-        /*
-         * NÃO marcamos produtos como
-         * POSTADOS aqui.
-         *
-         * O backend precisa confirmar
-         * cada postagem.
-         */
-
-        state.automation = {
-
-            startedAt:
-                new Date().toISOString(),
-
-            products:
-                validProducts.map(
-                    product => ({
-                        ...product,
-                        status:
-                            "aguardando"
-                    })
-                ),
-
-            interval:
-                state.interval,
-
-            quantity:
-                state.quantity,
-
-            backendResponse:
-                result
-
-        };
-
-
-        setServerStatus(
-            true
-        );
-
-
-        showToast(
-            "Automação iniciada com sucesso.",
-            "success"
-        );
-
-
-        /*
-         * A segunda parte adicionará
-         * o painel de progresso.
-         */
-
-        navigateTo("automation");
-
-
-        console.log(
-            "Resposta do backend:",
-            result
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "Erro ao configurar automação:",
-            error
-        );
-
-
-        setServerStatus(
-            false
-        );
-
-
-        showToast(
-            "Não foi possível conectar ao servidor. Tente novamente em alguns instantes.",
-            "error"
-        );
-
-    } finally {
-
-        button.disabled =
-            false;
-
-        button.textContent =
-            "🚀 INICIAR AUTOMAÇÃO";
-
-    }
-
-}
-
-
-/* ===============================================================
-   STATUS DO SERVIDOR
-   =============================================================== */
-
-function setServerStatus(online) {
-
-    state.serverOnline =
-        Boolean(online);
-
-
-    const status =
-        document.getElementById(
-            "serverStatus"
-        );
-
-    const text =
-        document.getElementById(
-            "serverStatusText"
-        );
-
-
-    if (!status || !text) {
-        return;
-    }
-
-
-    status.classList.toggle(
-        "offline",
-        !online
+  const status =
+    row.querySelector(
+      ".link-status"
     );
 
 
-    text.textContent =
-        online
-            ? "BOT ONLINE"
-            : "SERVIDOR OFFLINE";
-
-}
-
-
-/* ===============================================================
-   FUNÇÃO PREPARADA PARA STATUS EM TEMPO REAL
-   =============================================================== */
-
-function atualizarStatusServidor(dados) {
-
-    if (!dados) {
-        return;
-    }
-
-
-    /*
-     * Esta função já está preparada
-     * para receber futuramente:
-     *
-     * {
-     *   produto: 3,
-     *   status: "processando"
-     * }
-     *
-     * {
-     *   produto: 3,
-     *   status: "postado"
-     * }
-     *
-     * {
-     *   produto: 3,
-     *   status: "erro"
-     * }
-     */
-
-
-    const productNumber =
-        Number(dados.produto);
-
-
-    const status =
-        String(
-            dados.status || ""
-        ).toLowerCase();
-
-
-    if (
-        !productNumber ||
-        !status
-    ) {
-        return;
-    }
-
-
-    const index =
-        productNumber - 1;
-
-
-    if (
-        !state.products[index]
-    ) {
-        return;
-    }
-
-
-    const product =
-        state.products[index];
-
-
-    const allowedStatuses = [
-        "aguardando",
-        "processando",
-        "postado",
-        "erro"
-    ];
-
-
-    if (
-        !allowedStatuses.includes(
-            status
-        )
-    ) {
-        return;
-    }
-
-
-    product.status =
-        status;
-
-
-    /*
-     * A UI detalhada de progresso,
-     * percentual e countdown será
-     * adicionada na segunda parte.
-     */
-
-    console.log(
-        "Status recebido:",
-        productNumber,
-        status
-    );
-
-}
-
-
-/* ===============================================================
-   TOAST
-   =============================================================== */
-
-function showToast(
-    message,
-    type = "success"
-) {
-
-    const container =
-        document.getElementById(
-            "toastContainer"
-        );
-
-
-    const toast =
-        document.createElement(
-            "div"
-        );
-
-
-    toast.className =
-        `toast ${type}`;
-
-
-    toast.textContent =
-        message;
-
-
-    container.appendChild(
-        toast
-    );
-
-
-    setTimeout(
-        () => {
-
-            toast.style.opacity =
-                "0";
-
-            toast.style.transform =
-                "translateY(8px)";
-
-            setTimeout(
-                () => toast.remove(),
-                250
-            );
-
-        },
-        3200
-    );
-
-}
-
-
-/* ===============================================================
-   SEGURANÇA — ESCAPE PARA HTML
-   =============================================================== */
-
-function escapeHtml(value) {
-
-    return String(value)
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
-        );
-
-}
-
-
-/* ===============================================================
-   INTERCEPTAR COLAGEM DE VÁRIOS LINKS
-   =============================================================== */
-
-document.addEventListener(
-    "paste",
-    event => {
-
-        const target =
-            event.target;
-
-
-        /*
-         * Só interceptamos colagens
-         * que parecem conter múltiplos links.
-         */
-
-        if (
-            !target.classList.contains(
-                "product-input"
-            )
-        ) {
-            return;
-        }
-
-
-        const text =
-            event.clipboardData
-                ?.getData("text");
-
-
-        if (!text) {
-            return;
-        }
-
-
-        const links =
-            extractLinks(text);
-
-
-        if (links.length <= 1) {
-            return;
-        }
-
-
-        event.preventDefault();
-
-
-        /*
-         * O campo atual recebe
-         * o primeiro link.
-         */
-
-        const currentId =
-            target
-                .closest(".product-item")
-                ?.querySelector(
-                    ".remove-product"
-                )
-                ?.getAttribute(
-                    "onclick"
-                );
-
-
-        /*
-         * Encontramos o produto
-         * pela posição do elemento.
-         */
-
-        const productElements =
-            [
-                ...document.querySelectorAll(
-                    ".product-item"
-                )
-            ];
-
-
-        const currentElement =
-            target.closest(
-                ".product-item"
-            );
-
-
-        const index =
-            productElements.indexOf(
-                currentElement
-            );
-
-
-        if (
-            index >= 0 &&
-            state.products[index]
-        ) {
-
-            state.products[index].link =
-                links[0];
-
-            state.products[index].valid =
-                isShopeeLink(
-                    links[0]
-                );
-
-        }
-
-
-        /*
-         * Adicionamos os demais
-         * respeitando o limite de 20.
-         */
-
-        links
-            .slice(1)
-            .forEach(
-                link =>
-                    addProduct(link)
-            );
-
-
-        normalizeQuantity();
-
-        updateProductsUI();
-
-    }
-);
-
-
-/* ===============================================================
-   INICIALIZAÇÃO
-   =============================================================== */
-
-function initializeApp() {
-
-    initTelegram();
-
-
-    /*
-     * Começamos sem produtos.
-     *
-     * O usuário adiciona manualmente
-     * ou cola múltiplos links.
-     */
-
-    updateProductsUI();
-
-    updateQuantityUI();
-
-    updateSummaryUI();
-
-
-    /*
-     * Endpoint atual disponível.
-     *
-     * Ainda não fazemos polling agressivo
-     * porque o backend pode não possuir
-     * endpoint de status.
-     */
-
-    setServerStatus(
-        true
-    );
-
-}
-
-
-document.addEventListener(
-    "DOMContentLoaded",
-    initializeApp
-);
-
-    /* ===============================================================
-   BLOCO 1 — PAINEL DE PROGRESSO
-   =============================================================== */
-
-/*
- * Endpoint preparado para a Parte 2/backend.
- *
- * Caso seu backend use outro caminho,
- * altere somente esta constante.
- */
-
-CONFIG.ENDPOINT_STATUS =
-    "/api/automacao/status";
-
-CONFIG.ENDPOINT_CANCELAR =
-    "/api/automacao/cancelar";
-
-
-/* ===============================================================
-   ESTADO DO PROGRESSO
-   =============================================================== */
-
-state.automationProgress = {
-
-    id: null,
-
-    status:
-        "idle",
-
-    total:
-        0,
-
-    processed:
-        0,
-
-    posted:
-        0,
-
-    errors:
-        0,
-
-    current:
-        0,
-
-    nextIn:
-        0,
-
-    products:
-        [],
-
-    polling:
-        null,
-
-    countdownTimer:
-        null
-
-};
-
-
-/* ===============================================================
-   INICIAR PAINEL
-   =============================================================== */
-
-function initializeAutomationProgress() {
-
-    const progress =
-        document.getElementById(
-            "automationProgress"
-        );
-
-    if (!progress) {
-        return;
-    }
-
-
-    progress.classList.remove(
-        "visible"
-    );
-
-
-    clearAutomationTimers();
-
-}
-
-
-/* ===============================================================
-   CRIAR ESTADO DOS PRODUTOS
-   =============================================================== */
-
-function createAutomationProducts() {
-
-    state.automationProgress.products =
-        state.products.map(
-            (product, index) => ({
-
-                number:
-                    index + 1,
-
-                id:
-                    product.id,
-
-                link:
-                    product.link,
-
-                status:
-                    "aguardando"
-
-            })
-        );
-
-}
-
-
-/* ===============================================================
-   MOSTRAR PAINEL
-   =============================================================== */
-
-function showAutomationProgress() {
-
-    const progress =
-        document.getElementById(
-            "automationProgress"
-        );
-
-    if (!progress) {
-        return;
-    }
-
-
-    progress.classList.add(
-        "visible"
-    );
-
-
-    renderAutomationProgress();
-
-}
-
-
-/* ===============================================================
-   ESCONDER PAINEL
-   =============================================================== */
-
-function hideAutomationProgress() {
-
-    const progress =
-        document.getElementById(
-            "automationProgress"
-        );
-
-    if (!progress) {
-        return;
-    }
-
-
-    progress.classList.remove(
-        "visible"
-    );
-
-
-    clearAutomationTimers();
-
-}
-
-
-/* ===============================================================
-   RENDERIZAR PRODUTOS
-   =============================================================== */
-
-function renderAutomationProducts() {
-
-    const container =
-        document.getElementById(
-            "automationProducts"
-        );
-
-    if (!container) {
-        return;
-    }
-
-
-    container.innerHTML = "";
-
-
-    state.automationProgress.products
-        .forEach(product => {
-
-            const item =
-                document.createElement(
-                    "div"
-                );
-
-
-            item.className =
-                `progress-product ${product.status}`;
-
-
-            const statusLabels = {
-
-                aguardando:
-                    "AGUARDANDO",
-
-                processando:
-                    "PROCESSANDO",
-
-                postado:
-                    "POSTADO",
-
-                erro:
-                    "ERRO"
-
-            };
-
-
-            item.innerHTML = `
-
-                <div class="progress-product-number">
-                    ${String(product.number).padStart(2, "0")}
-                </div>
-
-                <div class="progress-product-info">
-
-                    <div class="progress-product-name">
-                        Produto ${product.number}
-                    </div>
-
-                    <div class="progress-product-link">
-                        ${escapeHtml(product.link)}
-                    </div>
-
-                </div>
-
-                <div class="progress-product-status">
-                    ${statusLabels[product.status] || "AGUARDANDO"}
-                </div>
-
-            `;
-
-
-            container.appendChild(
-                item
-            );
-
-        });
-
-}
-
-
-/* ===============================================================
-   RENDERIZAR PROGRESSO
-   =============================================================== */
-
-function renderAutomationProgress() {
-
-    const progress =
-        state.automationProgress;
-
-
-    const total =
-        Math.max(
-            0,
-            Number(progress.total)
-        );
-
-
-    const processed =
-        Math.max(
-            0,
-            Math.min(
-                Number(progress.processed),
-                total || Number(progress.processed)
-            )
-        );
-
-
-    const percent =
-        total > 0
-            ? Math.round(
-                (processed / total) * 100
-            )
-            : 0;
-
-
-    const percentElement =
-        document.getElementById(
-            "automationPercent"
-        );
-
-    const bar =
-        document.getElementById(
-            "automationProgressBar"
-        );
-
-    const processedElement =
-        document.getElementById(
-            "automationProcessed"
-        );
-
-    const totalElement =
-        document.getElementById(
-            "automationTotal"
-        );
-
-
-    if (percentElement) {
-        percentElement.textContent =
-            percent;
-    }
-
-
-    if (bar) {
-        bar.style.width =
-            `${percent}%`;
-    }
-
-
-    if (processedElement) {
-        processedElement.textContent =
-            processed;
-    }
-
-
-    if (totalElement) {
-        totalElement.textContent =
-            total;
-    }
-
-
-    /*
-     * Produto atual
-     */
-
-    const current =
-        state.automationProgress.products.find(
-            product =>
-                product.status ===
-                "processando"
-        );
-
-
-    const currentElement =
-        document.getElementById(
-            "automationCurrentProduct"
-        );
-
-
-    if (currentElement) {
-
-        if (current) {
-
-            currentElement.textContent =
-                `Produto ${current.number}`;
-
-        } else if (
-            progress.status ===
-            "concluida"
-        ) {
-
-            currentElement.textContent =
-                "Todos os produtos foram processados.";
-
-        } else {
-
-            currentElement.textContent =
-                "Aguardando processamento...";
-
-        }
-
-    }
-
-
-    renderAutomationProducts();
-
-    updateAutomationStatusUI();
-
-}
-
-
-/* ===============================================================
-   STATUS SUPERIOR
-   =============================================================== */
-
-function updateAutomationStatusUI() {
-
-    const statusElement =
-        document.getElementById(
-            "automationProgressStatus"
-        );
-
-    const textElement =
-        document.getElementById(
-            "automationProgressStatusText"
-        );
-
-    const completeElement =
-        document.getElementById(
-            "automationComplete"
-        );
-
-    const stopButton =
-        document.getElementById(
-            "stopAutomationButton"
-        );
-
-
-    if (
-        !statusElement ||
-        !textElement
-    ) {
-        return;
-    }
-
-
-    statusElement.classList.remove(
-        "finished",
-        "error"
-    );
-
-
-    const status =
-        state.automationProgress.status;
-
-
-    if (
-        status ===
-        "concluida"
-    ) {
-
-        statusElement.classList.add(
-            "finished"
-        );
-
-        textElement.textContent =
-            "CONCLUÍDA";
-
-
-        if (completeElement) {
-            completeElement.classList.add(
-                "visible"
-            );
-        }
-
-
-        if (stopButton) {
-            stopButton.style.display =
-                "none";
-        }
-
-
-        return;
-
-    }
-
-
-    if (
-        status ===
-        "erro"
-    ) {
-
-        statusElement.classList.add(
-            "error"
-        );
-
-        textElement.textContent =
-            "ERRO";
-
-
-        if (completeElement) {
-            completeElement.classList.remove(
-                "visible"
-            );
-        }
-
-
-        if (stopButton) {
-            stopButton.style.display =
-                "flex";
-        }
-
-
-        return;
-
-    }
-
-
-    if (
-        status ===
-        "cancelada"
-    ) {
-
-        statusElement.classList.add(
-            "error"
-        );
-
-        textElement.textContent =
-            "CANCELADA";
-
-
-        if (completeElement) {
-            completeElement.classList.remove(
-                "visible"
-            );
-        }
-
-
-        if (stopButton) {
-            stopButton.style.display =
-                "none";
-        }
-
-
-        return;
-
-    }
-
-
-    textElement.textContent =
-        "PROCESSANDO";
-
-
-    if (completeElement) {
-        completeElement.classList.remove(
-            "visible"
-        );
-    }
-
-
-    if (stopButton) {
-        stopButton.style.display =
-            "flex";
-    }
-
-}
-
-
-/* ===============================================================
-   ATUALIZAR COUNTDOWN
-   =============================================================== */
-
-function startAutomationCountdown(seconds) {
-
-    clearInterval(
-        state.automationProgress.countdownTimer
-    );
-
-
-    let remaining =
-        Math.max(
-            0,
-            Number(seconds) || 0
-        );
-
-
-    state.automationProgress.nextIn =
-        remaining;
-
-
-    updateCountdownUI();
-
-
-    if (remaining <= 0) {
-        return;
-    }
-
-
-    state.automationProgress.countdownTimer =
-        setInterval(
-            () => {
-
-                remaining--;
-
-                state.automationProgress.nextIn =
-                    remaining;
-
-                updateCountdownUI();
-
-
-                if (remaining <= 0) {
-
-                    clearInterval(
-                        state.automationProgress.countdownTimer
-                    );
-
-                }
-
-            },
-            1000
-        );
-
-}
-
-
-/* ===============================================================
-   COUNTDOWN UI
-   =============================================================== */
-
-function updateCountdownUI() {
-
-    const element =
-        document.getElementById(
-            "automationCountdown"
-        );
-
-
-    if (!element) {
-        return;
-    }
-
-
-    const seconds =
-        Math.max(
-            0,
-            Number(
-                state.automationProgress.nextIn
-            ) || 0
-        );
-
-
-    if (
-        state.automationProgress.status ===
-        "concluida"
-    ) {
-
-        element.textContent =
-            "Automação finalizada.";
-
-        return;
-
-    }
-
-
-    if (
-        state.automationProgress.status ===
-        "cancelada"
-    ) {
-
-        element.textContent =
-            "Automação cancelada.";
-
-        return;
-
-    }
-
-
-    if (seconds <= 0) {
-
-        element.textContent =
-            "Processando...";
-
-        return;
-
-    }
-
-
-    const minutes =
-        Math.floor(
-            seconds / 60
-        );
-
-
-    const secs =
-        seconds % 60;
-
-
-    element.textContent =
-        `Próximo processamento em ${
-            String(minutes).padStart(2, "0")
-        }:${
-            String(secs).padStart(2, "0")
-        }`;
-
-}
-
-
-/* ===============================================================
-   APLICAR STATUS RECEBIDO DO BACKEND
-   =============================================================== */
-
-function applyAutomationStatus(data) {
-
-    if (!data) {
-        return;
-    }
-
-
-    const progress =
-        state.automationProgress;
-
-
-    /*
-     * Aceita diferentes nomes,
-     * facilitando a compatibilidade
-     * com o backend.
-     */
-
-    if (
-        data.id ||
-        data.automationId
-    ) {
-
-        progress.id =
-            data.id ||
-            data.automationId;
-
-    }
-
-
-    if (data.status) {
-
-        const normalized =
-            String(
-                data.status
-            )
-            .toLowerCase();
-
-
-        const statusMap = {
-
-            "completed":
-                "concluida",
-
-            "complete":
-                "concluida",
-
-            "finished":
-                "concluida",
-
-            "concluido":
-                "concluida",
-
-            "concluída":
-                "concluida",
-
-            "cancelled":
-                "cancelada",
-
-            "canceled":
-                "cancelada",
-
-            "cancelado":
-                "cancelada",
-
-            "cancelada":
-                "cancelada",
-
-            "error":
-                "erro",
-
-            "failed":
-                "erro",
-
-            "running":
-                "processando",
-
-            "processing":
-                "processando"
-
-        };
-
-
-        progress.status =
-            statusMap[normalized] ||
-            normalized;
-
-    }
-
-
-    if (
-        data.total !== undefined
-    ) {
-
-        progress.total =
-            Number(data.total);
-
-    }
-
-
-    if (
-        data.processados !== undefined
-    ) {
-
-        progress.processed =
-            Number(data.processados);
-
-    } else if (
-        data.processed !== undefined
-    ) {
-
-        progress.processed =
-            Number(data.processed);
-
-    }
-
-
-    if (
-        data.postados !== undefined
-    ) {
-
-        progress.posted =
-            Number(data.postados);
-
-    } else if (
-        data.posted !== undefined
-    ) {
-
-        progress.posted =
-            Number(data.posted);
-
-    }
-
-
-    if (
-        data.erros !== undefined
-    ) {
-
-        progress.errors =
-            Number(data.erros);
-
-    } else if (
-        data.errors !== undefined
-    ) {
-
-        progress.errors =
-            Number(data.errors);
-
-    }
-
-
-    if (
-        data.atual !== undefined
-    ) {
-
-        progress.current =
-            Number(data.atual);
-
-    } else if (
-        data.current !== undefined
-    ) {
-
-        progress.current =
-            Number(data.current);
-
-    }
-
-
-    if (
-        data.proximoEm !== undefined
-    ) {
-
-        startAutomationCountdown(
-            Number(data.proximoEm)
-        );
-
-    } else if (
-        data.nextIn !== undefined
-    ) {
-
-        startAutomationCountdown(
-            Number(data.nextIn)
-        );
-
-    }
-
-
-    /*
-     * Status dos produtos
-     */
-
-    if (
-        Array.isArray(
-            data.produtos
-        )
-    ) {
-
-        data.produtos.forEach(
-            serverProduct => {
-
-                const number =
-                    Number(
-                        serverProduct.numero ??
-                        serverProduct.number ??
-                        serverProduct.produto
-                    );
-
-
-                if (!number) {
-                    return;
-                }
-
-
-                const product =
-                    progress.products.find(
-                        item =>
-                            item.number ===
-                            number
-                    );
-
-
-                if (!product) {
-                    return;
-                }
-
-
-                const serverStatus =
-                    String(
-                        serverProduct.status ||
-                        "aguardando"
-                    )
-                    .toLowerCase();
-
-
-                const allowed = [
-                    "aguardando",
-                    "processando",
-                    "postado",
-                    "erro"
-                ];
-
-
-                if (
-                    allowed.includes(
-                        serverStatus
-                    )
-                ) {
-
-                    product.status =
-                        serverStatus;
-
-                }
-
-            }
-        );
-
-    }
-
-
-    /*
-     * Compatibilidade com:
-     *
-     * {
-     *   produto: 3,
-     *   status: "postado"
-     * }
-     */
-
-    if (
-        data.produto !== undefined &&
-        data.status
-    ) {
-
-        atualizarStatusServidor({
-            produto:
-                data.produto,
-
-            status:
-                data.status
-        });
-
-    }
-
-
-    /*
-     * Se não houver total explícito,
-     * usamos a quantidade de produtos.
-     */
-
-    if (
-        progress.total <= 0
-    ) {
-
-        progress.total =
-            progress.products.length;
-
-    }
-
-
-    /*
-     * Se o backend mandar percentual
-     * diretamente, usamos para inferência.
-     */
-
-    if (
-        data.percentual !== undefined &&
-        progress.total > 0
-    ) {
-
-        const percentage =
-            Number(
-                data.percentual
-            );
-
-
-        progress.processed =
-            Math.round(
-                progress.total *
-                (percentage / 100)
-            );
-
-    }
-
-
-    /*
-     * Se todos terminaram, concluímos
-     * automaticamente.
-     */
-
-    const finishedProducts =
-        progress.products.filter(
-            product =>
-                product.status === "postado" ||
-                product.status === "erro"
-        ).length;
-
-
-    if (
-        progress.total > 0 &&
-        finishedProducts >=
-        progress.total &&
-        progress.status !== "cancelada"
-    ) {
-
-        progress.processed =
-            progress.total;
-
-        progress.status =
-            "concluida";
-
-        clearAutomationTimers();
-
-    }
-
-
-    renderAutomationProgress();
-
-}
-
-
-/* ===============================================================
-   POLLING DE STATUS
-   =============================================================== */
-
-function startAutomationPolling() {
-
-    clearInterval(
-        state.automationProgress.polling
-    );
-
-
-    /*
-     * Sem ID da automação não temos
-     * como consultar o status individual.
-     */
-
-    if (
-        !state.automationProgress.id
-    ) {
-
-        console.warn(
-            "Nenhum automationId foi retornado pelo backend."
-        );
-
-        return;
-
-    }
-
-
-    consultarStatusAutomacao();
-
-
-    state.automationProgress.polling =
-        setInterval(
-            consultarStatusAutomacao,
-            3000
-        );
-
-}
-
-
-/* ===============================================================
-   CONSULTAR STATUS
-   =============================================================== */
-
-async function consultarStatusAutomacao() {
-
-    const id =
-        state.automationProgress.id;
-
-
-    if (!id) {
-        return;
-    }
-
-
-    try {
-
-        const url =
-            CONFIG.API_BASE +
-            CONFIG.ENDPOINT_STATUS +
-            "/" +
-            encodeURIComponent(id);
-
-
-        const response =
-            await fetch(
-                url,
-                {
-                    method:
-                        "GET",
-
-                    headers: {
-                        "Accept":
-                            "application/json"
-                    }
-                }
-            );
-
-
-        if (!response.ok) {
-            throw new Error(
-                `HTTP ${response.status}`
-            );
-        }
-
-
-        const data =
-            await response.json();
-
-
-        setServerStatus(
-            true
-        );
-
-
-        applyAutomationStatus(
-            data
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "Erro ao consultar status:",
-            error
-        );
-
-
-        /*
-         * Não marcamos a automação
-         * como perdida imediatamente.
-         *
-         * O próximo polling tentará
-         * novamente.
-         */
-
-        setServerStatus(
-            false
-        );
-
-    }
-
-}
-
-
-/* ===============================================================
-   PARAR AUTOMAÇÃO
-   =============================================================== */
-
-async function stopAutomation() {
-
-    const id =
-        state.automationProgress.id;
-
-
-    if (!id) {
-
-        showToast(
-            "Esta automação ainda não possui um identificador no servidor.",
-            "error"
-        );
-
-        return;
-
-    }
-
-
-    const confirmed =
-        window.confirm(
-            "Tem certeza que deseja parar esta automação?"
-        );
-
-
-    if (!confirmed) {
-        return;
-    }
-
-
-    const button =
-        document.getElementById(
-            "stopAutomationButton"
-        );
-
-
-    if (button) {
-
-        button.disabled =
-            true;
-
-        button.textContent =
-            "PARANDO...";
-
-    }
-
-
-    try {
-
-        const url =
-            CONFIG.API_BASE +
-            CONFIG.ENDPOINT_CANCELAR +
-            "/" +
-            encodeURIComponent(id);
-
-
-        const response =
-            await fetch(
-                url,
-                {
-                    method:
-                        "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json",
-
-                        "Accept":
-                            "application/json"
-                    },
-
-                    body:
-                        JSON.stringify({
-
-                            initData:
-                                state.initData,
-
-                            automationId:
-                                id
-
-                        })
-                }
-            );
-
-
-        let data =
-            null;
-
-
-        try {
-
-            data =
-                await response.json();
-
-        } catch {
-
-            data = null;
-
-        }
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                data?.message ||
-                "Não foi possível cancelar a automação."
-            );
-
-        }
-
-
-        state.automationProgress.status =
-            "cancelada";
-
-
-        clearAutomationTimers();
-
-        renderAutomationProgress();
-
-
-        showToast(
-            "Automação parada.",
-            "success"
-        );
-
-
-        setServerStatus(
-            true
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "Erro ao parar automação:",
-            error
-        );
-
-
-        showToast(
-            error.message ||
-            "Não foi possível parar a automação.",
-            "error"
-        );
-
-
-    } finally {
-
-        if (button) {
-
-            button.disabled =
-                false;
-
-            button.textContent =
-                "🛑 PARAR AUTOMAÇÃO";
-
-        }
-
-    }
-
-}
-
-
-/* ===============================================================
-   LIMPAR TIMERS
-   =============================================================== */
-
-function clearAutomationTimers() {
-
-    if (
-        state.automationProgress.polling
-    ) {
-
-        clearInterval(
-            state.automationProgress.polling
-        );
-
-        state.automationProgress.polling =
-            null;
-
-    }
-
-
-    if (
-        state.automationProgress.countdownTimer
-    ) {
-
-        clearInterval(
-            state.automationProgress.countdownTimer
-        );
-
-        state.automationProgress.countdownTimer =
-            null;
-
-    }
-
-}
-
-
-/* ===============================================================
-   ATUALIZAR ESTATÍSTICAS LOCAIS
-   =============================================================== */
-
-function updateLocalAutomationStats() {
-
-    const products =
-        state.automationProgress.products;
-
-
-    const posted =
-        products.filter(
-            product =>
-                product.status === "postado"
-        ).length;
-
-
-    const errors =
-        products.filter(
-            product =>
-                product.status === "erro"
-        ).length;
-
-
-    const pending =
-        products.filter(
-            product =>
-                product.status === "aguardando" ||
-                product.status === "processando"
-        ).length;
-
-
-    const offers =
-        products.length;
-
-
-    const statOffers =
-        document.getElementById(
-            "statOffers"
-        );
-
-    const statPosted =
-        document.getElementById(
-            "statPosted"
-        );
-
-    const statPending =
-        document.getElementById(
-            "statPending"
-        );
-
-    const statErrors =
-        document.getElementById(
-            "statErrors"
-        );
-
-
-    /*
-     * Somamos aos valores existentes
-     * somente quando apropriado.
-     *
-     * Para evitar duplicação durante polling,
-     * usamos apenas o estado atual da automação.
-     */
-
-    if (statOffers) {
-        statOffers.textContent =
-            offers;
-    }
-
-    if (statPosted) {
-        statPosted.textContent =
-            posted;
-    }
-
-    if (statPending) {
-        statPending.textContent =
-            pending;
-    }
-
-    if (statErrors) {
-        statErrors.textContent =
-            errors;
-    }
-
-}
-
-
-/* ===============================================================
-   SOBRESCREVER startAutomation
-   =============================================================== */
-
-/*
- * Guardamos a função original.
- *
- * A função original continua responsável
- * por validar e chamar /api/configurar.
- */
-
-const originalStartAutomation =
-    startAutomation;
-
-
-startAutomation =
-    async function() {
-
-        const validProducts =
-            state.products.filter(
-                product =>
-                    product.valid &&
-                    product.link
-            );
-
-
-        if (
-            validProducts.length === 0
-        ) {
-
-            showToast(
-                "Adicione pelo menos um link válido da Shopee.",
-                "error"
-            );
-
-            navigateTo(
-                "automation"
-            );
-
-            return;
-
-        }
-
-
-        if (
-            validProducts.length !==
-            state.products.length
-        ) {
-
-            showToast(
-                "Corrija os links inválidos antes de iniciar.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        /*
-         * Preparamos o painel antes
-         * de chamar o backend.
-         */
-
-        state.automationProgress = {
-
-            id:
-                null,
-
-            status:
-                "processando",
-
-            total:
-                validProducts.length,
-
-            processed:
-                0,
-
-            posted:
-                0,
-
-            errors:
-                0,
-
-            current:
-                0,
-
-            nextIn:
-                state.interval,
-
-            products:
-                [],
-
-            polling:
-                null,
-
-            countdownTimer:
-                null
-
-        };
-
-
-        createAutomationProducts();
-
-        showAutomationProgress();
-
-        startAutomationCountdown(
-            state.interval
-        );
-
-
-        /*
-         * Chamamos a função original.
-         *
-         * Ela mantém toda a lógica
-         * de validação e envio existente.
-         */
-
-        await originalStartAutomation();
-
-
-        /*
-         * A função original salva:
-         *
-         * state.automation.backendResponse
-         *
-         * Tentamos encontrar o ID em
-         * diferentes formatos de resposta.
-         */
-
-        const response =
-            state.automation
-                ?.backendResponse;
-
-
-        const automationId =
-            response?.automationId ||
-            response?.automation_id ||
-            response?.id ||
-            response?.data?.automationId ||
-            response?.data?.id ||
-            null;
-
-
-        if (automationId) {
-
-            state.automationProgress.id =
-                automationId;
-
-
-            startAutomationPolling();
-
-        } else {
-
-            /*
-             * O painel continua funcionando,
-             * mas o status em tempo real
-             * ficará aguardando o ID.
-             */
-
-            console.warn(
-                "Backend não retornou automationId."
-            );
-
-        }
-
-
-        renderAutomationProgress();
-
-    };
-
-
-/* ===============================================================
-   MELHORAR atualizarStatusServidor
-   =============================================================== */
-
-const originalAtualizarStatusServidor =
-    atualizarStatusServidor;
-
-
-atualizarStatusServidor =
-    function(dados) {
-
-        originalAtualizarStatusServidor(
-            dados
-        );
-
-
-        if (!dados) {
-            return;
-        }
-
-
-        const number =
-            Number(
-                dados.produto
-            );
-
-
-        const status =
-            String(
-                dados.status || ""
-            ).toLowerCase();
-
-
-        if (
-            number >= 1 &&
-            number <=
-            state.automationProgress.products.length
-        ) {
-
-            const product =
-                state.automationProgress.products[
-                    number - 1
-                ];
-
-
-            if (
-                [
-                    "aguardando",
-                    "processando",
-                    "postado",
-                    "erro"
-                ].includes(status)
-            ) {
-
-                product.status =
-                    status;
-
-            }
-
-        }
-
-
-        /*
-         * Atualizamos contadores.
-         */
-
-        const products =
-            state.automationProgress.products;
-
-
-        state.automationProgress.posted =
-            products.filter(
-                product =>
-                    product.status ===
-                    "postado"
-            ).length;
-
-
-        state.automationProgress.errors =
-            products.filter(
-                product =>
-                    product.status ===
-                    "erro"
-            ).length;
-
-
-        state.automationProgress.processed =
-            state.automationProgress.posted +
-            state.automationProgress.errors;
-
-
-        if (
-            state.automationProgress.processed >=
-            state.automationProgress.total
-        ) {
-
-            state.automationProgress.status =
-                "concluida";
-
-            clearAutomationTimers();
-
-        }
-
-
-        renderAutomationProgress();
-
-        updateLocalAutomationStats();
-
-    };
-
-
-/* ===============================================================
-   INICIALIZAR BLOCO 1
-   =============================================================== */
-
-document.addEventListener(
-    "DOMContentLoaded",
+  input.addEventListener(
+    "input",
     () => {
 
-        initializeAutomationProgress();
+      validarInput(
+        input,
+        row,
+        status
+      );
+
+      atualizarInterface();
 
     }
-);
+  );
 
-/* ===============================================================
-   BLOCO 2 — PERSISTÊNCIA
-   =============================================================== */
 
-const STORAGE_KEYS = {
+  row
+    .querySelector(
+      ".remove-link"
+    )
+    .addEventListener(
+      "click",
+      () => {
 
-    settings:
-        "raposa_cacadora_settings",
+        row.remove();
 
-    history:
-        "raposa_cacadora_history"
+        renumerar();
 
-};
+        atualizarInterface();
 
-
-/* ===============================================================
-   CONFIGURAÇÕES PADRÃO
-   =============================================================== */
-
-const DEFAULT_SETTINGS = {
-
-    notifications:
-        true,
-
-    interval:
-        60,
-
-    quantity:
-        1
-
-};
-
-
-/* ===============================================================
-   CARREGAR CONFIGURAÇÕES
-   =============================================================== */
-
-function loadSettings() {
-
-    try {
-
-        const saved =
-            localStorage.getItem(
-                STORAGE_KEYS.settings
-            );
-
-
-        if (!saved) {
-
-            applySettings(
-                DEFAULT_SETTINGS
-            );
-
-            return;
-
-        }
-
-
-        const settings =
-            JSON.parse(saved);
-
-
-        applySettings({
-            ...DEFAULT_SETTINGS,
-            ...settings
-        });
-
-
-    } catch (error) {
-
-        console.error(
-            "Erro ao carregar configurações:",
-            error
-        );
-
-
-        applySettings(
-            DEFAULT_SETTINGS
-        );
-
-    }
-
-}
-
-
-/* ===============================================================
-   APLICAR CONFIGURAÇÕES
-   =============================================================== */
-
-function applySettings(settings) {
-
-    const notifications =
-        document.getElementById(
-            "settingNotifications"
-        );
-
-    const interval =
-        document.getElementById(
-            "settingInterval"
-        );
-
-    const quantity =
-        document.getElementById(
-            "settingQuantity"
-        );
-
-
-    if (notifications) {
-
-        notifications.checked =
-            Boolean(
-                settings.notifications
-            );
-
-    }
-
-
-    if (interval) {
-
-        interval.value =
-            String(
-                settings.interval
-            );
-
-    }
-
-
-    if (quantity) {
-
-        quantity.value =
-            String(
-                settings.quantity
-            );
-
-    }
-
-}
-
-
-/* ===============================================================
-   SALVAR CONFIGURAÇÕES
-   =============================================================== */
-
-function saveSettings() {
-
-    const notifications =
-        document.getElementById(
-            "settingNotifications"
-        );
-
-    const interval =
-        document.getElementById(
-            "settingInterval"
-        );
-
-    const quantity =
-        document.getElementById(
-            "settingQuantity"
-        );
-
-
-    const settings = {
-
-        notifications:
-            notifications
-                ? notifications.checked
-                : true,
-
-        interval:
-            interval
-                ? Number(interval.value)
-                : 60,
-
-        quantity:
-            quantity
-                ? Number(quantity.value)
-                : 1
-
-    };
-
-
-    try {
-
-        localStorage.setItem(
-            STORAGE_KEYS.settings,
-            JSON.stringify(settings)
-        );
-
-
-        showToast(
-            "Configurações salvas.",
-            "success"
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "Erro ao salvar configurações:",
-            error
-        );
-
-    }
-
-}
-
-
-/* ===============================================================
-   RESTAURAR CONFIGURAÇÕES
-   =============================================================== */
-
-function resetSettings() {
-
-    const confirmed =
-        window.confirm(
-            "Restaurar todas as configurações padrão?"
-        );
-
-
-    if (!confirmed) {
-        return;
-    }
-
-
-    applySettings(
-        DEFAULT_SETTINGS
+      }
     );
 
 
-    saveSettings();
+  input.focus();
+
+  atualizarInterface();
+
+}
 
 
-    showToast(
-        "Configurações restauradas.",
-        "success"
+/* ============================================================
+   VALIDAR LINK
+============================================================ */
+
+function validarLinkShopee(link) {
+
+  try {
+
+    const url =
+      new URL(link);
+
+
+    if (
+      url.protocol !== "http:" &&
+      url.protocol !== "https:"
+    ) {
+
+      return false;
+
+    }
+
+
+    return url.hostname
+      .toLowerCase()
+      .includes("shopee");
+
+  } catch {
+
+    return false;
+
+  }
+
+}
+
+
+function validarInput(
+  input,
+  row,
+  status
+) {
+
+  const valor =
+    input.value.trim();
+
+
+  row.classList.remove(
+    "valid"
+  );
+
+
+  status.innerHTML = "";
+
+
+  if (!valor) {
+
+    return;
+
+  }
+
+
+  if (
+    validarLinkShopee(
+      valor
+    )
+  ) {
+
+    row.classList.add(
+      "valid"
+    );
+
+
+    status.innerHTML =
+      '<i class="fa-solid fa-circle-check" style="color:#32d583"></i>';
+
+  } else {
+
+    status.innerHTML =
+      '<i class="fa-solid fa-circle-xmark" style="color:#ff5c5c"></i>';
+
+  }
+
+}
+
+
+/* ============================================================
+   RENUMERAR
+============================================================ */
+
+function renumerar() {
+
+  document
+    .querySelectorAll(
+      ".link-row"
+    )
+    .forEach(
+      (row,index) => {
+
+        row.querySelector(
+          ".link-number"
+        ).innerText =
+          String(index + 1)
+            .padStart(2,"0");
+
+      }
     );
 
 }
 
 
-/* ===============================================================
-   HISTÓRICO — LER
-   =============================================================== */
+/* ============================================================
+   PEGAR LINKS
+============================================================ */
 
-function getLocalHistory() {
+function obterLinks() {
 
-    try {
+  return [
+    ...document.querySelectorAll(
+      ".link-input"
+    )
+  ]
 
-        const saved =
-            localStorage.getItem(
-                STORAGE_KEYS.history
-            );
+  .map(
+    input =>
+      input.value.trim()
+  )
 
-
-        if (!saved) {
-            return [];
-        }
-
-
-        const history =
-            JSON.parse(saved);
-
-
-        return Array.isArray(history)
-            ? history
-            : [];
-
-
-    } catch (error) {
-
-        console.error(
-            "Erro ao carregar histórico:",
-            error
-        );
-
-
-        return [];
-
-    }
+  .filter(
+    link =>
+      link.length > 0
+  );
 
 }
 
 
-/* ===============================================================
-   HISTÓRICO — SALVAR
-   =============================================================== */
+/* ============================================================
+   QUANTIDADE
+============================================================ */
 
-function saveLocalHistory(history) {
+function alterarQuantidade(
+  valor
+) {
 
-    try {
-
-        /*
-         * Mantemos somente os últimos
-         * 50 registros locais.
-         */
-
-        const limited =
-            history.slice(
-                0,
-                50
-            );
+  const total =
+    obterLinks().length;
 
 
-        localStorage.setItem(
-            STORAGE_KEYS.history,
-            JSON.stringify(limited)
-        );
+  if (
+    total === 0
+  ) {
+
+    mostrarMensagem(
+      "❌ Adicione pelo menos um produto.",
+      "erro"
+    );
+
+    return;
+
+  }
 
 
-    } catch (error) {
+  quantidade += valor;
 
-        console.error(
-            "Erro ao salvar histórico:",
-            error
-        );
 
-    }
+  const limite =
+    Math.min(
+      total,
+      MAX_LINKS
+    );
+
+
+  quantidade =
+    Math.max(
+      1,
+      Math.min(
+        quantidade,
+        limite
+      )
+    );
+
+
+  atualizarInterface();
 
 }
 
 
-/* ===============================================================
-   ADICIONAR AO HISTÓRICO
-   =============================================================== */
+/* ============================================================
+   INTERVALOS
+============================================================ */
 
-function addToLocalHistory(automation) {
+document
+  .querySelectorAll(
+    ".interval"
+  )
+  .forEach(
+    button => {
 
-    if (!automation) {
-        return;
-    }
+      button.addEventListener(
+        "click",
+        () => {
 
-
-    const history =
-        getLocalHistory();
-
-
-    const products =
-        automation.products || [];
-
-
-    const posted =
-        products.filter(
-            product =>
-                product.status ===
-                "postado"
-        ).length;
-
-
-    const errors =
-        products.filter(
-            product =>
-                product.status ===
-                "erro"
-        ).length;
-
-
-    const record = {
-
-        id:
-            automation.id ||
-            automation.automationId ||
-            Date.now(),
-
-        createdAt:
-            automation.startedAt ||
-            new Date().toISOString(),
-
-        total:
-            products.length,
-
-        posted:
-            posted,
-
-        errors:
-            errors,
-
-        interval:
-            automation.interval ||
-            60,
-
-        quantity:
-            automation.quantity ||
-            1,
-
-        status:
-            automation.status ||
-            (
-                errors > 0
-                    ? "erro"
-                    : "concluida"
+          document
+            .querySelectorAll(
+              ".interval"
             )
-
-    };
-
-
-    /*
-     * Evita duplicar o mesmo ID.
-     */
-
-    const filtered =
-        history.filter(
-            item =>
-                String(item.id) !==
-                String(record.id)
-        );
+            .forEach(
+              item =>
+                item.classList
+                  .remove(
+                    "active"
+                  )
+            );
 
 
-    filtered.unshift(
-        record
-    );
+          button.classList.add(
+            "active"
+          );
 
 
-    saveLocalHistory(
-        filtered
-    );
+          intervaloSelecionado =
+            Number(
+              button.dataset.segundos
+            );
 
 
-    renderHistory();
+          atualizarInterface();
+
+        }
+      );
+
+    }
+  );
+
+
+/* ============================================================
+   FORMATAR INTERVALO
+============================================================ */
+
+function formatarIntervalo(
+  segundos
+) {
+
+  if (
+    segundos < 60
+  ) {
+
+    return `${segundos}s`;
+
+  }
+
+
+  return `${segundos / 60}min`;
 
 }
 
 
-/* ===============================================================
-   HISTÓRICO — RENDER
-   =============================================================== */
+/* ============================================================
+   ATUALIZAR INTERFACE
+============================================================ */
 
-function renderHistory() {
+function atualizarInterface() {
 
-    const container =
-        document.getElementById(
-            "historyList"
-        );
+  const links =
+    obterLinks();
 
 
-    if (!container) {
-        return;
-    }
+  summaryLinks.innerText =
+    links.length;
 
 
-    const history =
-        getLocalHistory();
+  linkCounter.innerText =
+    `${links.length} / ${MAX_LINKS}`;
 
 
-    if (!history.length) {
+  summaryInterval.innerText =
+    formatarIntervalo(
+      intervaloSelecionado
+    );
 
-        container.innerHTML = `
 
-            <div class="empty-state">
+  if (
+    links.length > 0 &&
+    quantidade > links.length
+  ) {
 
-                <div class="empty-state-icon">
-                    📭
-                </div>
+    quantidade =
+      links.length;
 
-                <strong>
-                    Nenhuma automação ainda
-                </strong>
+  }
 
-                <span>
-                    Quando você executar automações,
-                    elas aparecerão aqui.
-                </span>
 
-            </div>
+  quantidade =
+    Math.max(
+      1,
+      Math.min(
+        quantidade,
+        MAX_LINKS
+      )
+    );
+
+
+  quantidadeEl.innerText =
+    quantidade;
+
+
+  summaryPosts.innerText =
+    quantidade;
+
+
+  addLinkBtn.disabled =
+    linksContainer
+      .querySelectorAll(
+        ".link-row"
+      ).length >= MAX_LINKS;
+
+
+  if (
+    addLinkBtn.disabled
+  ) {
+
+    addLinkBtn.innerHTML =
+      '<i class="fa-solid fa-check"></i> LIMITE DE 20';
+
+  } else {
+
+    addLinkBtn.innerHTML =
+      '<i class="fa-solid fa-plus"></i> ADICIONAR PRODUTO';
+
+  }
+
+}
+
+
+/* ============================================================
+   MENSAGEM
+============================================================ */
+
+function mostrarMensagem(
+  texto,
+  tipo
+) {
+
+  msgBox.style.display =
+    "block";
+
+
+  msgBox.className =
+    tipo === "sucesso"
+      ? "msg-sucesso"
+      : "msg-erro";
+
+
+  msgBox.innerText =
+    texto;
+
+}
+
+
+/* ============================================================
+   PREPARAR LISTA DE STATUS
+============================================================ */
+
+function prepararStatusProdutos(
+  links
+) {
+
+  productStatusList.innerHTML =
+    "";
+
+
+  links
+    .slice(
+      0,
+      quantidade
+    )
+    .forEach(
+      (link,index) => {
+
+        const item =
+          document.createElement(
+            "div"
+          );
+
+
+        item.className =
+          "product-status";
+
+
+        item.id =
+          `produto-status-${index}`;
+
+
+        item.innerHTML = `
+
+          <div
+            class="product-status-icon"
+            id="status-icon-${index}"
+          >
+            <i class="fa-solid fa-clock"></i>
+          </div>
+
+          <div class="product-status-text">
+
+            <strong>
+              Produto ${index + 1}
+            </strong>
+
+            <span>
+              ${escaparHTML(link)}
+            </span>
+
+          </div>
+
+          <div
+            class="product-status-state"
+            id="status-text-${index}"
+          >
+            AGUARDANDO
+          </div>
 
         `;
 
 
-        return;
+        productStatusList
+          .appendChild(
+            item
+          );
 
-    }
-
-
-    container.innerHTML = "";
-
-
-    history.forEach(
-        item => {
-
-            const element =
-                document.createElement(
-                    "div"
-                );
-
-
-            element.className =
-                "history-item";
-
-
-            const date =
-                formatHistoryDate(
-                    item.createdAt
-                );
-
-
-            let statusClass =
-                "pending";
-
-
-            let statusText =
-                "PENDENTE";
-
-
-            if (
-                item.status ===
-                "concluida"
-            ) {
-
-                statusClass =
-                    "success";
-
-                statusText =
-                    "CONCLUÍDA";
-
-            } else if (
-                item.status ===
-                "erro"
-            ) {
-
-                statusClass =
-                    "error";
-
-                statusText =
-                    "ERRO";
-
-            } else if (
-                item.status ===
-                "cancelada"
-            ) {
-
-                statusClass =
-                    "error";
-
-                statusText =
-                    "CANCELADA";
-
-            }
-
-
-            element.innerHTML = `
-
-                <div class="history-top">
-
-                    <div class="history-title">
-                        Automação #${escapeHtml(
-                            String(item.id)
-                        )}
-                    </div>
-
-                    <div class="history-date">
-                        ${date}
-                    </div>
-
-                </div>
-
-
-                <div
-                    class="history-status ${statusClass}">
-
-                    <span>●</span>
-
-                    ${statusText}
-
-                </div>
-
-
-                <div class="history-stats">
-
-                    <div class="history-stat">
-
-                        <strong>
-                            ${Number(item.total) || 0}
-                        </strong>
-
-                        <span>
-                            PRODUTOS
-                        </span>
-
-                    </div>
-
-
-                    <div class="history-stat">
-
-                        <strong style="color:var(--green);">
-                            ${Number(item.posted) || 0}
-                        </strong>
-
-                        <span>
-                            POSTADOS
-                        </span>
-
-                    </div>
-
-
-                    <div class="history-stat">
-
-                        <strong style="color:var(--red);">
-                            ${Number(item.errors) || 0}
-                        </strong>
-
-                        <span>
-                            ERROS
-                        </span>
-
-                    </div>
-
-                </div>
-
-            `;
-
-            container.appendChild(
-                element
-            );
-
-        }
+      }
     );
 
 }
 
 
-/* ===============================================================
-   DATA DO HISTÓRICO
-   =============================================================== */
+/* ============================================================
+   ESCAPAR HTML
+============================================================ */
 
-function formatHistoryDate(value) {
+function escaparHTML(
+  texto
+) {
 
-    try {
+  const div =
+    document.createElement(
+      "div"
+    );
 
-        const date =
-            new Date(value);
+  div.textContent =
+    texto;
 
-
-        return date.toLocaleString(
-            "pt-BR",
-            {
-                day: "2-digit",
-                month: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit"
-            }
-        );
-
-
-    } catch {
-
-        return "--";
-
-    }
+  return div.innerHTML;
 
 }
 
 
-/* ===============================================================
-   LIMPAR HISTÓRICO
-   =============================================================== */
+/* ============================================================
+   ATUALIZAR PROGRESSO
+============================================================ */
 
-function clearLocalHistory() {
+function atualizarProgresso(
+  numero,
+  total,
+  status,
+  link
+) {
 
-    const confirmed =
-        window.confirm(
-            "Deseja realmente apagar o histórico local?"
-        );
+  const percentual =
+    total > 0
+      ? Math.round(
+          (numero / total) * 100
+        )
+      : 0;
 
 
-    if (!confirmed) {
-        return;
+  progressoAtual =
+    percentual;
+
+
+  progressFill.style.width =
+    `${percentual}%`;
+
+
+  progressPercent.innerText =
+    `${percentual}%`;
+
+
+  automationStatus.innerText =
+    status;
+
+
+  currentProduct.innerText =
+    link || "Concluído";
+
+
+  if (
+    numero > 0
+  ) {
+
+    const index =
+      numero - 1;
+
+
+    const item =
+      document.getElementById(
+        `produto-status-${index}`
+      );
+
+
+    const icon =
+      document.getElementById(
+        `status-icon-${index}`
+      );
+
+
+    const state =
+      document.getElementById(
+        `status-text-${index}`
+      );
+
+
+    if (item) {
+
+      item.classList.add(
+        "done"
+      );
+
     }
 
 
-    try {
+    if (icon) {
 
-        localStorage.removeItem(
-            STORAGE_KEYS.history
-        );
-
-
-        renderHistory();
-
-
-        showToast(
-            "Histórico local apagado.",
-            "success"
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "Erro ao limpar histórico:",
-            error
-        );
+      icon.innerHTML =
+        '<i class="fa-solid fa-check"></i>';
 
     }
+
+
+    if (state) {
+
+      state.innerText =
+        "POSTADO";
+
+    }
+
+  }
+
+
+  if (
+    numero < total
+  ) {
+
+    nextPost.innerText =
+      `Produto ${numero + 1}`;
+
+  } else {
+
+    nextPost.innerText =
+      "Concluído";
+
+  }
 
 }
 
 
-/* ===============================================================
-   SALVAR AUTOMAÇÃO FINALIZADA
-   =============================================================== */
+/* ============================================================
+   MARCAR PRODUTO COMO PROCESSANDO
+============================================================ */
 
-function saveFinishedAutomationToHistory() {
+function marcarProcessando(
+  index
+) {
+
+  const item =
+    document.getElementById(
+      `produto-status-${index}`
+    );
+
+
+  const icon =
+    document.getElementById(
+      `status-icon-${index}`
+    );
+
+
+  const state =
+    document.getElementById(
+      `status-text-${index}`
+    );
+
+
+  if (item) {
+
+    item.classList.remove(
+      "done"
+    );
+
+    item.classList.add(
+      "processing"
+    );
+
+  }
+
+
+  if (icon) {
+
+    icon.innerHTML =
+      '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+
+  }
+
+
+  if (state) {
+
+    state.innerText =
+      "PROCESSANDO";
+
+  }
+
+}
+
+
+/* ============================================================
+   PARAR
+============================================================ */
+
+function pararAutomacao() {
+
+  automacaoAtiva =
+    false;
+
+
+  if (timerSimulado) {
+
+    clearInterval(
+      timerSimulado
+    );
+
+    timerSimulado =
+      null;
+
+  }
+
+
+  automationStatus.innerText =
+    "Automação interrompida";
+
+
+  nextPost.innerText =
+    "Parada pelo usuário";
+
+
+  document
+    .querySelector(
+      ".status-dot"
+    )
+    .style.background =
+    "#ff5c5c";
+
+
+  btn.disabled =
+    false;
+
+
+  btn.innerHTML =
+    '<i class="fa-solid fa-rocket"></i> INICIAR AUTOMAÇÃO';
+
+
+  mostrarMensagem(
+    "⚠️ A automação foi interrompida.",
+    "erro"
+  );
+
+}
+
+
+/* ============================================================
+   ENVIAR CONFIGURAÇÃO
+============================================================ */
+
+async function enviarConfiguracao() {
+
+  const links =
+    obterLinks();
+
+
+  msgBox.style.display =
+    "none";
+
+
+  if (
+    links.length === 0
+  ) {
+
+    mostrarMensagem(
+      "❌ Adicione pelo menos 1 produto da Shopee.",
+      "erro"
+    );
+
+    return;
+
+  }
+
+
+  const invalidos =
+    links.filter(
+      link =>
+        !validarLinkShopee(
+          link
+        )
+    );
+
+
+  if (
+    invalidos.length > 0
+  ) {
+
+    mostrarMensagem(
+      "❌ Corrija os links inválidos antes de iniciar.",
+      "erro"
+    );
+
+    return;
+
+  }
+
+
+  if (
+    quantidade < 1 ||
+    quantidade > links.length
+  ) {
+
+    mostrarMensagem(
+      "❌ A quantidade de postagens é inválida.",
+      "erro"
+    );
+
+    return;
+
+  }
+
+
+  /* ----------------------------------------------------------
+     PREPARA PAINEL
+  ---------------------------------------------------------- */
+
+  linksDaAutomacao =
+    links.slice(
+      0,
+      quantidade
+    );
+
+
+  prepararStatusProdutos(
+    linksDaAutomacao
+  );
+
+
+  progressPanel.style.display =
+    "block";
+
+
+  progressFill.style.width =
+    "0%";
+
+
+  progressPercent.innerText =
+    "0%";
+
+
+  automationStatus.innerText =
+    "Conectando...";
+
+
+  currentProduct.innerText =
+    "Enviando configuração...";
+
+
+  nextPost.innerText =
+    "Preparando";
+
+
+  document
+    .querySelector(
+      ".status-dot"
+    )
+    .style.background =
+    "var(--orange)";
+
+
+  btn.disabled =
+    true;
+
+
+  btn.innerHTML =
+    '<i class="fa-solid fa-circle-notch fa-spin"></i> ENVIANDO...';
+
+
+  /* ----------------------------------------------------------
+     PAYLOAD
+  ---------------------------------------------------------- */
+
+  const dadosParaEnviar = {
+
+    initData:
+      tg ? tg.initData : "",
+
+    links:
+      linksDaAutomacao,
+
+    link:
+      linksDaAutomacao[0],
+
+    intervalo:
+      intervaloSelecionado,
+
+    quantidade:
+      quantidade
+
+  };
+
+
+  try {
+
+    const resposta =
+      await fetch(
+
+        "https://bot-raposa-cacadora.onrender.com/api/configurar",
+
+        {
+
+          method:"POST",
+
+          headers:{
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify(
+              dadosParaEnviar
+            )
+
+        }
+
+      );
+
+
+    const resultado =
+      await resposta
+        .json()
+        .catch(
+          () => ({})
+        );
+
 
     if (
-        !state.automation
+      !resposta.ok
     ) {
-        return;
+
+      let erro =
+        `Erro HTTP ${resposta.status}`;
+
+
+      if (
+        typeof resultado.erro ===
+        "string"
+      ) {
+
+        erro =
+          resultado.erro;
+
+      }
+
+      else if (
+        typeof resultado.error ===
+        "string"
+      ) {
+
+        erro =
+          resultado.error;
+
+      }
+
+      else if (
+        typeof resultado.mensagem ===
+        "string"
+      ) {
+
+        erro =
+          resultado.mensagem;
+
+      }
+
+
+      throw new Error(
+        erro
+      );
+
     }
 
 
-    const progress =
-        state.automationProgress;
+    /* --------------------------------------------------------
+       SUCESSO DO SERVIDOR
+    -------------------------------------------------------- */
+
+    automacaoAtiva =
+      true;
 
 
-    const automation = {
-
-        id:
-            progress.id ||
-            state.automation.id ||
-            Date.now(),
-
-        startedAt:
-            state.automation.startedAt,
-
-        interval:
-            state.automation.interval,
-
-        quantity:
-            state.automation.quantity,
-
-        status:
-            progress.status,
-
-        products:
-            progress.products
-
-    };
+    btn.innerHTML =
+      '<i class="fa-solid fa-circle-notch fa-spin"></i> AUTOMAÇÃO ATIVA';
 
 
-    addToLocalHistory(
-        automation
+    mostrarMensagem(
+
+      "✓ " +
+      (
+        resultado.mensagem ||
+        "Automação iniciada com sucesso!"
+      ),
+
+      "sucesso"
+
     );
 
-}
+
+    automationStatus.innerText =
+      "Automação ativa";
 
 
-/* ===============================================================
-   USUÁRIO TELEGRAM
-   =============================================================== */
-
-function loadTelegramUserInfo() {
-
-    const element =
-        document.getElementById(
-            "telegramUserName"
-        );
+    currentProduct.innerText =
+      linksDaAutomacao[0];
 
 
-    if (!element) {
-        return;
-    }
+    nextPost.innerText =
+      "Produto 1";
 
-
-    try {
-
-        const user =
-            tg?.initDataUnsafe?.user;
-
-
-        if (!user) {
-
-            element.textContent =
-                "Sessão Telegram";
-
-            return;
-
-        }
-
-
-        let name =
-            [
-                user.first_name,
-                user.last_name
-            ]
-            .filter(Boolean)
-            .join(" ");
-
-
-        if (
-            user.username
-        ) {
-
-            name +=
-                ` (@${user.username})`;
-
-        }
-
-
-        element.textContent =
-            name ||
-            "Usuário Telegram";
-
-
-    } catch {
-
-        element.textContent =
-            "Sessão Telegram";
-
-    }
-
-}
-
-
-/* ===============================================================
-   DASHBOARD — API
-   =============================================================== */
-
-CONFIG.ENDPOINT_DASHBOARD =
-    "/api/dashboard";
-
-
-async function loadDashboard() {
 
     /*
-     * Primeiro mostramos dados locais,
-     * para a tela nunca ficar vazia.
-     */
+      IMPORTANTE:
 
-    updateDashboardFromLocal();
+      Este bloco NÃO deve ser usado como fonte
+      real de progresso.
 
+      Ele apenas demonstra visualmente o painel
+      enquanto seu backend não envia atualizações
+      reais.
 
-    try {
+      Quando seu Flask tiver endpoint de status,
+      WebSocket ou SSE, substitua esta função
+      pelo retorno real do servidor.
+    */
 
-        const response =
-            await fetch(
-                CONFIG.API_BASE +
-                CONFIG.ENDPOINT_DASHBOARD,
-                {
-                    method:
-                        "GET",
-
-                    headers: {
-                        "Accept":
-                            "application/json"
-                    }
-                }
-            );
+    iniciarAcompanhamentoLocal();
 
 
-        if (!response.ok) {
-            throw new Error(
-                `HTTP ${response.status}`
-            );
-        }
+  } catch (erro) {
+
+    console.error(
+      "Erro:",
+      erro
+    );
 
 
-        const data =
-            await response.json();
+    automacaoAtiva =
+      false;
 
 
-        if (
-            data &&
-            typeof data === "object"
-        ) {
-
-            updateDashboardValues(
-                data
-            );
-
-        }
+    progressPanel.style.display =
+      "block";
 
 
-        setServerStatus(
-            true
-        );
+    automationStatus.innerText =
+      "Falha na automação";
 
 
-    } catch (error) {
+    document
+      .querySelector(
+        ".status-dot"
+      )
+      .style.background =
+      "var(--red)";
 
-        /*
-         * O dashboard continua funcionando
-         * com os dados locais.
-         */
 
-        console.warn(
-            "Dashboard remoto indisponível:",
-            error
-        );
+    mostrarMensagem(
+      "❌ " + erro.message,
+      "erro"
+    );
 
-    }
+
+    btn.disabled =
+      false;
+
+
+    btn.innerHTML =
+      '<i class="fa-solid fa-rocket"></i> TENTAR NOVAMENTE';
+
+  }
 
 }
 
 
-/* ===============================================================
-   DASHBOARD — LOCAL
-   =============================================================== */
+/* ============================================================
+   ACOMPANHAMENTO VISUAL
 
-function updateDashboardFromLocal() {
+   ATENÇÃO:
+   É apenas fallback visual.
+============================================================ */
 
-    const history =
-        getLocalHistory();
+function iniciarAcompanhamentoLocal() {
 
+  if (
+    timerSimulado
+  ) {
 
-    const posted =
-        history.reduce(
-            (total, item) =>
-                total +
-                (Number(item.posted) || 0),
-            0
-        );
+    clearInterval(
+      timerSimulado
+    );
 
-
-    const errors =
-        history.reduce(
-            (total, item) =>
-                total +
-                (Number(item.errors) || 0),
-            0
-        );
+  }
 
 
-    const offers =
-        history.reduce(
-            (total, item) =>
-                total +
-                (Number(item.total) || 0),
-            0
-        );
+  let index = 0;
 
 
-    updateDashboardValues({
+  marcarProcessando(
+    index
+  );
 
-        ofertasHoje:
-            offers,
 
-        postadas:
-            posted,
+  automationStatus.innerText =
+    "Processando produto 1";
 
-        pendentes:
-            Math.max(
-                offers -
-                posted -
-                errors,
-                0
-            ),
 
-        erros:
-            errors
+  currentProduct.innerText =
+    linksDaAutomacao[0];
 
-    });
+
+  /*
+    Não usamos o intervalo real para
+    fingir que o produto foi postado.
+
+    O painel permanece em processamento
+    até receber uma atualização real.
+
+    O próximo bloco é propositalmente
+    desativado.
+
+    Para progresso real, conecte aqui
+    seu endpoint de status.
+  */
 
 }
 
 
-/* ===============================================================
-   DASHBOARD — ATUALIZAR VALORES
-   =============================================================== */
+/* ============================================================
+   FUNÇÃO PARA O BACKEND ATUALIZAR O PAINEL
 
-function updateDashboardValues(data) {
+   Você pode chamar:
 
-    const offers =
-        data.ofertasHoje ??
-        data.offers ??
-        data.total ??
-        0;
+   atualizarStatusServidor({
+      produto: 1,
+      status: "postado"
+   });
 
+============================================================ */
 
-    const posted =
-        data.postadas ??
-        data.posted ??
-        0;
+function atualizarStatusServidor(
+  dados
+) {
 
+  if (
+    !dados
+  ) {
 
-    const pending =
-        data.pendentes ??
-        data.pending ??
-        0;
+    return;
 
-
-    const errors =
-        data.erros ??
-        data.errors ??
-        0;
+  }
 
 
-    const statOffers =
-        document.getElementById(
-            "statOffers"
-        );
-
-    const statPosted =
-        document.getElementById(
-            "statPosted"
-        );
-
-    const statPending =
-        document.getElementById(
-            "statPending"
-        );
-
-    const statErrors =
-        document.getElementById(
-            "statErrors"
-        );
+  const produto =
+    Number(
+      dados.produto
+    );
 
 
-    if (statOffers) {
-        statOffers.textContent =
-            Number(offers) || 0;
+  if (
+    !produto ||
+    produto < 1
+  ) {
+
+    return;
+
+  }
+
+
+  const index =
+    produto - 1;
+
+
+  const total =
+    linksDaAutomacao.length;
+
+
+  const link =
+    linksDaAutomacao[index] ||
+    "";
+
+
+  const status =
+    String(
+      dados.status ||
+      ""
+    ).toLowerCase();
+
+
+  if (
+    status === "processando"
+  ) {
+
+    marcarProcessando(
+      index
+    );
+
+
+    automationStatus.innerText =
+      `Processando produto ${produto}`;
+
+
+    currentProduct.innerText =
+      link;
+
+
+    return;
+
+  }
+
+
+  if (
+    status === "postado" ||
+    status === "sucesso" ||
+    status === "done"
+  ) {
+
+    const item =
+      document.getElementById(
+        `produto-status-${index}`
+      );
+
+
+    const icon =
+      document.getElementById(
+        `status-icon-${index}`
+      );
+
+
+    const state =
+      document.getElementById(
+        `status-text-${index}`
+      );
+
+
+    if (item) {
+
+      item.className =
+        "product-status done";
+
     }
 
-    if (statPosted) {
-        statPosted.textContent =
-            Number(posted) || 0;
+
+    if (icon) {
+
+      icon.innerHTML =
+        '<i class="fa-solid fa-check"></i>';
+
     }
 
-    if (statPending) {
-        statPending.textContent =
-            Number(pending) || 0;
+
+    if (state) {
+
+      state.innerText =
+        "POSTADO";
+
     }
 
-    if (statErrors) {
-        statErrors.textContent =
-            Number(errors) || 0;
+
+    atualizarProgresso(
+      produto,
+      total,
+      `Produto ${produto} concluído`,
+      link
+    );
+
+
+    if (
+      produto === total
+    ) {
+
+      finalizarAutomacao();
+
     }
+
+
+    return;
+
+  }
+
+
+  if (
+    status === "erro" ||
+    status === "error" ||
+    status === "falhou"
+  ) {
+
+    const item =
+      document.getElementById(
+        `produto-status-${index}`
+      );
+
+
+    const icon =
+      document.getElementById(
+        `status-icon-${index}`
+      );
+
+
+    const state =
+      document.getElementById(
+        `status-text-${index}`
+      );
+
+
+    if (item) {
+
+      item.className =
+        "product-status error";
+
+    }
+
+
+    if (icon) {
+
+      icon.innerHTML =
+        '<i class="fa-solid fa-xmark"></i>';
+
+    }
+
+
+    if (state) {
+
+      state.innerText =
+        "ERRO";
+
+    }
+
+
+    automationStatus.innerText =
+      `Erro no produto ${produto}`;
+
+
+    currentProduct.innerText =
+      link;
+
+
+    return;
+
+  }
 
 }
 
 
-/* ===============================================================
-   NAVEGAÇÃO — CARREGAR DADOS DA TELA
-   =============================================================== */
+/* ============================================================
+   FINALIZAR
+============================================================ */
 
-const originalNavigateTo =
-    navigateTo;
+function finalizarAutomacao() {
 
-
-navigateTo =
-    function(screenName) {
-
-        originalNavigateTo(
-            screenName
-        );
+  automacaoAtiva =
+    false;
 
 
-        if (
-            screenName ===
-            "history"
-        ) {
-
-            renderHistory();
-
-        }
+  progressoAtual =
+    100;
 
 
-        if (
-            screenName ===
-            "settings"
-        ) {
-
-            loadSettings();
-
-            loadTelegramUserInfo();
-
-        }
+  progressFill.style.width =
+    "100%";
 
 
-        if (
-            screenName ===
-            "home"
-        ) {
-
-            loadDashboard();
-
-        }
-
-    };
+  progressPercent.innerText =
+    "100%";
 
 
-/* ===============================================================
-   INICIALIZAÇÃO DO BLOCO 2
-   =============================================================== */
+  automationStatus.innerText =
+    "Automação concluída";
 
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
 
-        loadSettings();
+  currentProduct.innerText =
+    "Todos os produtos foram processados";
 
-        renderHistory();
 
-        loadTelegramUserInfo();
+  nextPost.innerText =
+    "Concluído";
 
-        loadDashboard();
 
-    }
-);
+  document
+    .querySelector(
+      ".status-dot"
+    )
+    .style.background =
+    "var(--green)";
+
+
+  btn.disabled =
+    false;
+
+
+  btn.innerHTML =
+    '<i class="fa-solid fa-check"></i> AUTOMAÇÃO CONCLUÍDA';
+
+
+  mostrarMensagem(
+    "✓ Todas as postagens foram processadas.",
+    "sucesso"
+  );
+
+}
+
 
 </script>
 
 </body>
+
 </html>

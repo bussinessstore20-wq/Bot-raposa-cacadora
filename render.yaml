@@ -1,7 +1,6 @@
 services:
   - type: web
     name: bot-raposa-cacadora
-    CHANNEL_USERNAME: @raposacacadora
     runtime: python
 
     buildCommand: pip install -r requirements.txt
@@ -11,3 +10,6 @@ services:
     envVars:
       - key: BOT_TOKEN
         sync: false
+
+      - key: CHANNEL_USERNAME
+        value: "@raposacacadora"

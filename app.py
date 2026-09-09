@@ -4,51 +4,101 @@ import hashlib
 import json
 import threading
 import time
+import uuid
+
 from urllib.parse import parse_qsl
 
 from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
 
 
-app = Flask(__name__)
-CORS(app)
+# ============================================================
+# APP
+# ============================================================
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
+app = Flask(__name__)
+
+CORS(
+    app,
+    resources={
+        r"/api/*": {
+            "origins": "*"
+        }
+    }
+)
+
+
+# ============================================================
+# CONFIGURAÇÃO
+# ============================================================
+
+BOT_TOKEN = os.environ.get(
+    "BOT_TOKEN",
+    ""
+).strip()
 
 MAX_LINKS = 20
 
+INTERVALOS_PERMITIDOS = {
+    10,
+    60,
+    300,
+    600
+}
+
+
+# ============================================================
+# ARMAZENAMENTO TEMPORÁRIO
+#
+# IMPORTANTE:
+# Isso funciona para testes.
+# Em produção, recomenda-se Redis/PostgreSQL.
+# ============================================================
+
 tarefas = {}
+
 tarefas_lock = threading.Lock()
 
 
 # ============================================================
-# TELEGRAM INIT DATA
+# TELEGRAM
 # ============================================================
 
-def validar_init_data(init_data: str) -> bool:
+def validar_init_data(init_data):
     """
-    Valida o initData enviado pelo Telegram Mini App.
+    Valida o initData recebido do Telegram.
+
+    Se BOT_TOKEN não estiver configurado,
+    permite o funcionamento para testes.
     """
 
     if not BOT_TOKEN:
-        # Durante desenvolvimento, permite funcionar
-        # sem BOT_TOKEN configurado.
         return True
 
     if not init_data:
         return False
 
     try:
-        dados = dict(parse_qsl(init_data, keep_blank_values=True))
 
-        hash_recebido = dados.pop("hash", None)
+        dados = dict(
+            parse_qsl(
+                init_data,
+                keep_blank_values=True
+            )
+        )
+
+        hash_recebido = dados.pop(
+            "hash",
+            None
+        )
 
         if not hash_recebido:
             return False
 
         data_check_string = "\n".join(
             f"{chave}={valor}"
-            for chave, valor in sorted(dados.items())
+            for chave, valor
+            in sorted(dados.items())
         )
 
         secret_key = hmac.new(
@@ -68,164 +118,565 @@ def validar_init_data(init_data: str) -> bool:
             hash_recebido
         )
 
-    except Exception:
+    except Exception as erro:
+
+        print(
+            "Erro validando initData:",
+            erro
+        )
+
         return False
 
 
-def obter_usuario(init_data: str):
+def obter_usuario(init_data):
     """
-    Extrai os dados básicos do usuário Telegram.
+    Obtém o objeto user do Telegram.
     """
+
+    if not init_data:
+        return None
 
     try:
-        dados = dict(parse_qsl(
-            init_data,
-            keep_blank_values=True
-        ))
 
-        usuario = dados.get("user")
+        dados = dict(
+            parse_qsl(
+                init_data,
+                keep_blank_values=True
+            )
+        )
+
+        usuario = dados.get(
+            "user"
+        )
 
         if not usuario:
             return None
 
-        return json.loads(usuario)
+        return json.loads(
+            usuario
+        )
 
-    except Exception:
+    except Exception as erro:
+
+        print(
+            "Erro obtendo usuário:",
+            erro
+        )
+
         return None
 
 
 # ============================================================
-# VALIDAÇÃO
+# SHOPEE
 # ============================================================
 
-def link_shopee_valido(link: str) -> bool:
+def link_shopee_valido(link):
     """
-    Validação básica do endereço.
+    Validação básica do link.
     """
 
-    if not isinstance(link, str):
-        return False
-
-    link = link.strip().lower()
-
-    if not (
-        link.startswith("http://")
-        or link.startswith("https://")
+    if not isinstance(
+        link,
+        str
     ):
         return False
 
-    return "shopee" in link
+    link = link.strip()
+
+    if not link:
+        return False
+
+    link_lower = link.lower()
+
+    if not (
+        link_lower.startswith(
+            "http://"
+        )
+        or
+        link_lower.startswith(
+            "https://"
+        )
+    ):
+        return False
+
+    return (
+        "shopee." in link_lower
+        or
+        "shopee" in link_lower
+    )
+
+
+# ============================================================
+# STATUS DA TAREFA
+# ============================================================
+
+def criar_tarefa(
+    links,
+    intervalo,
+    quantidade,
+    usuario
+):
+
+    task_id = str(
+        uuid.uuid4()
+    )
+
+    tarefa = {
+
+        "id":
+            task_id,
+
+        "usuario":
+            usuario,
+
+        "links":
+            links,
+
+        "intervalo":
+            intervalo,
+
+        "quantidade":
+            quantidade,
+
+        "produto_atual":
+            0,
+
+        "produto_link":
+            "",
+
+        "progresso":
+            0,
+
+        "status":
+            "iniciando",
+
+        "cancelada":
+            False,
+
+        "resultados":
+            [],
+
+        "criada_em":
+            time.time()
+    }
+
+    with tarefas_lock:
+
+        tarefas[
+            task_id
+        ] = tarefa
+
+    return task_id
+
+
+# ============================================================
+# PUBLICAÇÃO REAL
+# ============================================================
+
+def publicar_produto(
+    link,
+    usuario
+):
+    """
+    ============================================================
+    ATENÇÃO
+
+    Esta função é o ponto onde entra a automação REAL.
+
+    Atualmente ela apenas simula o processamento.
+
+    Depois podemos conectar aqui:
+    - API
+    - bot do Telegram
+    - geração da mensagem
+    - afiliado Shopee
+    - publicação no canal
+    ============================================================
+    """
+
+    print(
+        "----------------------------------------"
+    )
+
+    print(
+        "[PUBLICAÇÃO]"
+    )
+
+    print(
+        "Usuário:",
+        usuario
+    )
+
+    print(
+        "Link:",
+        link
+    )
+
+    print(
+        "----------------------------------------"
+    )
+
+    # Simulação
+    time.sleep(3)
+
+    return {
+        "sucesso": True,
+        "mensagem":
+            "Produto processado."
+    }
 
 
 # ============================================================
 # WORKER
 # ============================================================
 
-def executar_tarefa(task_id: str):
-    """
-    Worker de demonstração.
+def executar_tarefa(
+    task_id
+):
 
-    Aqui posteriormente entra a automação real.
-    """
+    print(
+        f"[TASK] Iniciando {task_id}"
+    )
 
     while True:
 
+        # ----------------------------------------------------
+        # BUSCA TAREFA
+        # ----------------------------------------------------
+
         with tarefas_lock:
-            tarefa = tarefas.get(task_id)
+
+            tarefa = tarefas.get(
+                task_id
+            )
 
             if not tarefa:
                 return
 
-            if tarefa["cancelada"]:
-                tarefa["status"] = "cancelada"
+            if tarefa[
+                "cancelada"
+            ]:
+
+                tarefa[
+                    "status"
+                ] = "cancelada"
+
                 return
 
-            produtos = tarefa["links"]
+            indice = tarefa[
+                "produto_atual"
+            ]
 
-            index = tarefa["produto_atual"]
+            links = list(
+                tarefa[
+                    "links"
+                ]
+            )
 
-        if index >= len(produtos):
+            quantidade = tarefa[
+                "quantidade"
+            ]
+
+            usuario = tarefa[
+                "usuario"
+            ]
+
+            intervalo = tarefa[
+                "intervalo"
+            ]
+
+        # ----------------------------------------------------
+        # FINALIZAÇÃO
+        # ----------------------------------------------------
+
+        if indice >= quantidade:
 
             with tarefas_lock:
-                tarefa = tarefas.get(task_id)
+
+                tarefa = tarefas.get(
+                    task_id
+                )
 
                 if tarefa:
-                    tarefa["status"] = "concluida"
-                    tarefa["progresso"] = 100
-                    tarefa["produto_atual"] = len(produtos)
+
+                    tarefa[
+                        "status"
+                    ] = "concluida"
+
+                    tarefa[
+                        "progresso"
+                    ] = 100
+
+                    tarefa[
+                        "produto_atual"
+                    ] = quantidade
+
+                    tarefa[
+                        "produto_link"
+                    ] = ""
+
+            print(
+                f"[TASK] Concluída {task_id}"
+            )
 
             return
 
-        link = produtos[index]
+        # ----------------------------------------------------
+        # PRODUTO ATUAL
+        # ----------------------------------------------------
 
-        with tarefas_lock:
-            tarefa = tarefas.get(task_id)
+        link = links[
+            indice
+        ]
 
-            if not tarefa:
-                return
-
-            tarefa["status"] = "processando"
-            tarefa["produto_link"] = link
-            tarefa["progresso"] = round(
-                (index / len(produtos)) * 100
-            )
-
-        # ------------------------------------------------------
-        # AQUI ENTRARÁ A PUBLICAÇÃO REAL
-        # ------------------------------------------------------
-
-        print(
-            f"[AUTOMAÇÃO] Processando produto "
-            f"{index + 1}: {link}"
+        numero_produto = (
+            indice + 1
         )
 
-        # Simulação temporária.
-        # Depois substituiremos pela automação real.
-        time.sleep(3)
+        # ----------------------------------------------------
+        # PROCESSANDO
+        # ----------------------------------------------------
 
         with tarefas_lock:
-            tarefa = tarefas.get(task_id)
+
+            tarefa = tarefas.get(
+                task_id
+            )
 
             if not tarefa:
                 return
 
-            if tarefa["cancelada"]:
-                tarefa["status"] = "cancelada"
-                return
+            tarefa[
+                "status"
+            ] = "processando"
 
-            tarefa["resultados"].append({
-                "produto": index + 1,
-                "link": link,
-                "status": "postado"
-            })
+            tarefa[
+                "produto_link"
+            ] = link
 
-            tarefa["produto_atual"] = index + 1
-
-            tarefa["progresso"] = round(
+            tarefa[
+                "progresso"
+            ] = round(
                 (
-                    (index + 1)
-                    / len(produtos)
+                    indice
+                    / quantidade
                 ) * 100
             )
 
-            tarefa["status"] = "aguardando"
+        # ----------------------------------------------------
+        # PUBLICAÇÃO
+        # ----------------------------------------------------
 
-        # Intervalo entre postagens
-        intervalo = tarefa["intervalo"]
+        try:
 
-        for _ in range(intervalo):
+            resultado = publicar_produto(
+                link,
+                usuario
+            )
+
+            sucesso = (
+                resultado.get(
+                    "sucesso",
+                    False
+                )
+            )
+
+        except Exception as erro:
+
+            print(
+                "[PUBLICAÇÃO] Erro:",
+                erro
+            )
+
+            sucesso = False
+
+            resultado = {
+                "mensagem":
+                    str(erro)
+            }
+
+        # ----------------------------------------------------
+        # RESULTADO
+        # ----------------------------------------------------
+
+        with tarefas_lock:
+
+            tarefa = tarefas.get(
+                task_id
+            )
+
+            if not tarefa:
+                return
+
+            if tarefa[
+                "cancelada"
+            ]:
+
+                tarefa[
+                    "status"
+                ] = "cancelada"
+
+                return
+
+            if sucesso:
+
+                tarefa[
+                    "resultados"
+                ].append({
+
+                    "produto":
+                        numero_produto,
+
+                    "link":
+                        link,
+
+                    "status":
+                        "postado"
+                })
+
+                tarefa[
+                    "produto_atual"
+                ] = numero_produto
+
+                tarefa[
+                    "progresso"
+                ] = round(
+                    (
+                        numero_produto
+                        / quantidade
+                    ) * 100
+                )
+
+                tarefa[
+                    "status"
+                ] = "aguardando"
+
+            else:
+
+                tarefa[
+                    "resultados"
+                ].append({
+
+                    "produto":
+                        numero_produto,
+
+                    "link":
+                        link,
+
+                    "status":
+                        "erro",
+
+                    "mensagem":
+                        resultado.get(
+                            "mensagem",
+                            "Erro desconhecido."
+                        )
+                })
+
+                tarefa[
+                    "produto_atual"
+                ] = numero_produto
+
+                tarefa[
+                    "progresso"
+                ] = round(
+                    (
+                        numero_produto
+                        / quantidade
+                    ) * 100
+                )
+
+                tarefa[
+                    "status"
+                ] = "erro"
+
+        # ----------------------------------------------------
+        # SE HOUVE ERRO
+        # ----------------------------------------------------
+
+        if not sucesso:
+
+            print(
+                f"[TASK] Produto {numero_produto} falhou."
+            )
+
+            # Continua para o próximo produto.
+            time.sleep(1)
+
+            continue
+
+        # ----------------------------------------------------
+        # ÚLTIMO PRODUTO
+        # ----------------------------------------------------
+
+        if numero_produto >= quantidade:
 
             with tarefas_lock:
-                tarefa = tarefas.get(task_id)
+
+                tarefa = tarefas.get(
+                    task_id
+                )
+
+                if tarefa:
+
+                    tarefa[
+                        "status"
+                    ] = "concluida"
+
+                    tarefa[
+                        "progresso"
+                    ] = 100
+
+            print(
+                f"[TASK] Finalizada {task_id}"
+            )
+
+            return
+
+        # ----------------------------------------------------
+        # INTERVALO
+        #
+        # O loop permite cancelar durante a espera.
+        # ----------------------------------------------------
+
+        with tarefas_lock:
+
+            tarefa = tarefas.get(
+                task_id
+            )
+
+            if tarefa:
+
+                tarefa[
+                    "status"
+                ] = "aguardando"
+
+        segundos_restantes = intervalo
+
+        while segundos_restantes > 0:
+
+            with tarefas_lock:
+
+                tarefa = tarefas.get(
+                    task_id
+                )
 
                 if not tarefa:
                     return
 
-                if tarefa["cancelada"]:
-                    tarefa["status"] = "cancelada"
+                if tarefa[
+                    "cancelada"
+                ]:
+
+                    tarefa[
+                        "status"
+                    ] = "cancelada"
+
                     return
 
             time.sleep(1)
+
+            segundos_restantes -= 1
 
 
 # ============================================================
@@ -234,22 +685,37 @@ def executar_tarefa(task_id: str):
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+
+    return render_template(
+        "index.html"
+    )
 
 
 # ============================================================
 # HEALTH CHECK
 # ============================================================
 
-@app.route("/health")
+@app.route(
+    "/health",
+    methods=["GET"]
+)
 def health():
+
     return jsonify({
-        "status": "ok"
+
+        "status":
+            "ok",
+
+        "service":
+            "raposa-cacadora",
+
+        "timestamp":
+            int(time.time())
     })
 
 
 # ============================================================
-# CONFIGURAR AUTOMAÇÃO
+# CONFIGURAR
 # ============================================================
 
 @app.route(
@@ -258,195 +724,238 @@ def health():
 )
 def configurar():
 
-    dados = request.get_json(
-        silent=True
-    )
+    try:
 
-    if not dados:
-        return jsonify({
-            "erro": "JSON inválido."
-        }), 400
+        dados = request.get_json(
+            silent=True
+        )
 
-    init_data = dados.get(
-        "initData",
-        ""
-    )
+        if not dados:
 
-    # --------------------------------------------------------
-    # TELEGRAM
-    # --------------------------------------------------------
-
-    if BOT_TOKEN:
-
-        if not validar_init_data(
-            init_data
-        ):
             return jsonify({
                 "erro":
-                    "initData do Telegram inválido."
-            }), 401
+                    "JSON inválido."
+            }), 400
 
-    usuario = obter_usuario(
-        init_data
-    )
+        # ----------------------------------------------------
+        # INIT DATA
+        # ----------------------------------------------------
 
-    # --------------------------------------------------------
-    # LINKS
-    # --------------------------------------------------------
-
-    links = dados.get(
-        "links",
-        []
-    )
-
-    intervalo = dados.get(
-        "intervalo",
-        10
-    )
-
-    quantidade = dados.get(
-        "quantidade",
-        1
-    )
-
-    if not isinstance(
-        links,
-        list
-    ):
-        return jsonify({
-            "erro":
-                "A lista de links é inválida."
-        }), 400
-
-    if len(links) == 0:
-        return jsonify({
-            "erro":
-                "Adicione pelo menos um produto."
-        }), 400
-
-    if len(links) > MAX_LINKS:
-        return jsonify({
-            "erro":
-                "Máximo de 20 produtos."
-        }), 400
-
-    # --------------------------------------------------------
-    # VALIDAÇÃO DOS LINKS
-    # --------------------------------------------------------
-
-    links = [
-        str(link).strip()
-        for link in links
-        if str(link).strip()
-    ]
-
-    invalidos = [
-        link
-        for link in links
-        if not link_shopee_valido(link)
-    ]
-
-    if invalidos:
-
-        return jsonify({
-            "erro":
-                "Existem links inválidos da Shopee."
-        }), 400
-
-    # --------------------------------------------------------
-    # QUANTIDADE
-    # --------------------------------------------------------
-
-    try:
-        quantidade = int(
-            quantidade
+        init_data = dados.get(
+            "initData",
+            ""
         )
-    except Exception:
-        quantidade = 1
 
-    if quantidade < 1:
-        return jsonify({
-            "erro":
-                "Quantidade inválida."
-        }), 400
+        if BOT_TOKEN:
 
-    if quantidade > len(links):
-        return jsonify({
-            "erro":
-                "A quantidade não pode ser maior que os produtos."
-        }), 400
+            if not validar_init_data(
+                init_data
+            ):
 
-    # --------------------------------------------------------
-    # INTERVALO
-    # --------------------------------------------------------
+                return jsonify({
+                    "erro":
+                        "Sessão do Telegram inválida."
+                }), 401
 
-    try:
-        intervalo = int(
-            intervalo
+        usuario = obter_usuario(
+            init_data
         )
-    except Exception:
-        intervalo = 10
 
-    intervalos_permitidos = {
-        10,
-        60,
-        300,
-        600
-    }
+        # ----------------------------------------------------
+        # LINKS
+        # ----------------------------------------------------
 
-    if intervalo not in intervalos_permitidos:
+        links = dados.get(
+            "links",
+            []
+        )
+
+        if not isinstance(
+            links,
+            list
+        ):
+
+            return jsonify({
+                "erro":
+                    "A lista de produtos é inválida."
+            }), 400
+
+        links = [
+            str(link).strip()
+            for link in links
+            if str(link).strip()
+        ]
+
+        if len(links) == 0:
+
+            return jsonify({
+                "erro":
+                    "Adicione pelo menos um produto."
+            }), 400
+
+        if len(links) > MAX_LINKS:
+
+            return jsonify({
+                "erro":
+                    "Máximo de 20 produtos."
+            }), 400
+
+        # ----------------------------------------------------
+        # VALIDA LINKS
+        # ----------------------------------------------------
+
+        invalidos = [
+            link
+            for link in links
+            if not link_shopee_valido(
+                link
+            )
+        ]
+
+        if invalidos:
+
+            return jsonify({
+
+                "erro":
+                    "Um ou mais links não são válidos."
+            }), 400
+
+        # ----------------------------------------------------
+        # QUANTIDADE
+        # ----------------------------------------------------
+
+        try:
+
+            quantidade = int(
+                dados.get(
+                    "quantidade",
+                    1
+                )
+            )
+
+        except Exception:
+
+            return jsonify({
+                "erro":
+                    "Quantidade inválida."
+            }), 400
+
+        if quantidade < 1:
+
+            return jsonify({
+                "erro":
+                    "A quantidade mínima é 1."
+            }), 400
+
+        if quantidade > len(links):
+
+            return jsonify({
+                "erro":
+                    "A quantidade não pode ser maior que os produtos."
+            }), 400
+
+        if quantidade > MAX_LINKS:
+
+            return jsonify({
+                "erro":
+                    "Máximo de 20 postagens."
+            }), 400
+
+        # ----------------------------------------------------
+        # INTERVALO
+        # ----------------------------------------------------
+
+        try:
+
+            intervalo = int(
+                dados.get(
+                    "intervalo",
+                    10
+                )
+            )
+
+        except Exception:
+
+            return jsonify({
+                "erro":
+                    "Intervalo inválido."
+            }), 400
+
+        if intervalo not in INTERVALOS_PERMITIDOS:
+
+            return jsonify({
+                "erro":
+                    "Intervalo selecionado é inválido."
+            }), 400
+
+        # ----------------------------------------------------
+        # LIMITA LINKS
+        # ----------------------------------------------------
+
+        links = links[
+            :quantidade
+        ]
+
+        # ----------------------------------------------------
+        # CRIA TAREFA
+        # ----------------------------------------------------
+
+        task_id = criar_tarefa(
+            links=links,
+            intervalo=intervalo,
+            quantidade=quantidade,
+            usuario=usuario
+        )
+
+        # ----------------------------------------------------
+        # THREAD
+        # ----------------------------------------------------
+
+        thread = threading.Thread(
+            target=executar_tarefa,
+            args=(task_id,),
+            daemon=True
+        )
+
+        thread.start()
+
+        # ----------------------------------------------------
+        # RESPOSTA
+        # ----------------------------------------------------
+
         return jsonify({
+
+            "sucesso":
+                True,
+
+            "mensagem":
+                "Automação iniciada com sucesso.",
+
+            "task_id":
+                task_id,
+
+            "quantidade":
+                quantidade,
+
+            "intervalo":
+                intervalo
+        })
+
+    except Exception as erro:
+
+        print(
+            "Erro /api/configurar:",
+            erro
+        )
+
+        return jsonify({
+
             "erro":
-                "Intervalo inválido."
-        }), 400
+                "Erro interno do servidor.",
 
-    links = links[:quantidade]
-
-    # --------------------------------------------------------
-    # ID DA TAREFA
-    # --------------------------------------------------------
-
-    import uuid
-
-    task_id = str(
-        uuid.uuid4()
-    )
-
-    tarefa = {
-        "id": task_id,
-        "usuario": usuario,
-        "links": links,
-        "intervalo": intervalo,
-        "quantidade": quantidade,
-        "produto_atual": 0,
-        "produto_link": "",
-        "progresso": 0,
-        "status": "iniciando",
-        "cancelada": False,
-        "resultados": []
-    }
-
-    with tarefas_lock:
-        tarefas[task_id] = tarefa
-
-    # --------------------------------------------------------
-    # INICIA WORKER
-    # --------------------------------------------------------
-
-    thread = threading.Thread(
-        target=executar_tarefa,
-        args=(task_id,),
-        daemon=True
-    )
-
-    thread.start()
-
-    return jsonify({
-        "sucesso": True,
-        "mensagem":
-            "Automação iniciada com sucesso.",
-        "task_id": task_id
-    })
+            "detalhes":
+                str(erro)
+        }), 500
 
 
 # ============================================================
@@ -466,12 +975,14 @@ def status(task_id):
         )
 
         if not tarefa:
+
             return jsonify({
                 "erro":
                     "Tarefa não encontrada."
             }), 404
 
         return jsonify({
+
             "id":
                 tarefa["id"],
 
@@ -512,23 +1023,32 @@ def parar(task_id):
         )
 
         if not tarefa:
+
             return jsonify({
                 "erro":
                     "Tarefa não encontrada."
             }), 404
 
-        tarefa["cancelada"] = True
-        tarefa["status"] = "cancelada"
+        tarefa[
+            "cancelada"
+        ] = True
+
+        tarefa[
+            "status"
+        ] = "cancelada"
 
     return jsonify({
-        "sucesso": True,
+
+        "sucesso":
+            True,
+
         "mensagem":
             "Automação interrompida."
     })
 
 
 # ============================================================
-# START
+# EXECUÇÃO
 # ============================================================
 
 if __name__ == "__main__":

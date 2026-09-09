@@ -1314,6 +1314,236 @@
     display: block;
 }
 
+        /* =========================================================
+   BLOCO 2 — HISTÓRICO + CONFIGURAÇÕES + DASHBOARD
+   ========================================================= */
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.history-item {
+    padding: 14px;
+    border-radius: 14px;
+    background: rgba(0,0,0,.20);
+    border: 1px solid var(--border);
+}
+
+.history-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.history-title {
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.history-date {
+    color: var(--text-muted);
+    font-size: 8px;
+}
+
+.history-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 7px;
+    font-size: 8px;
+    font-weight: 800;
+}
+
+.history-status.success {
+    color: var(--green);
+}
+
+.history-status.error {
+    color: var(--red);
+}
+
+.history-status.pending {
+    color: var(--yellow);
+}
+
+.history-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.history-stat {
+    padding: 8px 5px;
+    text-align: center;
+    border-radius: 9px;
+    background: rgba(255,255,255,.025);
+}
+
+.history-stat strong {
+    display: block;
+    font-size: 12px;
+}
+
+.history-stat span {
+    display: block;
+    margin-top: 2px;
+    color: var(--text-muted);
+    font-size: 7px;
+    font-weight: 700;
+}
+
+.empty-state {
+    padding: 30px 15px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.empty-state-icon {
+    font-size: 30px;
+    margin-bottom: 10px;
+}
+
+.empty-state strong {
+    display: block;
+    color: var(--text-soft);
+    font-size: 12px;
+}
+
+.empty-state span {
+    display: block;
+    margin-top: 5px;
+    font-size: 9px;
+    line-height: 1.5;
+}
+
+/* =========================================================
+   CONFIGURAÇÕES
+   ========================================================= */
+
+.settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px;
+    border-radius: 13px;
+    background: rgba(0,0,0,.20);
+    border: 1px solid var(--border);
+}
+
+.setting-info {
+    flex: 1;
+}
+
+.setting-title {
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.setting-description {
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: 8px;
+    line-height: 1.4;
+}
+
+.setting-select {
+    min-width: 95px;
+    min-height: 36px;
+    padding: 0 9px;
+    color: var(--text);
+    background: rgba(255,255,255,.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    outline: none;
+    font-size: 9px;
+}
+
+.toggle {
+    position: relative;
+    width: 43px;
+    height: 25px;
+    flex: 0 0 43px;
+}
+
+.toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: #29292c;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: .2s ease;
+}
+
+.toggle-slider::before {
+    content: "";
+    position: absolute;
+    width: 17px;
+    height: 17px;
+    left: 3px;
+    top: 3px;
+    border-radius: 50%;
+    background: #777;
+    transition: .2s ease;
+}
+
+.toggle input:checked + .toggle-slider {
+    background: rgba(255,106,0,.22);
+    border-color: var(--border-orange);
+}
+
+.toggle input:checked + .toggle-slider::before {
+    transform: translateX(18px);
+    background: var(--orange-light);
+    box-shadow: 0 0 9px rgba(255,106,0,.35);
+}
+
+.user-info {
+    padding: 14px;
+    border-radius: 14px;
+    background: rgba(255,106,0,.045);
+    border: 1px solid rgba(255,106,0,.12);
+}
+
+.user-info-label {
+    color: var(--text-muted);
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: .7px;
+}
+
+.user-info-value {
+    margin-top: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    word-break: break-word;
+}
+
+.settings-version {
+    margin-top: 15px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 8px;
+}
+
+        
     </style>
 </head>
 
@@ -1926,40 +2156,69 @@
              ===================================================== -->
 
         <section
-            class="screen"
-            id="screen-history"
-            data-screen="history">
+    class="screen"
+    id="screen-history"
+    data-screen="history">
 
-            <div class="screen-title">
+    <div class="screen-title">
 
-                <h2>
-                    Histórico
-                </h2>
+        <h2>
+            Histórico
+        </h2>
 
-                <p>
-                    Acompanhe suas automações anteriores.
-                </p>
+        <p>
+            Acompanhe suas automações anteriores.
+        </p>
 
-            </div>
+    </div>
 
-            <div class="card placeholder">
 
-                <div class="placeholder-icon">
-                    📊
+    <div class="card">
+
+        <div class="card-header">
+
+            <div>
+
+                <div class="card-title">
+                    Automações recentes
                 </div>
 
-                <strong>
-                    Histórico preparado
-                </strong>
-
-                <span>
-                    A integração com o histórico real será adicionada
-                    na segunda parte.
-                </span>
+                <div class="card-subtitle">
+                    Últimas execuções da Raposa Caçadora
+                </div>
 
             </div>
 
-        </section>
+            <span style="font-size:20px;">
+                📊
+            </span>
+
+        </div>
+
+
+        <div
+            class="history-list"
+            id="historyList">
+
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <button
+            class="btn btn-danger btn-full"
+            onclick="clearLocalHistory()">
+
+            🗑️ LIMPAR HISTÓRICO LOCAL
+
+        </button>
+
+    </div>
+
+</section>
+
 
 
         <!-- =====================================================
@@ -1967,129 +2226,212 @@
              ===================================================== -->
 
         <section
-            class="screen"
-            id="screen-settings"
-            data-screen="settings">
+    class="screen"
+    id="screen-settings"
+    data-screen="settings">
 
-            <div class="screen-title">
+    <div class="screen-title">
 
-                <h2>
-                    Configurações
-                </h2>
+        <h2>
+            Configurações
+        </h2>
 
-                <p>
-                    Preferências da Raposa Caçadora.
-                </p>
+        <p>
+            Preferências da Raposa Caçadora.
+        </p>
 
-            </div>
+    </div>
 
-            <div class="card placeholder">
 
-                <div class="placeholder-icon">
-                    ⚙️
+    <div class="card">
+
+        <div class="card-header">
+
+            <div>
+
+                <div class="card-title">
+                    Preferências
                 </div>
 
-                <strong>
-                    Configurações
-                </strong>
-
-                <span>
-                    As opções avançadas serão adicionadas
-                    na segunda parte.
-                </span>
+                <div class="card-subtitle">
+                    Personalize o funcionamento do aplicativo.
+                </div>
 
             </div>
 
-        </section>
+            <span style="font-size:20px;">
+                ⚙️
+            </span>
 
-    </main>
-
-</div>
-
-
-<!-- =============================================================
-     TOASTS
-     ============================================================= -->
-
-<div
-    class="toast-container"
-    id="toastContainer">
-</div>
+        </div>
 
 
-<!-- =============================================================
-     NAVEGAÇÃO INFERIOR
-     ============================================================= -->
+        <div class="settings-list">
 
-<nav class="bottom-nav">
+            <div class="setting-row">
 
-    <button
-        class="nav-item active"
-        data-target="home"
-        onclick="navigateTo('home')">
+                <div class="setting-info">
 
-        <span class="nav-icon">
-            🏠
-        </span>
+                    <div class="setting-title">
+                        Notificações
+                    </div>
 
-        <span class="nav-label">
-            Início
-        </span>
+                    <div class="setting-description">
+                        Receber avisos quando uma automação terminar.
+                    </div>
 
-    </button>
+                </div>
 
 
-    <button
-        class="nav-item"
-        data-target="automation"
-        onclick="navigateTo('automation')">
+                <label class="toggle">
 
-        <span class="nav-icon">
-            🚀
-        </span>
+                    <input
+                        type="checkbox"
+                        id="settingNotifications"
+                        checked
+                        onchange="saveSettings()">
 
-        <span class="nav-label">
-            Automação
-        </span>
+                    <span class="toggle-slider"></span>
 
-    </button>
+                </label>
 
-
-    <button
-        class="nav-item"
-        data-target="history"
-        onclick="navigateTo('history')">
-
-        <span class="nav-icon">
-            📊
-        </span>
-
-        <span class="nav-label">
-            Histórico
-        </span>
-
-    </button>
+            </div>
 
 
-    <button
-        class="nav-item"
-        data-target="settings"
-        onclick="navigateTo('settings')">
+            <div class="setting-row">
 
-        <span class="nav-icon">
-            ⚙️
-        </span>
+                <div class="setting-info">
 
-        <span class="nav-label">
-            Config.
-        </span>
+                    <div class="setting-title">
+                        Intervalo padrão
+                    </div>
 
-    </button>
+                    <div class="setting-description">
+                        Intervalo utilizado ao criar uma nova automação.
+                    </div>
 
-</nav>
+                </div>
 
 
-<script>
+                <select
+                    class="setting-select"
+                    id="settingInterval"
+                    onchange="saveSettings()">
+
+                    <option value="10">
+                        10s
+                    </option>
+
+                    <option value="60">
+                        1 min
+                    </option>
+
+                    <option value="300">
+                        5 min
+                    </option>
+
+                    <option value="600">
+                        10 min
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="setting-row">
+
+                <div class="setting-info">
+
+                    <div class="setting-title">
+                        Quantidade padrão
+                    </div>
+
+                    <div class="setting-description">
+                        Quantidade inicial para novas automações.
+                    </div>
+
+                </div>
+
+
+                <select
+                    class="setting-select"
+                    id="settingQuantity"
+                    onchange="saveSettings()">
+
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <div>
+
+                <div class="card-title">
+                    Conta Telegram
+                </div>
+
+                <div class="card-subtitle">
+                    Informações da sessão atual.
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="user-info">
+
+            <div class="user-info-label">
+                USUÁRIO
+            </div>
+
+            <div
+                class="user-info-value"
+                id="telegramUserName">
+
+                Sessão Telegram
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <button
+            class="btn btn-secondary btn-full"
+            onclick="resetSettings()">
+
+            ↻ RESTAURAR PADRÕES
+
+        </button>
+
+    </div>
+
+
+    <div class="settings-version">
+        Raposa Caçadora • v1.0
+    </div>
+
+</section>
+
 /* ===============================================================
    RAPOSA CAÇADORA
    PARTE 1 — JAVASCRIPT
@@ -5242,6 +5584,1104 @@ document.addEventListener(
     () => {
 
         initializeAutomationProgress();
+
+    }
+);
+
+/* ===============================================================
+   BLOCO 2 — PERSISTÊNCIA
+   =============================================================== */
+
+const STORAGE_KEYS = {
+
+    settings:
+        "raposa_cacadora_settings",
+
+    history:
+        "raposa_cacadora_history"
+
+};
+
+
+/* ===============================================================
+   CONFIGURAÇÕES PADRÃO
+   =============================================================== */
+
+const DEFAULT_SETTINGS = {
+
+    notifications:
+        true,
+
+    interval:
+        60,
+
+    quantity:
+        1
+
+};
+
+
+/* ===============================================================
+   CARREGAR CONFIGURAÇÕES
+   =============================================================== */
+
+function loadSettings() {
+
+    try {
+
+        const saved =
+            localStorage.getItem(
+                STORAGE_KEYS.settings
+            );
+
+
+        if (!saved) {
+
+            applySettings(
+                DEFAULT_SETTINGS
+            );
+
+            return;
+
+        }
+
+
+        const settings =
+            JSON.parse(saved);
+
+
+        applySettings({
+            ...DEFAULT_SETTINGS,
+            ...settings
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "Erro ao carregar configurações:",
+            error
+        );
+
+
+        applySettings(
+            DEFAULT_SETTINGS
+        );
+
+    }
+
+}
+
+
+/* ===============================================================
+   APLICAR CONFIGURAÇÕES
+   =============================================================== */
+
+function applySettings(settings) {
+
+    const notifications =
+        document.getElementById(
+            "settingNotifications"
+        );
+
+    const interval =
+        document.getElementById(
+            "settingInterval"
+        );
+
+    const quantity =
+        document.getElementById(
+            "settingQuantity"
+        );
+
+
+    if (notifications) {
+
+        notifications.checked =
+            Boolean(
+                settings.notifications
+            );
+
+    }
+
+
+    if (interval) {
+
+        interval.value =
+            String(
+                settings.interval
+            );
+
+    }
+
+
+    if (quantity) {
+
+        quantity.value =
+            String(
+                settings.quantity
+            );
+
+    }
+
+}
+
+
+/* ===============================================================
+   SALVAR CONFIGURAÇÕES
+   =============================================================== */
+
+function saveSettings() {
+
+    const notifications =
+        document.getElementById(
+            "settingNotifications"
+        );
+
+    const interval =
+        document.getElementById(
+            "settingInterval"
+        );
+
+    const quantity =
+        document.getElementById(
+            "settingQuantity"
+        );
+
+
+    const settings = {
+
+        notifications:
+            notifications
+                ? notifications.checked
+                : true,
+
+        interval:
+            interval
+                ? Number(interval.value)
+                : 60,
+
+        quantity:
+            quantity
+                ? Number(quantity.value)
+                : 1
+
+    };
+
+
+    try {
+
+        localStorage.setItem(
+            STORAGE_KEYS.settings,
+            JSON.stringify(settings)
+        );
+
+
+        showToast(
+            "Configurações salvas.",
+            "success"
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Erro ao salvar configurações:",
+            error
+        );
+
+    }
+
+}
+
+
+/* ===============================================================
+   RESTAURAR CONFIGURAÇÕES
+   =============================================================== */
+
+function resetSettings() {
+
+    const confirmed =
+        window.confirm(
+            "Restaurar todas as configurações padrão?"
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    applySettings(
+        DEFAULT_SETTINGS
+    );
+
+
+    saveSettings();
+
+
+    showToast(
+        "Configurações restauradas.",
+        "success"
+    );
+
+}
+
+
+/* ===============================================================
+   HISTÓRICO — LER
+   =============================================================== */
+
+function getLocalHistory() {
+
+    try {
+
+        const saved =
+            localStorage.getItem(
+                STORAGE_KEYS.history
+            );
+
+
+        if (!saved) {
+            return [];
+        }
+
+
+        const history =
+            JSON.parse(saved);
+
+
+        return Array.isArray(history)
+            ? history
+            : [];
+
+
+    } catch (error) {
+
+        console.error(
+            "Erro ao carregar histórico:",
+            error
+        );
+
+
+        return [];
+
+    }
+
+}
+
+
+/* ===============================================================
+   HISTÓRICO — SALVAR
+   =============================================================== */
+
+function saveLocalHistory(history) {
+
+    try {
+
+        /*
+         * Mantemos somente os últimos
+         * 50 registros locais.
+         */
+
+        const limited =
+            history.slice(
+                0,
+                50
+            );
+
+
+        localStorage.setItem(
+            STORAGE_KEYS.history,
+            JSON.stringify(limited)
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Erro ao salvar histórico:",
+            error
+        );
+
+    }
+
+}
+
+
+/* ===============================================================
+   ADICIONAR AO HISTÓRICO
+   =============================================================== */
+
+function addToLocalHistory(automation) {
+
+    if (!automation) {
+        return;
+    }
+
+
+    const history =
+        getLocalHistory();
+
+
+    const products =
+        automation.products || [];
+
+
+    const posted =
+        products.filter(
+            product =>
+                product.status ===
+                "postado"
+        ).length;
+
+
+    const errors =
+        products.filter(
+            product =>
+                product.status ===
+                "erro"
+        ).length;
+
+
+    const record = {
+
+        id:
+            automation.id ||
+            automation.automationId ||
+            Date.now(),
+
+        createdAt:
+            automation.startedAt ||
+            new Date().toISOString(),
+
+        total:
+            products.length,
+
+        posted:
+            posted,
+
+        errors:
+            errors,
+
+        interval:
+            automation.interval ||
+            60,
+
+        quantity:
+            automation.quantity ||
+            1,
+
+        status:
+            automation.status ||
+            (
+                errors > 0
+                    ? "erro"
+                    : "concluida"
+            )
+
+    };
+
+
+    /*
+     * Evita duplicar o mesmo ID.
+     */
+
+    const filtered =
+        history.filter(
+            item =>
+                String(item.id) !==
+                String(record.id)
+        );
+
+
+    filtered.unshift(
+        record
+    );
+
+
+    saveLocalHistory(
+        filtered
+    );
+
+
+    renderHistory();
+
+}
+
+
+/* ===============================================================
+   HISTÓRICO — RENDER
+   =============================================================== */
+
+function renderHistory() {
+
+    const container =
+        document.getElementById(
+            "historyList"
+        );
+
+
+    if (!container) {
+        return;
+    }
+
+
+    const history =
+        getLocalHistory();
+
+
+    if (!history.length) {
+
+        container.innerHTML = `
+
+            <div class="empty-state">
+
+                <div class="empty-state-icon">
+                    📭
+                </div>
+
+                <strong>
+                    Nenhuma automação ainda
+                </strong>
+
+                <span>
+                    Quando você executar automações,
+                    elas aparecerão aqui.
+                </span>
+
+            </div>
+
+        `;
+
+
+        return;
+
+    }
+
+
+    container.innerHTML = "";
+
+
+    history.forEach(
+        item => {
+
+            const element =
+                document.createElement(
+                    "div"
+                );
+
+
+            element.className =
+                "history-item";
+
+
+            const date =
+                formatHistoryDate(
+                    item.createdAt
+                );
+
+
+            let statusClass =
+                "pending";
+
+
+            let statusText =
+                "PENDENTE";
+
+
+            if (
+                item.status ===
+                "concluida"
+            ) {
+
+                statusClass =
+                    "success";
+
+                statusText =
+                    "CONCLUÍDA";
+
+            } else if (
+                item.status ===
+                "erro"
+            ) {
+
+                statusClass =
+                    "error";
+
+                statusText =
+                    "ERRO";
+
+            } else if (
+                item.status ===
+                "cancelada"
+            ) {
+
+                statusClass =
+                    "error";
+
+                statusText =
+                    "CANCELADA";
+
+            }
+
+
+            element.innerHTML = `
+
+                <div class="history-top">
+
+                    <div class="history-title">
+                        Automação #${escapeHtml(
+                            String(item.id)
+                        )}
+                    </div>
+
+                    <div class="history-date">
+                        ${date}
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="history-status ${statusClass}">
+
+                    <span>●</span>
+
+                    ${statusText}
+
+                </div>
+
+
+                <div class="history-stats">
+
+                    <div class="history-stat">
+
+                        <strong>
+                            ${Number(item.total) || 0}
+                        </strong>
+
+                        <span>
+                            PRODUTOS
+                        </span>
+
+                    </div>
+
+
+                    <div class="history-stat">
+
+                        <strong style="color:var(--green);">
+                            ${Number(item.posted) || 0}
+                        </strong>
+
+                        <span>
+                            POSTADOS
+                        </span>
+
+                    </div>
+
+
+                    <div class="history-stat">
+
+                        <strong style="color:var(--red);">
+                            ${Number(item.errors) || 0}
+                        </strong>
+
+                        <span>
+                            ERROS
+                        </span>
+
+                    </div>
+
+                </div>
+
+            `;
+
+            container.appendChild(
+                element
+            );
+
+        }
+    );
+
+}
+
+
+/* ===============================================================
+   DATA DO HISTÓRICO
+   =============================================================== */
+
+function formatHistoryDate(value) {
+
+    try {
+
+        const date =
+            new Date(value);
+
+
+        return date.toLocaleString(
+            "pt-BR",
+            {
+                day: "2-digit",
+                month: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
+
+
+    } catch {
+
+        return "--";
+
+    }
+
+}
+
+
+/* ===============================================================
+   LIMPAR HISTÓRICO
+   =============================================================== */
+
+function clearLocalHistory() {
+
+    const confirmed =
+        window.confirm(
+            "Deseja realmente apagar o histórico local?"
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    try {
+
+        localStorage.removeItem(
+            STORAGE_KEYS.history
+        );
+
+
+        renderHistory();
+
+
+        showToast(
+            "Histórico local apagado.",
+            "success"
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Erro ao limpar histórico:",
+            error
+        );
+
+    }
+
+}
+
+
+/* ===============================================================
+   SALVAR AUTOMAÇÃO FINALIZADA
+   =============================================================== */
+
+function saveFinishedAutomationToHistory() {
+
+    if (
+        !state.automation
+    ) {
+        return;
+    }
+
+
+    const progress =
+        state.automationProgress;
+
+
+    const automation = {
+
+        id:
+            progress.id ||
+            state.automation.id ||
+            Date.now(),
+
+        startedAt:
+            state.automation.startedAt,
+
+        interval:
+            state.automation.interval,
+
+        quantity:
+            state.automation.quantity,
+
+        status:
+            progress.status,
+
+        products:
+            progress.products
+
+    };
+
+
+    addToLocalHistory(
+        automation
+    );
+
+}
+
+
+/* ===============================================================
+   USUÁRIO TELEGRAM
+   =============================================================== */
+
+function loadTelegramUserInfo() {
+
+    const element =
+        document.getElementById(
+            "telegramUserName"
+        );
+
+
+    if (!element) {
+        return;
+    }
+
+
+    try {
+
+        const user =
+            tg?.initDataUnsafe?.user;
+
+
+        if (!user) {
+
+            element.textContent =
+                "Sessão Telegram";
+
+            return;
+
+        }
+
+
+        let name =
+            [
+                user.first_name,
+                user.last_name
+            ]
+            .filter(Boolean)
+            .join(" ");
+
+
+        if (
+            user.username
+        ) {
+
+            name +=
+                ` (@${user.username})`;
+
+        }
+
+
+        element.textContent =
+            name ||
+            "Usuário Telegram";
+
+
+    } catch {
+
+        element.textContent =
+            "Sessão Telegram";
+
+    }
+
+}
+
+
+/* ===============================================================
+   DASHBOARD — API
+   =============================================================== */
+
+CONFIG.ENDPOINT_DASHBOARD =
+    "/api/dashboard";
+
+
+async function loadDashboard() {
+
+    /*
+     * Primeiro mostramos dados locais,
+     * para a tela nunca ficar vazia.
+     */
+
+    updateDashboardFromLocal();
+
+
+    try {
+
+        const response =
+            await fetch(
+                CONFIG.API_BASE +
+                CONFIG.ENDPOINT_DASHBOARD,
+                {
+                    method:
+                        "GET",
+
+                    headers: {
+                        "Accept":
+                            "application/json"
+                    }
+                }
+            );
+
+
+        if (!response.ok) {
+            throw new Error(
+                `HTTP ${response.status}`
+            );
+        }
+
+
+        const data =
+            await response.json();
+
+
+        if (
+            data &&
+            typeof data === "object"
+        ) {
+
+            updateDashboardValues(
+                data
+            );
+
+        }
+
+
+        setServerStatus(
+            true
+        );
+
+
+    } catch (error) {
+
+        /*
+         * O dashboard continua funcionando
+         * com os dados locais.
+         */
+
+        console.warn(
+            "Dashboard remoto indisponível:",
+            error
+        );
+
+    }
+
+}
+
+
+/* ===============================================================
+   DASHBOARD — LOCAL
+   =============================================================== */
+
+function updateDashboardFromLocal() {
+
+    const history =
+        getLocalHistory();
+
+
+    const posted =
+        history.reduce(
+            (total, item) =>
+                total +
+                (Number(item.posted) || 0),
+            0
+        );
+
+
+    const errors =
+        history.reduce(
+            (total, item) =>
+                total +
+                (Number(item.errors) || 0),
+            0
+        );
+
+
+    const offers =
+        history.reduce(
+            (total, item) =>
+                total +
+                (Number(item.total) || 0),
+            0
+        );
+
+
+    updateDashboardValues({
+
+        ofertasHoje:
+            offers,
+
+        postadas:
+            posted,
+
+        pendentes:
+            Math.max(
+                offers -
+                posted -
+                errors,
+                0
+            ),
+
+        erros:
+            errors
+
+    });
+
+}
+
+
+/* ===============================================================
+   DASHBOARD — ATUALIZAR VALORES
+   =============================================================== */
+
+function updateDashboardValues(data) {
+
+    const offers =
+        data.ofertasHoje ??
+        data.offers ??
+        data.total ??
+        0;
+
+
+    const posted =
+        data.postadas ??
+        data.posted ??
+        0;
+
+
+    const pending =
+        data.pendentes ??
+        data.pending ??
+        0;
+
+
+    const errors =
+        data.erros ??
+        data.errors ??
+        0;
+
+
+    const statOffers =
+        document.getElementById(
+            "statOffers"
+        );
+
+    const statPosted =
+        document.getElementById(
+            "statPosted"
+        );
+
+    const statPending =
+        document.getElementById(
+            "statPending"
+        );
+
+    const statErrors =
+        document.getElementById(
+            "statErrors"
+        );
+
+
+    if (statOffers) {
+        statOffers.textContent =
+            Number(offers) || 0;
+    }
+
+    if (statPosted) {
+        statPosted.textContent =
+            Number(posted) || 0;
+    }
+
+    if (statPending) {
+        statPending.textContent =
+            Number(pending) || 0;
+    }
+
+    if (statErrors) {
+        statErrors.textContent =
+            Number(errors) || 0;
+    }
+
+}
+
+
+/* ===============================================================
+   NAVEGAÇÃO — CARREGAR DADOS DA TELA
+   =============================================================== */
+
+const originalNavigateTo =
+    navigateTo;
+
+
+navigateTo =
+    function(screenName) {
+
+        originalNavigateTo(
+            screenName
+        );
+
+
+        if (
+            screenName ===
+            "history"
+        ) {
+
+            renderHistory();
+
+        }
+
+
+        if (
+            screenName ===
+            "settings"
+        ) {
+
+            loadSettings();
+
+            loadTelegramUserInfo();
+
+        }
+
+
+        if (
+            screenName ===
+            "home"
+        ) {
+
+            loadDashboard();
+
+        }
+
+    };
+
+
+/* ===============================================================
+   INICIALIZAÇÃO DO BLOCO 2
+   =============================================================== */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        loadSettings();
+
+        renderHistory();
+
+        loadTelegramUserInfo();
+
+        loadDashboard();
 
     }
 );

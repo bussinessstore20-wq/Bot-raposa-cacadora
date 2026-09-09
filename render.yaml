@@ -1,6 +1,7 @@
 services:
   - type: web
     name: bot-raposa-cacadora
+    CHANNEL_USERNAME: @raposacacadora
     runtime: python
 
     buildCommand: pip install -r requirements.txt
